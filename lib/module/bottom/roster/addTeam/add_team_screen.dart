@@ -133,20 +133,20 @@ class AddTeamScreen extends StatelessWidget {
                       }
                     },
                   ),
-                  Gap(16),
-                  CommonTextField(
-                    focusNode: addTeamController.teamCodeFocus,
-                    hintText: "Team code",
-                    controller: addTeamController.zipCodeController,
-                    keyboardType: TextInputType.number,
-                    validator: (val) {
-                      if ((val ?? "").isEmpty) {
-                        return "Please enter team code";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
+                  // Gap(16),
+                  // CommonTextField(
+                  //   focusNode: addTeamController.teamCodeFocus,
+                  //   hintText: "Team code",
+                  //   controller: addTeamController.zipCodeController,
+                  //   keyboardType: TextInputType.number,
+                  //   validator: (val) {
+                  //     if ((val ?? "").isEmpty) {
+                  //       return "Please enter team code";
+                  //     } else {
+                  //       return null;
+                  //     }
+                  //   },
+                  // ),
                   Gap(16),
                   CommonTextField(
                     hintText: "Country",

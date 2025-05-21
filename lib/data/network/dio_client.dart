@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart' as Foundation;
 late Dio dio;
 
 BaseOptions baseOptions = BaseOptions(
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30));
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60));
 
 const String baseUrl = kDebugMode
     ? 'http://3.84.37.74/TeamMates'

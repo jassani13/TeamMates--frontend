@@ -23,7 +23,7 @@ class GroupChatController extends GetxController {
         false,
       );
       if (res?.statusCode == 200) {
-        return res?.data["data"]["media_url"];
+        return res?.data["data"]["media_name"];
       }
       return "";
     } catch (e) {

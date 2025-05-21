@@ -57,8 +57,17 @@ class AddPlayerController extends GetxController {
         }
       }
     } catch (e) {
+      AppLoader().dismissLoader();
+
+      if (e is DioException && e.response?.statusCode == 422) {
+        final message = e.response?.data['ResponseMsg'] ?? 'Something went wrong.';
+        AppToast.showAppToast(message);
+      } else {
+        AppToast.showAppToast('Failed to add players. Please try again.');
+      }
+
       if (kDebugMode) {
-        print(e);
+        print("AddMembers Error: $e");
       }
     }
   }

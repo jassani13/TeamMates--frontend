@@ -142,8 +142,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 itemCount: events.length,
                 itemBuilder: (context, index) {
                   final event = events[index];
+                  print(event);
+                  final String summary = event['summary'] ?? 'No Title';
+                  final String location = event['location'] ?? 'Unknown Location';
+                  final String description = cleanDescription(event['description'] ?? '');
+                  final String? mapUrl = extractMapUrl(event['description'] ?? '');
+
+                  final rawDt = event['dtstart'].dt;
+                  final start = DateTime.parse(rawDt);
+
+                  final rawDtEnd = event['dtend'].dt;
+                  final end = DateTime.parse(rawDtEnd);
+                  final String formattedDate = DateFormat('EEEE, MMMM d, y').format(start);
+                  final String formattedTime = '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColor.white,
                       borderRadius: BorderRadius.circular(16),
@@ -155,69 +170,85 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                       ],
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      leading: CircleAvatar(
-                        backgroundColor: AppColor.primaryColorLight.withOpacity(0.2),
-                        child: Icon(Icons.event, color: AppColor.primaryColorLight),
-                      ),
-                      title: Text(
-                        event['summary'] ?? 'No Title',
-                        style: TextStyle().normal16w700.textColor(AppColor.black12Color),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  event['location'] ?? 'Unknown Location',
-                                  style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// Event Header
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: AppColor.primaryColorLight.withOpacity(0.2),
+                              child: Icon(Icons.event, color: AppColor.primaryColorLight),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                summary,
+                                style: TextStyle().normal16w700.textColor(AppColor.black12Color),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Builder(
-                            builder: (_) {
-                              final raw = event['description'] ?? '';
-                              final cleaned = cleanDescription(raw);
-                              final url = extractMapUrl(raw);
+                            ),
+                          ],
+                        ),
 
-                              if (url != null) {
-                                return RichText(
-                                  text: TextSpan(
-                                    style: Theme.of(context).textTheme.bodyMedium,
-                                    children: [
-                                      TextSpan(
-                                        text: 'View Location',
-                                        style: TextStyle().normal14w600.textColor(AppColor.primaryColorLight),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () async {
-                                            final uri = Uri.parse(url);
-                                            if (await canLaunchUrl(uri)) {
-                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                            }
-                                          },
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else {
-                                return Text(
-                                  cleaned,
-                                  style: TextStyle().normal14w500.textColor(AppColor.black12Color),
-                                );
+                        const SizedBox(height: 12),
+
+                        /// Date & Time
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$formattedDate | $formattedTime',
+                              style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        /// Location
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                location,
+                                style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        /// Description / Map Link
+                        if (mapUrl != null)
+                          InkWell(
+                            onTap: () async {
+                              final uri = Uri.parse(mapUrl);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
                               }
                             },
+                            child: Row(
+                              children: [
+                                const Icon(Icons.map_outlined, size: 16, color: Colors.blue),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'View on Map',
+                                  style: TextStyle().normal14w600.textColor(AppColor.primaryColorLight),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Text(
+                            description,
+                            style: TextStyle().normal14w500.textColor(AppColor.black12Color),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   );
                 },
@@ -227,6 +258,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ],
       ),
     );
+  }
+
+  String cleanDescription(String raw) {
+    return raw.split('\r\n').firstWhere(
+          (line) => !line.toLowerCase().startsWith('map'),
+          orElse: () => '',
+        );
+  }
+
+  String? extractMapUrl(String raw) {
+    final mapRegex = RegExp(r'(http[s]?:\/\/maps\.google\.com\?q=[^\s]+)');
+    final match = mapRegex.firstMatch(raw);
+    return match?.group(0);
   }
 
   void _showSubscribeDialog(BuildContext context) {

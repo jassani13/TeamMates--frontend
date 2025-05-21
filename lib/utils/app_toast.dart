@@ -15,7 +15,7 @@ class AppToast {
     toastification.show(
 
       context: Get.context,
-      title: Text(
+      description: Text(
         msg,
         style: TextStyle().normal14w400.textColor(textColor ?? AppColor.white),
       ),

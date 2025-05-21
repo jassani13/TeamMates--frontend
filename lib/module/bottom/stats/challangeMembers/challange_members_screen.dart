@@ -363,7 +363,7 @@ class ChallengeMembersScreen extends StatelessWidget {
           },
           subTitle: status.toLowerCase() != 'participate'
               ? "Are you sure you want to\nparticipate in this challenge?"
-              : "Are you sure you complete\nthis challenge?",
+              : "Are you sure you completed\nthis challenge?",
         );
       },
     );

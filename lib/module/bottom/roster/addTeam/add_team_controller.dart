@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 
 class AddTeamController extends GetxController {
   TextEditingController teamNameController = TextEditingController();
-  TextEditingController zipCodeController = TextEditingController();
+  // TextEditingController zipCodeController = TextEditingController();
   TextEditingController countryController = TextEditingController();
   TextEditingController gameController = TextEditingController();
   final FocusNode teamNameFocus = FocusNode();
@@ -42,7 +42,7 @@ class AddTeamController extends GetxController {
         "user_id": AppPref().userId,
         if (selectedImageNum.value != 0) "icon": selectedImageNum.value,
         "name": teamNameController.text.toString(),
-        "zipcode": zipCodeController.text.toString(),
+        // "zipcode": zipCodeController.text.toString(),
         "country": countryController.text.toString(),
         "sports": gameController.text.toString(),
       });

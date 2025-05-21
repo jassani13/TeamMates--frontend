@@ -52,6 +52,7 @@ onResponseError(onError) {
       case 408:
       case 409:
       case 422:
+        AppLoader().dismissLoader();
         var json = onError.response?.data;
         if (json.runtimeType.toString() != "_Map<String, dynamic>") {
           var json = onError.response?.data;

@@ -46,6 +46,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         _messages.clear();
         _messages.addAll(
           list.map((e) {
+            print("hello =====> ${e['msg']}");
             if (e['msg_type'] == 'media') {
               return types.ImageMessage(
                 createdAt: DateTime.parse(e['created_at']).toUtc().millisecondsSinceEpoch,
@@ -407,7 +408,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               children: [
                                 if (message.metadata?['msg_type'] == 'pdf') ...[
                                   GestureDetector(
-                                    onTap: () => openPdf(message.metadata?['msg']),
+                                    onTap: () => openPdf(
+                                      message.metadata?['msg'],
+                                    ),
                                     child: Container(
                                       width: 200,
                                       padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),

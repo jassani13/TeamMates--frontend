@@ -16,27 +16,38 @@ class TeamCodeScreen extends StatelessWidget {
       },
       child: Scaffold(
         bottomNavigationBar: Container(
-          decoration: const BoxDecoration(
-            color: AppColor.white,
-            boxShadow: [
-              BoxShadow(
-                offset: Offset(0, -2),
-                color: AppColor.lightPrimaryColor,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child:CommonAppButton(
+            decoration: const BoxDecoration(
+              color: AppColor.white,
+              boxShadow: [
+                BoxShadow(
+                  offset: Offset(0, -2),
+                  color: AppColor.lightPrimaryColor,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: CommonAppButton(
               text: "Submit",
-              buttonType:ButtonType.enable,
+              buttonType: ButtonType.enable,
               onTap: () {
-               teamCodeController.checkPlayerCode();
+                teamCodeController.checkPlayerCode();
               },
-            )
-
-        ),
+            )),
         appBar: AppBar(
-          leading: SizedBox(),
+          actions: [
+            GestureDetector(
+              onTap: () {
+                Get.offNamed(AppRouter.selectRole);
+              },
+              child: Text(
+                "Switch Role",
+                style: TextStyle().normal16w500.textColor(
+                      AppColor.black12Color,
+                    ),
+              ),
+            ),
+            Gap(20),
+          ],
         ),
         body: SingleChildScrollView(
           child: Padding(
@@ -82,7 +93,6 @@ class TeamCodeScreen extends StatelessWidget {
                           bgColor: Colors.black,
                           cColor: AppColor.white,
                           maxLength: 5,
-
                           textAlign: TextAlign.center,
                           style: const TextStyle().normal20w500.textColor(AppColor.white),
                           keyboardType: TextInputType.number,

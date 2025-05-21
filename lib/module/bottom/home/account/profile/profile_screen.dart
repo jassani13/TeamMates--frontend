@@ -263,13 +263,14 @@ class ProfileScreen extends StatelessWidget {
                                         hintText: "Position",
                                         validator: (val) {
                                           if ((val ?? "").isEmpty) {
-                                            return "Please enter your Position";
-                                          } else if (!RegExp(r'^[A-Za-z]{2}$').hasMatch(val!)) {
-                                            return "Enter exactly two letters (e.g., LW, RW, GK)";
+                                            return "Please enter your position";
+                                          } else if (!RegExp(r'^[A-Za-z]{1,2}$').hasMatch(val!)) {
+                                            return "Enter one or two letters (e.g., L, LW, GK)";
                                           }
                                           return null;
                                         },
                                       );
+
                                     }),
                                   ),
                                 ],

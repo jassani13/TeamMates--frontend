@@ -190,9 +190,9 @@ class CommonScheduleCard extends StatelessWidget {
             ),
           ),
           child: Text(
-            scheduleData?.isLive == 1 ? 'Live - ${capitalizeFirst(scheduleData?.activityType)}' : capitalizeFirst(scheduleData?.activityType),
+            (scheduleData?.isLive == 1) ? 'Live - ${capitalizeFirst(scheduleData?.activityType)}' : capitalizeFirst(scheduleData?.activityType),
             style: TextStyle().normal16w500.textColor(
-                  scheduleData?.isLive == 1 ? AppColor.redColor : AppColor.black12Color,
+                  (scheduleData?.isLive == 1 || scheduleData?.activityType?.toLowerCase() == 'game') ? AppColor.redColor : AppColor.black12Color,
                 ),
           ),
         ),
