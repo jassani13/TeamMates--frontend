@@ -1,3 +1,3 @@
-App Store Connect Paid Applications Agreement is active
-Bundle ID matches, 
-and your products are in the "Ready to Submit" state
+- If a coach/manager shows up, they aren’t able to add there own kid to the roster. It just keeps circling. Example: this user registered as team manager, she is trying to add her own player via the email she registered with but it keeps circling.
+- Set up promo for when client purchases annual plan, they will receive their first 3 months free
+- Set up mix panel. I sent you an invite long time ago

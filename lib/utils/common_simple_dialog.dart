@@ -21,7 +21,7 @@ class SimpleCommonDialog extends StatelessWidget {
     return AlertDialog(
       insetPadding: EdgeInsets.zero,
       backgroundColor: AppColor.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: SizedBox(),
       content: Text(

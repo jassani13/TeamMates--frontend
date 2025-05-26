@@ -264,6 +264,7 @@ void showAlertDialog({
     builder: (BuildContext context) {
       return AlertDialog(
         contentPadding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 24),
         title: Column(
           children: [
