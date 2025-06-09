@@ -148,7 +148,7 @@ class AllPlayerScreen extends StatelessWidget {
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(20),
                                             child: getImageView(
-                                              finalUrl: player?.profile ?? "",
+                                              finalUrl: '$publicImageUrl${player?.profile}',
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -190,18 +190,36 @@ class AllPlayerScreen extends StatelessWidget {
                                           if (AppPref().role == 'coach')
                                             GestureDetector(
                                               onTap: () {
-                                                hideKeyboard();
+                                                if (AppPref().proUser == true) {
+                                                  hideKeyboard();
 
-                                                Get.toNamed(
-                                                  AppRouter.personalChat,
-                                                  arguments: {
-                                                    'chatData': ChatListData(
-                                                      firstName: player?.firstName,
-                                                      lastName: player?.lastName,
-                                                      otherId: player?.userId.toString(),
-                                                    ),
-                                                  },
-                                                );
+                                                  Get.toNamed(
+                                                    AppRouter.personalChat,
+                                                    arguments: {
+                                                      'chatData': ChatListData(
+                                                        firstName: player?.firstName,
+                                                        lastName: player?.lastName,
+                                                        otherId: player?.userId.toString(),
+                                                      ),
+                                                    },
+                                                  );
+                                                } else {
+                                                  Get.defaultDialog(
+                                                    title: "Subscription Required",
+                                                    titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                                                    middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                                                    middleText: "Buy a subscription to access Personal Chat.",
+                                                    textConfirm: "Buy Now",
+                                                    confirmTextColor: AppColor.white,
+                                                    buttonColor: AppColor.black12Color,
+                                                    cancelTextColor: AppColor.black12Color,
+                                                    textCancel: "Cancel",
+                                                    onConfirm: () {
+                                                      Get.back();
+                                                      Get.toNamed(AppRouter.subscription);
+                                                    },
+                                                  );
+                                                }
                                               },
                                               child: Image.asset(
                                                 AppImage.messenger,

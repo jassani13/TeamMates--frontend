@@ -7,17 +7,13 @@ import 'package:base_code/utils/common_simple_dialog.dart';
 class ChallengeMembersScreen extends StatelessWidget {
   ChallengeMembersScreen({super.key});
 
-  final challengeMembersController =
-      Get.put<ChallengeMembersController>(ChallengeMembersController());
+  final challengeMembersController = Get.put<ChallengeMembersController>(ChallengeMembersController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: CommonTitleText(
-            text: (AppPref().role == "coach")
-                ? "Challenge Members"
-                : "Challenges & Rewards"),
+        title: CommonTitleText(text: (AppPref().role == "coach") ? "Challenge Members" : "Challenges & Rewards"),
         centerTitle: false,
       ),
       bottomNavigationBar: (AppPref().role == "coach")
@@ -34,9 +30,7 @@ class ChallengeMembersScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: Platform.isAndroid ? 20 : 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
                       child: CommonAppButton(
                         color: AppColor.redColor,
                         text: "Delete Challenge",
@@ -49,10 +43,7 @@ class ChallengeMembersScreen extends StatelessWidget {
           : Obx(() {
               return challengeMembersController.isLoading.value
                   ? SizedBox()
-                  : (challengeMembersController
-                                  .challengeDetails.value.participateStatus ??
-                              "") ==
-                          "Completed"
+                  : (challengeMembersController.challengeDetails.value.participateStatus ?? "") == "Completed"
                       ? SizedBox()
                       : Container(
                           decoration: const BoxDecoration(
@@ -64,25 +55,14 @@ class ChallengeMembersScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                           child: CommonAppButton(
                             color: AppColor.successColor,
-                            text: (challengeMembersController.challengeDetails
-                                            .value.participateStatus ??
-                                        "")
-                                    .isEmpty
-                                ? "Participate"
-                                : "Complete",
+                            text: (challengeMembersController.challengeDetails.value.participateStatus ?? "").isEmpty ? "Participate" : "Complete",
                             onTap: () {
                               participateCompleteDialog(
                                 context: context,
-                                status: challengeMembersController
-                                        .challengeDetails
-                                        .value
-                                        .participateStatus
-                                        ?.toLowerCase() ??
-                                    "",
+                                status: challengeMembersController.challengeDetails.value.participateStatus?.toLowerCase() ?? "",
                               );
                             },
                           ),
@@ -107,9 +87,7 @@ class ChallengeMembersScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  challengeMembersController
-                                          .challengeDetails.value.name ??
-                                      "",
+                                  challengeMembersController.challengeDetails.value.name ?? "",
                                   style: TextStyle().normal20w500.textColor(
                                         AppColor.black12Color,
                                       ),
@@ -134,10 +112,7 @@ class ChallengeMembersScreen extends StatelessWidget {
                           ),
                           if (AppPref().role != "coach")
                             Text(
-                              DateUtilities.getTimeLeft(
-                                  challengeMembersController
-                                          .challengeDetails.value.endAt ??
-                                      "2025-03-15 02:47:00"),
+                              DateUtilities.getTimeLeft(challengeMembersController.challengeDetails.value.endAt ?? "2025-03-15 02:47:00"),
                               style: TextStyle().normal16w500.textColor(
                                     AppColor.redColor,
                                   ),
@@ -146,10 +121,7 @@ class ChallengeMembersScreen extends StatelessWidget {
                       ),
                       Gap(16),
                       Obx(() {
-                        return (challengeMembersController
-                                        .challengeDetails.value.notes ??
-                                    "")
-                                .isEmpty
+                        return (challengeMembersController.challengeDetails.value.notes ?? "").isEmpty
                             ? SizedBox()
                             : Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,24 +135,19 @@ class ChallengeMembersScreen extends StatelessWidget {
                                   Gap(16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          challengeMembersController
-                                                  .challengeDetails.value.notes ??
-                                              "-",
-                                          style:
-                                              TextStyle().normal16w500.textColor(
-                                                    AppColor.black12Color,
-                                                  ),
+                                          challengeMembersController.challengeDetails.value.notes ?? "-",
+                                          style: TextStyle().normal16w500.textColor(
+                                                AppColor.black12Color,
+                                              ),
                                         ),
                                         Text(
                                           "Notes",
-                                          style:
-                                              TextStyle().normal16w500.textColor(
-                                                    AppColor.grey6EColor,
-                                                  ),
+                                          style: TextStyle().normal16w500.textColor(
+                                                AppColor.grey6EColor,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -202,27 +169,14 @@ class ChallengeMembersScreen extends StatelessWidget {
                         Obx(() {
                           return challengeMembersController.isLoading.value
                               ? Text("")
-                              : (challengeMembersController.challengeDetails
-                                              .value.participates ??
-                                          [])
-                                      .isEmpty
+                              : (challengeMembersController.challengeDetails.value.participates ?? []).isEmpty
                                   ? Center(
                                       child: Padding(
-                                      padding: EdgeInsets.only(
-                                          top: MediaQuery.of(context)
-                                                  .size
-                                                  .height /
-                                              5),
-                                      child: buildNoData(
-                                          text: "No participate found"),
+                                      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 5),
+                                      child: buildNoData(text: "No participate found"),
                                     ))
                                   : ListView.builder(
-                                      itemCount: (challengeMembersController
-                                                  .challengeDetails
-                                                  .value
-                                                  .participates ??
-                                              [])
-                                          .length,
+                                      itemCount: (challengeMembersController.challengeDetails.value.participates ?? []).length,
                                       padding: EdgeInsets.zero,
                                       physics: ScrollPhysics(),
                                       shrinkWrap: true,
@@ -233,69 +187,50 @@ class ChallengeMembersScreen extends StatelessWidget {
                                             top: 14,
                                           ),
                                           decoration: BoxDecoration(
-                                            border:index==0?null: Border(
-                                              top: BorderSide(
-                                                color: AppColor.greyF6Color,
-                                              ),
-                                            ),
+                                            border: index == 0
+                                                ? null
+                                                : Border(
+                                                    top: BorderSide(
+                                                      color: AppColor.greyF6Color,
+                                                    ),
+                                                  ),
                                           ),
                                           child: Row(
                                             children: [
                                               ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(24),
+                                                borderRadius: BorderRadius.circular(24),
                                                 child: getImageView(
-                                                    finalUrl: (challengeMembersController
-                                                                    .challengeDetails
-                                                                    .value
-                                                                    .participates ??
-                                                                [])[index]
-                                                            .user
-                                                            ?.profile ??
-                                                        "",
+                                                    finalUrl:
+                                                        '$publicImageUrl${(challengeMembersController.challengeDetails.value.participates ?? [])[index].user?.profile}' ??
+                                                            "",
                                                     fit: BoxFit.cover,
                                                     height: 48,
                                                     width: 48),
                                               ),
                                               Gap(16),
                                               Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     "${(challengeMembersController.challengeDetails.value.participates ?? [])[index].user?.firstName ?? ""} ${(challengeMembersController.challengeDetails.value.participates ?? [])[index].user?.lastName ?? ""}",
-                                                    style: TextStyle()
-                                                        .normal20w500
-                                                        .textColor(
+                                                    style: TextStyle().normal20w500.textColor(
                                                           AppColor.black12Color,
                                                         ),
                                                   ),
                                                   Text(
-                                                    (challengeMembersController
-                                                                    .challengeDetails
-                                                                    .value
-                                                                    .participates ??
-                                                                [])[index]
-                                                            .status ??
-                                                        "",
-                                                    style: TextStyle()
-                                                        .normal14w500
-                                                        .textColor(
-                                                      (challengeMembersController
-                                                          .challengeDetails
-                                                          .value
-                                                          .participates ??
-                                                          [])[index]
-                                                          .status?.toLowerCase() == "completed"
-                                                          ? AppColor.success500
-                                                          :   (challengeMembersController
-                                                          .challengeDetails
-                                                          .value
-                                                          .participates ??
-                                                          [])[index]
-                                                          .status?.toLowerCase() == "participate"
-                                                          ? AppColor.primaryColor
-                                                          : AppColor.grey4EColor,
+                                                    (challengeMembersController.challengeDetails.value.participates ?? [])[index].status ?? "",
+                                                    style: TextStyle().normal14w500.textColor(
+                                                          (challengeMembersController.challengeDetails.value.participates ?? [])[index]
+                                                                      .status
+                                                                      ?.toLowerCase() ==
+                                                                  "completed"
+                                                              ? AppColor.success500
+                                                              : (challengeMembersController.challengeDetails.value.participates ?? [])[index]
+                                                                          .status
+                                                                          ?.toLowerCase() ==
+                                                                      "participate"
+                                                                  ? AppColor.primaryColor
+                                                                  : AppColor.grey4EColor,
                                                         ),
                                                   ),
                                                 ],
@@ -307,22 +242,16 @@ class ChallengeMembersScreen extends StatelessWidget {
                         }),
                       ] else ...[
                         Padding(
-                          padding: EdgeInsets.only(
-                              top: MediaQuery.of(context).size.height / 5),
+                          padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 5),
                           child: Center(child: SvgPicture.asset(AppImage.noP)),
                         ),
-                        if ((challengeMembersController
-                                    .challengeDetails.value.participateStatus ??
-                                "") ==
-                            "Completed") ...[
+                        if ((challengeMembersController.challengeDetails.value.participateStatus ?? "") == "Completed") ...[
                           Gap(20),
                           Center(
                             child: Text(
                               "This challenge is already\ncompleted by you.",
                               textAlign: TextAlign.center,
-                              style: TextStyle()
-                                  .textColor(AppColor.successColor)
-                                  .normal18w500,
+                              style: TextStyle().textColor(AppColor.successColor).normal18w500,
                             ),
                           )
                         ]
@@ -350,12 +279,7 @@ class ChallengeMembersScreen extends StatelessWidget {
           btn2Tap: () async {
             Get.back();
             await challengeMembersController.statusChangeApiCall(
-              status: (challengeMembersController
-                              .challengeDetails.value.participateStatus ??
-                          "")
-                      .isEmpty
-                  ? "Participate"
-                  : "Completed",
+              status: (challengeMembersController.challengeDetails.value.participateStatus ?? "").isEmpty ? "Participate" : "Completed",
             );
           },
           btn1Tap: () {

@@ -8,7 +8,7 @@ late Dio dio;
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
-
+const String publicImageUrl = "http://3.84.37.74/TeamMates/public/";
 const String baseUrl = kDebugMode
     ? 'http://3.84.37.74/TeamMates'
     : 'http://3.84.37.74/TeamMates';

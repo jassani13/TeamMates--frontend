@@ -5,6 +5,7 @@ class ScheduleData {
   int? activityId;
   int? challengeId;
   String? activityType;
+  String? weekDay;
   String? activityName;
   int? notifyTeam;
   int? isTimeTbd;
@@ -40,6 +41,7 @@ class ScheduleData {
       this.activityType,
       this.activityName,
       this.notifyTeam,
+        this.weekDay,
       this.isTimeTbd,
       this.isLive,
       this.eventDate,
@@ -66,6 +68,7 @@ class ScheduleData {
       this.team,this.opponent});
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
+    weekDay = json['week_day'];
     challengeId = json['challenge_id'];
     activityId = json['activity_id'];
     activityType = json['activity_type'];
@@ -104,6 +107,7 @@ class ScheduleData {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['week_day'] = this.weekDay;
     data['challenge_id'] = this.challengeId;
     data['activity_id'] = this.activityId;
     data['activity_type'] = this.activityType;

@@ -2,6 +2,7 @@ export 'package:base_code/app_route.dart';
 export 'package:base_code/components/buttons.dart';
 export 'package:base_code/components/input_field.dart';
 export 'package:base_code/module/bottom/roster/roster_controller.dart';
+export 'package:base_code/module/bottom/chat/search_chat/search_chat_controller.dart';
 
 export 'package:base_code/res/color_schema.dart';
 export 'package:base_code/res/text_style.dart';

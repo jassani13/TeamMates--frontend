@@ -1,55 +1,7 @@
-import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
-// Chat-base-url: http://3.84.37.74:8080
-// API-base-url: http://3.84.37.74/TeamMates
-
-///GROUP CHAT
-// 1. get team chat list
-//Emit: getTeamChatList(loginId) >> On: setTeamChatList()
-// 2. get particular team chat history
-//Emit: getTeamMessageList(loginId, teamId) >> On: setTeamMessageList()
-// 3. send msg and received on chat screen: setNewTeamMessage
-//Emit: sendTeamMessage(message,senderId, teamId, CreatedAt='2025-03-22 15:49:09', msgType='text')
-// >> On: setNewTeamMessage()
-// new msg received on chat user list: updateTeamChatList
-//On: updateTeamChatList()
-
-// user online-offline
-//Emit: userOnline(loginId) >> On: updateUserStatus
-
-// Response Ex:
-// -----------------------------
-// {"1":"g4dm2aeRPra1XgRGAAAJ","2":"vXCgKgVrMztaQTi7AAAN"}
-// Explianation:
-// "1": user_id
-// "g4dm2aeRPra1XgRGAAAJ": socket_id
-
-// You need to check user_Id exists in response list then this user is online other wise offline
-
-// send notification only if ON (notify_me/notify_team).
-// push notification setup done
-// added emergency_contact in updateProfile
-// getMyCoachDetails api for emergency_contact and chat
-
-// 1 to 1 chat
-// ---------------------
-//1. get mail user chat list
-//Emit: getChatUserList(loginId) >> On: setChatUserList()
-//2. get particular user chat history
-//Emit: getMessageList(loginId, receiverId) >> On: setMessageList()
-//3. send msg and received on chat screen: setNewMessage
-//Emit: sendMessage(message,senderId, receiverId, createdAt='2025-03-22 15:49:09', msgType='text')
-// >> On: setNewMessage()
-// new msg received on chat user list: updateChatList
-//On: updateChatList()
-
-// If send media in chat then you need to follow this step
-// call setChatMedia api for upload media and you can get "media_name" in response
-// then you can Emit sendMessage(media_name,senderId, receiverId, createdAt='2025-03-22 15:49:09', msgType='photo')
 
 late IO.Socket socket;
 
@@ -110,10 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - setChatUserList ------------>');
         print(list);
       }
-      chatController.chatListData = list
-          .map((e) => ChatListData.fromJson(e))
-          .toList()
-          .cast<ChatListData>();
+      chatController.chatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -128,10 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - setTeamChatList ------------>');
         print(list);
       }
-      chatController.grpChatListData = list
-          .map((e) => ChatListData.fromJson(e))
-          .toList()
-          .cast<ChatListData>();
+      chatController.grpChatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -161,10 +107,8 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - updateChatList $data ------------>');
       }
       int index = chatController.chatListData.indexWhere((test) =>
-          (test.senderId == data.senderId &&
-              test.receiverId == data.receiverId) ||
-          (test.senderId == data.receiverId &&
-              test.receiverId == data.senderId));
+          (test.senderId == data.senderId && test.receiverId == data.receiverId) ||
+          (test.senderId == data.receiverId && test.receiverId == data.senderId));
       if (index != -1) {
         chatController.chatListData[index] = data;
         if (mounted) {
@@ -188,8 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (kDebugMode) {
         print('<------------ ON - updateTeamChatList $data ------------>');
       }
-      int index = chatController.grpChatListData
-          .indexWhere((test) => data.teamId == test.teamId);
+      int index = chatController.grpChatListData.indexWhere((test) => data.teamId == test.teamId);
       if (index != -1) {
         chatController.grpChatListData[index] = data;
         if (mounted) {
@@ -204,10 +147,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // void disconnect() {
-  //   socket.disconnect();
-  // }
-
   @override
   void initState() {
     connectSocket();
@@ -220,12 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
     updateUserStatus();
     super.initState();
   }
-
-  // @override
-  // void dispose() {
-  //   disconnect();
-  //   super.dispose();
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -240,13 +173,22 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Column(
             children: [
-              Gap(Platform.isAndroid
-                  ? ScreenUtil().statusBarHeight + 20
-                  : ScreenUtil().statusBarHeight + 10),
+              Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
               Row(
                 children: [
                   Gap(16),
                   CommonTitleText(text: "Chat"),
+                  Spacer(),
+                  Visibility(
+                    visible: AppPref().role == 'coach',
+                    child: CommonIconButton(
+                      image: AppImage.plus,
+                      onTap: () {
+                        Get.toNamed(AppRouter.searchChatScreen);
+                      },
+                    ),
+                  ),
+                  Gap(16),
                 ],
               ),
               Gap(24),
@@ -304,8 +246,7 @@ class _ChatScreenState extends State<ChatScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height / 3.3),
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
                   child: Center(
                       child: buildNoData(
                     text: "No Conversations Yet",
@@ -315,7 +256,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           )
         : ListView.builder(
-      physics: NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(horizontal: 16),
             itemCount: chatController.chatListData.length,
             shrinkWrap: true,
@@ -323,12 +264,30 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.chatListData[index];
               return GestureDetector(
                 onTap: () {
-                  Get.toNamed(
-                    AppRouter.personalChat,
-                    arguments: {
-                      'chatData': chatData,
-                    },
-                  );
+                  if (AppPref().proUser == false) {
+                    Get.toNamed(
+                      AppRouter.personalChat,
+                      arguments: {
+                        'chatData': chatData,
+                      },
+                    );
+                  } else {
+                    Get.defaultDialog(
+                      title: "Subscription Required",
+                      titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                      middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                      middleText: "Buy a subscription to access Personal Chat.",
+                      textConfirm: "Buy Now",
+                      confirmTextColor: AppColor.white,
+                      buttonColor: AppColor.black12Color,
+                      cancelTextColor: AppColor.black12Color,
+                      textCancel: "Cancel",
+                      onConfirm: () {
+                        Get.back();
+                        Get.toNamed(AppRouter.subscription);
+                      },
+                    );
+                  }
                 },
                 behavior: HitTestBehavior.translucent,
                 child: Container(
@@ -359,16 +318,12 @@ class _ChatScreenState extends State<ChatScreen> {
                                 finalUrl: chatData.profile ?? "",
                                 fit: BoxFit.cover),
                           ),
-                          if (chatController.onlineUsers
-                                  .containsKey(chatData.receiverId) ==
-                              true)
+                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
                             Container(
                               height: 12,
                               width: 12,
-                              decoration: BoxDecoration(
-                                  color: AppColor.greenColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColor.white)),
+                              decoration:
+                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
                             ),
                         ],
                       ),
@@ -384,9 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                             ),
                             Text(
-                              chatData.msgType == 'text'
-                                  ? chatData.msg ?? ""
-                                  : "Sent a file",
+                              chatData.msgType == 'text' ? chatData.msg ?? "" : "Sent a file",
                               style: TextStyle().normal14w500.textColor(
                                     AppColor.grey4EColor,
                                   ),
@@ -410,8 +363,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             children: [
                               Gap(4),
                               Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
+                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColor.greyF6Color,
                                   borderRadius: BorderRadius.circular(4),
@@ -443,8 +395,7 @@ class _ChatScreenState extends State<ChatScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).size.height / 3.3),
+                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
                   child: Center(
                       child: buildNoData(
                     text: "No Conversations Yet",
@@ -454,21 +405,38 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           )
         : ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-
-        padding: EdgeInsets.symmetric(horizontal: 16),
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             itemCount: chatController.grpChatListData.length,
             shrinkWrap: true,
             itemBuilder: (context, index) {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
-                  Get.toNamed(
-                    AppRouter.grpChat,
-                    arguments: {
-                      'chatData': chatData,
-                    },
-                  );
+                  if (AppPref().proUser == false) {
+                    Get.toNamed(
+                      AppRouter.grpChat,
+                      arguments: {
+                        'chatData': chatData,
+                      },
+                    );
+                  } else {
+                    Get.defaultDialog(
+                      title: "Subscription Required",
+                      titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                      middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                      middleText: "Buy a subscription to\naccess Team Chat.",
+                      textConfirm: "Buy Now",
+                      confirmTextColor: AppColor.white,
+                      buttonColor: AppColor.black12Color,
+                      cancelTextColor: AppColor.black12Color,
+                      textCancel: "Cancel",
+                      onConfirm: () {
+                        Get.back();
+                        Get.toNamed(AppRouter.subscription);
+                      },
+                    );
+                  }
                 },
                 behavior: HitTestBehavior.translucent,
                 child: Container(
@@ -497,21 +465,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                 Icons.account_circle,
                                 size: 40,
                               ),
-                              finalUrl: (chatData.teamIcon ?? "").isEmpty
-                                  ? chatData.teamImage ?? ""
-                                  : chatData.teamIcon ?? "",
+                              finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
                             ),
                           ),
-                          if (chatController.onlineUsers
-                                  .containsKey(chatData.receiverId) ==
-                              true)
+                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
                             Container(
                               height: 12,
                               width: 12,
-                              decoration: BoxDecoration(
-                                  color: AppColor.greenColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColor.white)),
+                              decoration:
+                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
                             ),
                         ],
                       ),
@@ -551,8 +513,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             children: [
                               Gap(4),
                               Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
+                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColor.greyF6Color,
                                   borderRadius: BorderRadius.circular(4),

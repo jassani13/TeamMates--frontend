@@ -73,6 +73,8 @@ dependencies:
   geocoding:
   icalendar_parser:
   table_calendar:
+  flutter_chat_reactions: ^0.1.1
+
 
 
 

@@ -128,7 +128,8 @@ class RosterScreen extends StatelessWidget {
                                               ClipRRect(
                                                 borderRadius: BorderRadius.circular(24),
                                                 child: getImageView(
-                                                    finalUrl: (roster.iconImage ?? "").isNotEmpty ? (roster.iconImage ?? "") : roster.teamImage ?? "",
+                                                    finalUrl:
+                                                        '$publicImageUrl${(roster.iconImage ?? "").isNotEmpty ? (roster.iconImage ?? "") : roster.teamImage ?? ""}',
                                                     fit: BoxFit.cover,
                                                     height: 48,
                                                     width: 48),

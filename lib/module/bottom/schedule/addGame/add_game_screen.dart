@@ -1,3 +1,4 @@
+import 'package:base_code/module/bottom/schedule/addGame/widget/frequncy_day_selector.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -307,23 +308,17 @@ class AddGameScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Gap(16),
-                  // CommonTextField(
-                  //   hintText: "Time zone",
-                  //   readOnly: true,
-                  //   suffixIcon: Icon(
-                  //     Icons.keyboard_arrow_down_sharp,
-                  //     color: AppColor.black12Color,
-                  //   ),
-                  //   controller: addGameController.timeZoneController.value,
-                  //   onTap: () {
-                  //     addGameController.showTimeZoneSheet(
-                  //       context,
-                  //       list: addGameController.countryList,
-                  //       storeValue: addGameController.timeZoneController.value,
-                  //     );
-                  //   },
-                  // ),
+                  Column(
+                    children: [
+                      Gap(16),
+                      FrequencyDaySelector(
+                        selectedDays: addGameController.selectedDays,
+                        onSelectionChanged: (days) {
+                          addGameController.selectedDays.value = days;
+                        },
+                      ),
+                    ],
+                  ),
                   Gap(16),
                   Visibility(
                     visible: addGameController.isGame.value == true,
@@ -530,7 +525,6 @@ class AddGameScreen extends StatelessWidget {
                     hintText: "Notes",
                     controller: addGameController.noteController.value,
                   ),
-
                   Visibility(
                     visible: addGameController.isGame.value == true,
                     child: Row(
@@ -593,7 +587,6 @@ class AddGameScreen extends StatelessWidget {
                       ),
                     );
                   }),
-
                   Gap(24),
                 ],
               ),

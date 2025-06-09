@@ -3,13 +3,14 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
 class AddGameController extends GetxController {
+  RxList<int> selectedDays = <int>[].obs;
+
   Rx<TextEditingController> teamController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
   Rx<TextEditingController> activityNameController = TextEditingController().obs;
   Rx<TextEditingController> endTimeController = TextEditingController().obs;
   Rx<TextEditingController> startTimeController = TextEditingController().obs;
 
-  // Rx<TextEditingController> timeZoneController = TextEditingController().obs;
   Rx<TextEditingController> opponentController = TextEditingController().obs;
   Rx<TextEditingController> locationController = TextEditingController().obs;
   Rx<TextEditingController> locationDetailsController = TextEditingController().obs;
@@ -36,14 +37,6 @@ class AddGameController extends GetxController {
   RxBool isLive = true.obs;
   RxString activityType = ''.obs;
 
-  // List<String> countryList = [
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  //   "(GMT-5:00) Eastern Time (US & Canada)",
-  // ];
   List<String> arriveEarly = [
     "30 minutes early",
     "45 minutes early",
@@ -65,6 +58,7 @@ class AddGameController extends GetxController {
   Future<void> addActivityApi({String? activityType, bool? isGame}) async {
     try {
       FormData formData = FormData.fromMap({
+        "week_day": selectedDays,
         "user_id": AppPref().userId,
         "notify_team": notify.value == true ? 1 : 0,
         "activity_type": activityType,
@@ -75,7 +69,6 @@ class AddGameController extends GetxController {
         "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
         "end_time": endTimeController.value.text.trim(),
-        // "time_zone": timeZoneController.value.text.trim(),
         "time_zone": "",
         "location_id": selectedLocation.value?.locationId ?? 0,
         "location_details": locationDetailsController.value.text.trim(),
@@ -88,7 +81,6 @@ class AddGameController extends GetxController {
         "flag_color": flagController.value.text.trim(),
         "notes": noteController.value.text.trim(),
         "standings": isStanding.value == true ? 1 : 0,
-        // "is_live": isLive.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
       });
@@ -113,6 +105,7 @@ class AddGameController extends GetxController {
   Future<void> editActivityApi({String? activityType, bool? isGame, required int activityId}) async {
     try {
       FormData formData = FormData.fromMap({
+        "week_day": selectedDays,
         "user_id": AppPref().userId,
         "activity_id": activityId,
         "notify_team": notify.value == true ? 1 : 0,
@@ -124,9 +117,7 @@ class AddGameController extends GetxController {
         "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
         "end_time": endTimeController.value.text.trim(),
-        // "time_zone": timeZoneController.value.text.trim(),
         "time_zone": "",
-
         "location_id": selectedLocation.value?.locationId ?? 0,
         "location_details": locationDetailsController.value.text.trim(),
         "assignments": assignmentController.value.text.trim(),
@@ -138,7 +129,6 @@ class AddGameController extends GetxController {
         "flag_color": flagController.value.text.trim(),
         "notes": noteController.value.text.trim(),
         "standings": isStanding.value == true ? 1 : 0,
-        // "is_live": isLive.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
       });
@@ -591,6 +581,9 @@ class AddGameController extends GetxController {
       selectedTeam.refresh();
       selectedLocation.refresh();
       selectedOpponent.refresh();
+      if (activityDetail.value?.weekDay != null) {
+        selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+      }
     }
     if (activityType.value == 'game') {
       getRosterApiCall();

@@ -1,13 +1,12 @@
-import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/module/bottom/chat/chat_screen.dart';
 import 'package:base_code/module/bottom/chat/group_chat/group_chat_controller.dart';
-import 'package:base_code/module/bottom/chat/personalChat/personal_chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
+import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:uuid/uuid.dart';
 
 class GroupChatScreen extends StatefulWidget {
   const GroupChatScreen({super.key});
@@ -32,10 +31,49 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
+  void _emitReaction({
+    required String messageId,
+    required dynamic reaction,
+    bool convertToUnicode = false,
+  }) {
+    final userId = AppPref().userId.toString();
+    final otherId = chatData.otherId;
+
+    final reactionData = convertToUnicode ? reaction.runes.map((e) => 'U+${e.toRadixString(16).toUpperCase()}').join(' ') : reaction;
+
+    if (kDebugMode) {
+      print('<------------ EMIT - _emitReaction ------------>');
+      print([messageId, userId, otherId, reactionData]);
+    }
+
+    socket.emit('addTeamReaction', [messageId, userId, otherId, reactionData]);
+  }
+
   void _initializeChat() {
     socket.emit('getTeamMessageList', [AppPref().userId, chatData.teamId ?? 0]);
     socket.on('setTeamMessageList', _handleMessageList);
     socket.on('setNewTeamMessage', _handleNewMessage);
+    socket.on('teamReactionUpdated', _handleReactionUpdate);
+  }
+
+  void _handleReactionUpdate(dynamic data) {
+    final chatId = data['chatId'].toString();
+    final newReactions = List<Map<String, dynamic>>.from(data['reactions'] ?? []);
+    final index = _messages.indexWhere((msg) => msg.id == chatId);
+    if (index != -1) {
+      final updatedMessage = _copyMessageWithNewMetadata(
+        _messages[index],
+        {...?_messages[index].metadata, 'reaction': newReactions},
+      );
+      setState(() => _messages[index] = updatedMessage);
+    }
+  }
+
+  types.Message _copyMessageWithNewMetadata(types.Message message, Map<String, dynamic> newMetadata) {
+    if (message is types.TextMessage) return message.copyWith(metadata: newMetadata);
+    if (message is types.ImageMessage) return message.copyWith(metadata: newMetadata);
+    if (message is types.FileMessage) return message.copyWith(metadata: newMetadata);
+    throw Exception("Unsupported message type: ${message.runtimeType}");
   }
 
   void _handleMessageList(dynamic data) {
@@ -46,7 +84,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         _messages.clear();
         _messages.addAll(
           list.map((e) {
-            print("hello =====> ${e['msg']}");
             if (e['msg_type'] == 'media') {
               return types.ImageMessage(
                 createdAt: DateTime.parse(e['created_at']).toUtc().millisecondsSinceEpoch,
@@ -64,6 +101,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 metadata: {
                   'msg_type': e['msg_type'],
                   'msg': e['msg'],
+                  'reaction': e['reactions'],
                 },
               );
             } else if (e['msg_type'] == 'pdf') {
@@ -81,6 +119,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 metadata: {
                   'msg_type': e['msg_type'],
                   'msg': e['msg'],
+                  'reaction': e['reactions'],
                 },
               );
             } else {
@@ -90,6 +129,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 metadata: {
                   'msg': e['msg'],
                   'msg_type': e['msg_type'],
+                  'reaction': e['reactions'],
                 },
                 author: types.User(
                   id: e['sender_id'].toString(),
@@ -130,6 +170,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           metadata: {
             'msg_type': msgData['msg_type'],
             'msg': msgData['msg'],
+            'reaction': msgData['reactions'],
           },
         );
       } else if (msgData['msg_type'] == 'pdf') {
@@ -147,6 +188,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           metadata: {
             'msg_type': msgData['msg_type'],
             'msg': msgData['msg'],
+            'reaction': msgData['reactions'],
           },
         );
       } else {
@@ -162,6 +204,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           metadata: {
             'msg': msgData['msg'],
             'msg_type': msgData['msg_type'],
+            'reaction': msgData['reactions'],
           },
         );
       }
@@ -171,18 +214,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _sendMessage(types.PartialText message) {
-    final newMessage = types.TextMessage(
-      author: user,
-      id: Uuid().v4(),
-      text: message.text,
-      metadata: {
-        'msg': message.text,
-        'msg_type': 'text',
-      },
-      createdAt: DateTime.now().toUtc().millisecondsSinceEpoch,
-    );
-    _addMessage(newMessage);
-
     socket.emit('sendTeamMessage', [
       message.text,
       AppPref().userId.toString(),
@@ -248,19 +279,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (result != null && result.files.single.path != null) {
         final url = await groupChatController.setMediaChatApiCall(result: result.files[0]);
         if (url.isNotEmpty) {
-          final message = types.FileMessage(
-            author: user,
-            createdAt: DateTime.now().millisecondsSinceEpoch,
-            id: const Uuid().v4(),
-            name: result.files.single.name,
-            size: result.files.single.size,
-            uri: result.files.single.path!,
-            metadata: {
-              'msg_type': 'pdf',
-              'msg': 'http://3.84.37.74/TeamMates/public/chat/$url',
-            },
-          );
-          _addMessage(message);
           socket.emit('sendTeamMessage', [
             url,
             AppPref().userId.toString(),
@@ -278,12 +296,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
-  void _addMessage(types.Message message) {
-    setState(() {
-      _messages.insert(0, message);
-    });
-  }
-
   void _handleImageSelection() async {
     try {
       setState(() => isLoading = true);
@@ -295,26 +307,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       );
 
       if (result != null) {
-        final bytes = await result.readAsBytes();
-        final image = await decodeImageFromList(bytes);
         final url = await groupChatController.setMediaChatApiCall(result: result);
         if (url.isNotEmpty) {
-          final message = types.ImageMessage(
-            author: user,
-            createdAt: DateTime.now().millisecondsSinceEpoch,
-            height: image.height.toDouble(),
-            id: const Uuid().v4(),
-            name: result.name,
-            size: bytes.length,
-            uri: result.path,
-            width: image.width.toDouble(),
-            metadata: {
-              'msg_type': 'media',
-              'msg': 'http://3.84.37.74/TeamMates/public/chat/$url',
-            },
-          );
-          _addMessage(message);
-
           socket.emit(
             'sendTeamMessage',
             [
@@ -346,6 +340,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void dispose() {
     socket.off('setTeamMessageList', _handleMessageList);
     socket.off('setNewTeamMessage', _handleNewMessage);
+    socket.off('teamReactionUpdated', _handleReactionUpdate);
+
     emitTeamChatList();
     super.dispose();
   }
@@ -364,6 +360,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               dateIsUtc: true,
               messages: _messages,
               onSendPressed: _sendMessage,
+              onMessageLongPress: (v, message) {
+                Navigator.of(context).push(
+                  HeroDialogRoute(
+                    builder: (context) {
+                      return ReactionsDialogWidget(
+                        reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                        menuItems: [],
+                        id: message.id,
+                        messageWidget: const SizedBox.shrink(),
+                        onReactionTap: (reaction) {
+                          _emitReaction(messageId: message.id, reaction: reaction, convertToUnicode: true);
+                        },
+                        onContextMenuTap: (menuItem) {},
+                      );
+                    },
+                  ),
+                );
+              },
               user: user,
               onAttachmentPressed: _handleAttachmentPressed,
               customDateHeaderText: (val) {
@@ -371,127 +385,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               },
               bubbleBuilder: (Widget child, {required types.Message message, required bool nextMessageInGroup}) {
                 bool isSentByMe = message.author.id == user.id;
-                return Align(
-                  alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!isSentByMe)
-                        ClipOval(
-                          child: getImageView(
-                            height: 30,
-                            width: 30,
-                            finalUrl: message.author.imageUrl ?? "",
-                            fit: BoxFit.cover,
-                            errorWidget: Icon(
-                              Icons.account_circle,
-                              size: 30,
-                            ),
-                          ),
-                        ),
-                      Flexible(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!isSentByMe)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4, right: 6, left: 6),
-                                child: Text(
-                                  message.author.firstName ?? "",
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
-                                ),
-                              ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (message.metadata?['msg_type'] == 'pdf') ...[
-                                  GestureDetector(
-                                    onTap: () => openPdf(
-                                      message.metadata?['msg'],
-                                    ),
-                                    child: Container(
-                                      width: 200,
-                                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                      decoration: BoxDecoration(
-                                        color: AppColor.greyF6Color,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.picture_as_pdf,
-                                            color: Colors.red,
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 10),
-                                          Expanded(
-                                            child: Text(
-                                              "Document",
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ] else if (message.metadata?['msg_type'] == 'media') ...[
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 6),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: getImageView(
-                                        finalUrl: message.metadata?['msg'],
-                                        height: 200,
-                                        width: 200,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  )
-                                ] else ...[
-                                  Flexible(
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                      decoration: BoxDecoration(
-                                        color: AppColor.greyF6Color,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      constraints: BoxConstraints(
-                                        maxWidth: MediaQuery.of(Get.context!).size.width * 0.7,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: isSentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.end,
-                                        children: [
-                                          DefaultTextStyle(
-                                            style: TextStyle().normal16w400.textColor(
-                                                  AppColor.black12Color,
-                                                ),
-                                            child: Text(
-                                              message.metadata?['msg'] ?? "",
-                                              textAlign: TextAlign.start,
-                                              softWrap: true,
-                                              overflow: TextOverflow.visible,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ]
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+
+                return _buildMessage(message, isSentByMe);
               },
             ),
             if (isLoading)
@@ -513,6 +408,304 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Hero _buildMessage(types.Message message, bool isSentByMe) {
+    return Hero(
+      tag: message.id,
+      child: _buildReaction(isSentByMe, message),
+    );
+  }
+
+  Align _buildReaction(
+    bool isSentByMe,
+    types.Message message,
+  ) {
+    List reactions = message.metadata?['reaction'] ?? [];
+
+    return Align(
+      alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isSentByMe)
+            ClipOval(
+              child: getImageView(
+                height: 30,
+                width: 30,
+                finalUrl: message.author.imageUrl ?? "",
+                fit: BoxFit.cover,
+                errorWidget: Icon(
+                  Icons.account_circle,
+                  size: 30,
+                ),
+              ),
+            ),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isSentByMe)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4, right: 6, left: 6),
+                    child: Text(
+                      message.author.firstName ?? "",
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
+                    ),
+                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (message.metadata?['msg_type'] == 'pdf') ...[
+                      GestureDetector(
+                        onTap: () => openPdf(
+                          message.metadata?['msg'],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              width: 200,
+                              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: AppColor.greyF6Color,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.picture_as_pdf,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      "Document",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: AppColor.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Visibility(
+                              visible: reactions.isNotEmpty,
+                              child: GestureDetector(
+                                onTap: () => _showReactionDetailsSheet(
+                                  oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                  reactions: reactions,
+                                  currentUserId: AppPref().userId.toString(),
+                                  messageId: message.id,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 6.0),
+                                  child: Wrap(
+                                    children: reactions.map((reaction) {
+                                      final codePoints = reaction['reaction']
+                                          .toString()
+                                          .split(' ')
+                                          .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
+                                          .toList();
+
+                                      return Text(
+                                        String.fromCharCodes(codePoints),
+                                        style: const TextStyle(fontSize: 12),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ] else if (message.metadata?['msg_type'] == 'media') ...[
+                      Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: getImageView(
+                                finalUrl: message.metadata?['msg'],
+                                height: 200,
+                                width: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Visibility(
+                            visible: reactions.isNotEmpty,
+                            child: GestureDetector(
+                              onTap: () => _showReactionDetailsSheet(
+                                oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                reactions: reactions,
+                                currentUserId: AppPref().userId.toString(),
+                                messageId: message.id,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 6.0),
+                                child: Wrap(
+                                  children: reactions.map((reaction) {
+                                    final codePoints = reaction['reaction']
+                                        .toString()
+                                        .split(' ')
+                                        .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
+                                        .toList();
+
+                                    return Text(
+                                      String.fromCharCodes(codePoints),
+                                      style: const TextStyle(fontSize: 12),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      )
+                    ] else ...[
+                      Flexible(
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: AppColor.greyF6Color,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(Get.context!).size.width * 0.7,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: isSentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.end,
+                                  children: [
+                                    DefaultTextStyle(
+                                      style: TextStyle().normal16w400.textColor(
+                                            AppColor.black12Color,
+                                          ),
+                                      child: Text(
+                                        message.metadata?['msg'] ?? "",
+                                        textAlign: TextAlign.start,
+                                        softWrap: true,
+                                        overflow: TextOverflow.visible,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Visibility(
+                              visible: reactions.isNotEmpty,
+                              child: GestureDetector(
+                                onTap: () => _showReactionDetailsSheet(
+                                  oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                  reactions: reactions,
+                                  currentUserId: AppPref().userId.toString(),
+                                  messageId: message.id,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 6.0),
+                                  child: Wrap(
+                                    children: reactions.map((reaction) {
+                                      final codePoints = reaction['reaction']
+                                          .toString()
+                                          .split(' ')
+                                          .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
+                                          .toList();
+
+                                      return Text(
+                                        String.fromCharCodes(codePoints),
+                                        style: const TextStyle(fontSize: 12),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ]
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReactionDetailsSheet({
+    required List reactions,
+    required String currentUserId,
+    required String messageId,
+    required String oppositeUserName,
+  }) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Reactions",
+              style: TextStyle().normal16w400.textColor(AppColor.black),
+            ),
+            const SizedBox(height: 12),
+            ListView.separated(
+              shrinkWrap: true,
+              itemCount: reactions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final reaction = reactions[index];
+                final codePoints = reaction['reaction'].toString().split(' ').map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16)).toList();
+                final emoji = String.fromCharCodes(codePoints);
+                final userId = reaction['user_id'].toString();
+                final isMine = userId == currentUserId;
+                final userName = isMine ? "You" : oppositeUserName;
+
+                return ListTile(
+                  leading: Text(emoji, style: TextStyle(fontSize: 20)),
+                  title: Text(
+                    userName,
+                    style: TextStyle().normal16w400.textColor(AppColor.black12Color),
+                  ),
+                  trailing: isMine
+                      ? TextButton(
+                          onPressed: () {
+                            _emitReaction(messageId: messageId, reaction: reaction['reaction'], convertToUnicode: false);
+                            Get.back();
+                          },
+                          child: Text(
+                            "Remove",
+                            style: TextStyle().normal16w400.textColor(AppColor.red10Color),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
           ],
         ),
       ),
