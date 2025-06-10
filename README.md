@@ -1,4 +1,2 @@
+- pro user true - subscription
 
-
--- same change for grp send event to both
--- reaction

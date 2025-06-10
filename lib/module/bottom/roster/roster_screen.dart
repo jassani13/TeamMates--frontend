@@ -158,7 +158,7 @@ class RosterScreen extends StatelessWidget {
                                               if (AppPref().role == 'coach')
                                                 GestureDetector(
                                                   onTap: () {
-                                                    if (AppPref().proUser == true) {
+                                                    if (AppPref().proUser == false) {
                                                       Get.toNamed(
                                                         AppRouter.grpChat,
                                                         arguments: {

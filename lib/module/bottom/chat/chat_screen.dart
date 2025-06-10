@@ -262,7 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.chatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if (AppPref().proUser == true) {
+                  if (AppPref().proUser == false) {
                     Get.toNamed(
                       AppRouter.personalChat,
                       arguments: {
@@ -411,7 +411,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if (AppPref().proUser == true) {
+                  if (AppPref().proUser == false) {
                     Get.toNamed(
                       AppRouter.grpChat,
                       arguments: {

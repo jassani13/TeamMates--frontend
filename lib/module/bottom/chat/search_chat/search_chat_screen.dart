@@ -137,7 +137,7 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   void _onTeamChatTap(String teamId, String? teamName) {
-    if (AppPref().proUser ?? false) {
+    if (AppPref().proUser == false) {
       Get.toNamed(
         AppRouter.grpChat,
         arguments: {
@@ -201,7 +201,7 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   void _onPlayerChatTap(String userId, String firstName, String lastName) {
-    if (AppPref().proUser ?? false) {
+    if (AppPref().proUser == false) {
       Get.toNamed(AppRouter.personalChat, arguments: {
         'chatData': ChatListData(firstName: firstName, lastName: lastName, otherId: userId),
       });

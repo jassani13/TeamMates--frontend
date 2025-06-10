@@ -37,16 +37,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     bool convertToUnicode = false,
   }) {
     final userId = AppPref().userId.toString();
-    final otherId = chatData.otherId;
 
     final reactionData = convertToUnicode ? reaction.runes.map((e) => 'U+${e.toRadixString(16).toUpperCase()}').join(' ') : reaction;
 
     if (kDebugMode) {
       print('<------------ EMIT - _emitReaction ------------>');
-      print([messageId, userId, otherId, reactionData]);
+      print([messageId, userId, chatData.teamId,reactionData]);
     }
 
-    socket.emit('addTeamReaction', [messageId, userId, otherId, reactionData]);
+    socket.emit('addTeamReaction', [messageId, userId, chatData.teamId, reactionData]);
   }
 
   void _initializeChat() {
@@ -57,6 +56,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _handleReactionUpdate(dynamic data) {
+    print("_handleReactionUpdate=====>");
     final chatId = data['chatId'].toString();
     final newReactions = List<Map<String, dynamic>>.from(data['reactions'] ?? []);
     final index = _messages.indexWhere((msg) => msg.id == chatId);
@@ -426,7 +426,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     types.Message message,
   ) {
     List reactions = message.metadata?['reaction'] ?? [];
-
     return Align(
       alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Row(
@@ -503,7 +502,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               visible: reactions.isNotEmpty,
                               child: GestureDetector(
                                 onTap: () => _showReactionDetailsSheet(
-                                  oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                  oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
                                   reactions: reactions,
                                   currentUserId: AppPref().userId.toString(),
                                   messageId: message.id,
@@ -550,7 +549,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             visible: reactions.isNotEmpty,
                             child: GestureDetector(
                               onTap: () => _showReactionDetailsSheet(
-                                oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
                                 reactions: reactions,
                                 currentUserId: AppPref().userId.toString(),
                                 messageId: message.id,
@@ -614,7 +613,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               visible: reactions.isNotEmpty,
                               child: GestureDetector(
                                 onTap: () => _showReactionDetailsSheet(
-                                  oppositeUserName: '${chatData.firstName} ${chatData.lastName}',
+                                  oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
                                   reactions: reactions,
                                   currentUserId: AppPref().userId.toString(),
                                   messageId: message.id,
@@ -623,10 +622,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                   padding: const EdgeInsets.only(right: 6.0),
                                   child: Wrap(
                                     children: reactions.map((reaction) {
-                                      final codePoints = reaction['reaction']
-                                          .toString()
+                                      final reactionString = reaction['reaction'].toString();
+
+                                      final codePoints = reactionString
                                           .split(' ')
-                                          .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
+                                          .map((e) {
+                                            try {
+                                              return int.parse(e.replaceFirst('U+', ''), radix: 16);
+                                            } catch (error) {
+                                              return null;
+                                            }
+                                          })
+                                          .where((e) => e != null)
+                                          .cast<int>()
                                           .toList();
 
                                       return Text(
