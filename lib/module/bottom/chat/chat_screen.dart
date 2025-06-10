@@ -16,7 +16,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
   void connectSocket() {
-    socket = IO.io('http://3.84.37.74:8080', <String, dynamic>{
+    socket = IO.io('http://35.175.243.150:8080', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
@@ -60,7 +60,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final list = data['resData'];
       if (kDebugMode) {
         print('<------------ ON - setChatUserList ------------>');
-        print(list);
       }
       chatController.chatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
       if (mounted) {
@@ -75,7 +74,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (kDebugMode) {
         print('<------------ ON - setTeamChatList ------------>');
-        print(list);
       }
       chatController.grpChatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
       if (mounted) {
@@ -264,7 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.chatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if (AppPref().proUser == false) {
+                  if (AppPref().proUser == true) {
                     Get.toNamed(
                       AppRouter.personalChat,
                       arguments: {
@@ -413,7 +411,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if (AppPref().proUser == false) {
+                  if (AppPref().proUser == true) {
                     Get.toNamed(
                       AppRouter.grpChat,
                       arguments: {

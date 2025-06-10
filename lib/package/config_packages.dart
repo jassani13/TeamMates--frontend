@@ -12,6 +12,7 @@ export 'package:base_code/res/image.dart';
 export 'package:base_code/utils/notification_service.dart';
 export 'package:base_code/res/theme/theme.dart';
 export 'package:base_code/model/chat_list_model.dart';
+export 'package:base_code/model/challenge_model.dart';
 
 export 'package:base_code/model/onboard_data.dart';
 export 'package:base_code/utils/common_function.dart';
@@ -39,7 +40,7 @@ export 'package:get/get.dart'
 export 'package:get/get_navigation/src/routes/get_route.dart';
 export 'package:shared_preferences/shared_preferences.dart';
 export 'package:intl/intl.dart' hide TextDirection;
-export 'package:firebase_auth/firebase_auth.dart';
+export 'package:firebase_auth/firebase_auth.dart' hide User;
 export 'dart:math';
 export 'package:path_provider/path_provider.dart';
 export 'package:url_launcher/url_launcher.dart';

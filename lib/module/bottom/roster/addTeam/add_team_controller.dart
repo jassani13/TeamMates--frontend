@@ -57,7 +57,6 @@ class AddTeamController extends GetxController {
       if (res?.statusCode == 200) {
         Get.back();
         Get.find<RoasterController>().getRosterApiCall();
-        print(res?.data["data"]["team_id"]);
         Get.toNamed(AppRouter.addPlayer,
             arguments: [res?.data["data"]["team_id"], false]);
         AppToast.showAppToast("Team created successfully",

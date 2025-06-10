@@ -68,7 +68,7 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
                       : Stack(
                           children: [
                             getImageView(
-                              finalUrl: 'http://3.84.37.74/TeamMates/public/${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? "",
+                              finalUrl: '$publicImageUrl${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? "",
                               fit: BoxFit.cover,
                               height: MediaQuery.of(context).size.height / 3,
                               width: double.infinity,

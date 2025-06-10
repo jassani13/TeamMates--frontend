@@ -1,422 +1,249 @@
-import 'package:base_code/components/common_icon_button.dart';
-import 'package:base_code/components/common_progress_bar.dart';
-import 'package:base_code/components/common_title_text.dart';
-import 'package:base_code/components/horizontal_list.dart';
-import 'package:base_code/model/challenge_model.dart';
-import 'package:base_code/module/bottom/stats/stats_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-
-import '../../../components/common_stat_card.dart';
 
 class StatsScreen extends StatelessWidget {
   StatsScreen({super.key});
 
-  final statsController = Get.put<StatsController>(StatsController());
+  final StatsController statsController = Get.put(StatsController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          SvgPicture.asset(
-            AppImage.bottomBg,
-            height: double.infinity,
-            width: double.infinity,
-            fit: BoxFit.fill,
-          ),
+          _buildBackground(),
           RefreshIndicator(
             key: statsController.refreshKey,
-            onRefresh: () async {
-              await statsController.getChallengeApiCall();
-            },
+            onRefresh: statsController.getChallengeApiCall,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Gap(Platform.isAndroid
-                      ? ScreenUtil().statusBarHeight + 20
-                      : ScreenUtil().statusBarHeight + 10),
-                  Row(
-                    children: [
-                      CommonTitleText(text: "Challenges & Rewards"),
-                      Spacer(),
-                      if (AppPref().role == "coach")
-                        CommonIconButton(
-                            image: AppImage.plus,
-                            onTap: () {
-                              Get.toNamed(AppRouter.createChallenge)
-                                  ?.then((result) {
-                                if (result != null) {
-                                  statsController.allChallengeDetail.value.list
-                                      ?.insert(0, result);
-                                  statsController.allChallengeDetail.refresh();
-                                }
-                              });
-                            }),
-                    ],
-                  ),
+                  Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+                  _buildHeader(context),
                   Gap(24),
-                  Container(
-                    height: 63,
-                    width: double.infinity,
-                    padding: EdgeInsets.all(
-                      16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColor.greyF6Color,
-                      borderRadius: BorderRadius.circular(
-                        8,
-                      ),
-                    ),
-                    child: HorizontalSelectionList(
-                      items: statsController.statList,
-                      selectedIndex: statsController.selectedMethod,
-                      controller: statsController.controller,
-                      onItemSelected: (index) {
-                        statsController.selectedMethod.value = index;
-                      },
-                    ),
-                  ),
+                  _buildTabSelection(),
                   Gap(16),
-                  if (AppPref().role == "coach") ...[
-                    CommonTitleText(text: "Team challenges"),
-                    Gap(16),
-                    Expanded(
-                      child: Obx(() {
-                        return statsController.isShimmer.value
-                            ? ShimmerListClass(
-                                length: 5,
-                                height: 250,
-                              )
-                            : (statsController.allChallengeDetail.value.list ??
-                                        [])
-                                    .isEmpty
-                                ? SingleChildScrollView(
-                                    physics: AlwaysScrollableScrollPhysics(),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: MediaQuery.of(context)
-                                                      .size
-                                                      .height /
-                                                  3.3),
-                                          child: Center(
-                                              child: buildNoData(
-                                            text: "No challenges found",
-                                          )),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    itemCount: statsController
-                                        .allChallengeDetail.value.list?.length,
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.zero,
-                                    physics: AlwaysScrollableScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      Challenge? challenge = statsController
-                                          .allChallengeDetail
-                                          .value
-                                          .list?[index];
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Get.toNamed(
-                                              AppRouter.challengeMembers,
-                                              arguments: {
-                                                "challenge_id":
-                                                    challenge.challengeId ?? "",
-                                                "isHome": false,
-                                              });
-                                        },
-                                        child: CommonStatCard(
-                                          index: index,
-                                          challenge: challenge!,
-                                          isCoach: true,
-                                        ),
-                                      );
-                                    });
-                      }),
-                    ),
-                  ] else ...[
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: AlwaysScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Obx(() {
-                              return CommonTitleText(
-                                  text:
-                                      statsController.selectedMethod.value == 0
-                                          ? "Stats"
-                                          : "Challenges");
-                            }),
-                            Gap(16),
-                            Obx(() {
-                              return statsController.selectedMethod.value == 0
-                                  ? buildStat(context)
-                                  : statsController.isShimmer.value
-                                      ? ShimmerListClass(
-                                          length: 5,
-                                          height: 100,
-                                        )
-                                      : (statsController.allChallengeDetail
-                                                      .value.list ??
-                                                  [])
-                                              .isEmpty
-                                          ? Center(
-                                              child: Padding(
-                                              padding: EdgeInsets.only(
-                                                  top: MediaQuery.of(context)
-                                                          .size
-                                                          .height /
-                                                      4),
-                                              child: buildNoData(
-                                                  text: "No challenges found"),
-                                            ))
-                                          : ListView.builder(
-                                              itemCount: statsController
-                                                  .allChallengeDetail
-                                                  .value
-                                                  .list
-                                                  ?.length,
-                                              shrinkWrap: true,
-                                              padding: EdgeInsets.zero,
-                                              physics: ScrollPhysics(),
-                                              itemBuilder: (context, index) {
-                                                Challenge? challenge =
-                                                    statsController
-                                                        .allChallengeDetail
-                                                        .value
-                                                        .list?[index];
-                                                return GestureDetector(
-                                                  onTap: () {
-                                                    if ((DateUtilities
-                                                            .getTimeLeft(
-                                                                challenge
-                                                                        .endAt ??
-                                                                    "-")) ==
-                                                        "-") {
-                                                      AppToast.showAppToast(
-                                                          "This challenge is no longer available.",
-                                                          bgColor: AppColor
-                                                              .redColor);
-                                                    } else {
-                                                      Get.toNamed(
-                                                          AppRouter
-                                                              .challengeMembers,
-                                                          arguments: {
-                                                            "challenge_id":
-                                                                challenge
-                                                                        .challengeId ??
-                                                                    "",
-                                                            "isHome": false,
-                                                          });
-                                                    }
-                                                  },
-                                                  child: CommonStatCard(
-                                                      isCoach: false,
-                                                      index: index,
-                                                      challenge: challenge!),
-                                                );
-                                              });
-                            }),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ]
+                  Expanded(child:  _buildContent(context)),
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget buildStat(context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildBackground() {
+    return SvgPicture.asset(
+      AppImage.bottomBg,
+      height: double.infinity,
+      width: double.infinity,
+      fit: BoxFit.fill,
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
       children: [
-        Container(
-          decoration: BoxDecoration(
+        CommonTitleText(text: "Challenges & Rewards"),
+        const Spacer(),
+        if (AppPref().role == "coach")
+          CommonIconButton(
+            image: AppImage.plus,
+            onTap: () {
+              Get.toNamed(AppRouter.createChallenge)?.then((result) {
+                if (result != null) {
+                  statsController.allChallengeDetail.value.list?.insert(0, result);
+                  statsController.allChallengeDetail.refresh();
+                }
+              });
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTabSelection() {
+    return Container(
+      height: 63,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.greyF6Color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: HorizontalSelectionList(
+        items: statsController.statList,
+        selectedIndex: statsController.selectedMethod,
+        controller: statsController.scrollController,
+        onItemSelected: (index) {
+          statsController.selectedMethod.value = index;
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    if (AppPref().role == "coach") {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CommonTitleText(text: "Team challenges"),
+          Gap(16),
+          Expanded(child: _buildChallengeList(context, isCoach: true)),
+        ],
+      );
+    } else {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Obx(() => CommonTitleText(text: statsController.selectedMethod.value == 0 ? "Stats" : "Challenges")),
+            Gap(16),
+            Obx(() {
+              if (statsController.selectedMethod.value == 0) {
+                return buildStat(context);
+              } else {
+                return _buildChallengeList(context, isCoach: false);
+              }
+            }),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildChallengeList(BuildContext context, {required bool isCoach}) {
+    if (statsController.isShimmer.value) {
+      return ShimmerListClass(length: 5, height: isCoach ? 250 : 100);
+    }
+
+    final challenges = statsController.allChallengeDetail.value.list ?? [];
+    if (challenges.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+            child: buildNoData(text: "No challenges found"),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: challenges.length,
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        final challenge = challenges[index];
+        return GestureDetector(
+          onTap: () {
+            if (!isCoach && DateUtilities.getTimeLeft(challenge.endAt ?? "-") == "-") {
+              AppToast.showAppToast(
+                "This challenge is no longer available.",
+                bgColor: AppColor.redColor,
+              );
+              return;
+            }
+            Get.toNamed(AppRouter.challengeMembers, arguments: {
+              "challenge_id": challenge.challengeId ?? "",
+              "isHome": false,
+            });
+          },
+          child: CommonStatCard(
+            index: index,
+            challenge: challenge,
+            isCoach: isCoach,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget buildStat(BuildContext context) {
+    final score = statsController.allChallengeDetail.value.score;
+    final scoreNumber = score?.scoreNumber ?? 0;
+    final totalChallenges = score?.totalParticipate ?? 0;
+    final percentage = double.tryParse("${score?.percentage ?? 0}") ?? 0;
+    final grade = score?.grade ?? "";
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient: const LinearGradient(
+          colors: [AppColor.black12Color, AppColor.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Total strength gained", style: TextStyle().normal20w500.textColor(AppColor.white)),
+          Gap(16),
+          Container(
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              gradient: LinearGradient(colors: [
-                AppColor.black12Color,
-                AppColor.white,
-              ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Total strength gained",
-                style: TextStyle().normal20w500.textColor(
-                      AppColor.white,
-                    ),
+              gradient: LinearGradient(
+                colors: [AppColor.white, AppColor.white.withOpacity(0)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              Gap(16),
-              Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    gradient: LinearGradient(colors: [
-                      AppColor.white,
-                      AppColor.white.withValues(alpha: .0),
-                    ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                    border: Border.all(color: AppColor.white)),
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Column(
+              border: Border.all(color: AppColor.white),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Row(
-                      // crossAxisAlignment: s,
-                      children: [
-                        Text(
-                          "${statsController.allChallengeDetail.value.score?.scoreNumber ?? 0}",
-                          style: TextStyle().normal48w500.textColor(
-                                AppColor.black,
-                              ),
-                        ),
-                        Gap(10),
-                        Text(
-                          "${statsController.allChallengeDetail.value.score?.totalParticipate ?? 0} Challenges",
-                          style: TextStyle().normal16w500.textColor(
-                                AppColor.white,
-                              ),
-                        ),
-                      ],
+                    Text(
+                      "$scoreNumber",
+                      style: TextStyle().normal48w500.textColor(AppColor.black),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 30.0),
-                      child: Column(
-                        children: [
-                          LinearPercentIndicator(
-                            padding: EdgeInsets.zero,
-                            width: MediaQuery.of(context).size.width - 130,
-                            animation: true,
-                            barRadius: Radius.circular(12),
-                            lineHeight: 19.0,
-                            backgroundColor: Colors.white,
-                            animationDuration: 2500,
-                            percent: double.parse(
-                                    "${statsController.allChallengeDetail.value.score?.percentage ?? 0}") /
-                                100,
-                            linearStrokeCap: LinearStrokeCap.roundAll,
-                            progressColor: AppColor.black12Color,
-                          ),
-                          Gap(8),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              statsController
-                                      .allChallengeDetail.value.score?.grade ??
-                                  "",
-                              style: TextStyle().normal20w500.textColor(
-                                    AppColor.grey6EColor,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    Gap(10),
+                    Text(
+                      "$totalChallenges Challenges",
+                      style: TextStyle().normal16w500.textColor(AppColor.white),
                     ),
                   ],
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.only(right: 30.0),
+                  child: Column(
+                    children: [
+                      LinearPercentIndicator(
+                        padding: EdgeInsets.zero,
+                        width: MediaQuery.of(context).size.width - 130,
+                        animation: true,
+                        barRadius: const Radius.circular(12),
+                        lineHeight: 19.0,
+                        backgroundColor: Colors.white,
+                        animationDuration: 2500,
+                        percent: (percentage / 100).clamp(0.0, 1.0),
+                        linearStrokeCap: LinearStrokeCap.roundAll,
+                        progressColor: AppColor.black12Color,
+                      ),
+                      Gap(8),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          grade,
+                          style: TextStyle().normal20w500.textColor(AppColor.grey6EColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Gap(16),
-        // CommonTitleText(text: "Coach's Goal Challenge"),
-        // Gap(16),
-        // Obx(() {
-        //   return statsController.isShimmer.value
-        //       ? ShimmerListClass(
-        //           length: 5,
-        //           height: 100,
-        //         )
-        //       : (statsController.allChallengeDetail.value.list ?? []).isEmpty
-        //           ? Center(child: buildNoData(text: "No challenges found"))
-        //           : ListView.builder(
-        //               itemCount:
-        //                   statsController.allChallengeDetail.value.list?.length,
-        //               shrinkWrap: true,
-        //               padding: EdgeInsets.zero,
-        //               physics: ScrollPhysics(),
-        //               itemBuilder: (context, index) {
-        //                 return GestureDetector(
-        //                   onTap: () {},
-        //                   child: Container(
-        //                     // margin: EdgeInsets.only(
-        //                     //     top: index == 0
-        //                     //         ? 0
-        //                     //         : 16),
-        //                     decoration: BoxDecoration(
-        //                         border: index == 0
-        //                             ? null
-        //                             : Border(
-        //                                 top: BorderSide(
-        //                                     color: AppColor.greyF6Color))),
-        //                     padding: EdgeInsets.all(
-        //                       16,
-        //                     ),
-        //                     child: Row(
-        //                       crossAxisAlignment: CrossAxisAlignment.start,
-        //                       children: [
-        //                         Expanded(
-        //                           child: Column(
-        //                             crossAxisAlignment:
-        //                                 CrossAxisAlignment.start,
-        //                             children: [
-        //                               Text(
-        //                                 "Team Spirit Challenge",
-        //                                 style:
-        //                                     TextStyle().normal16w500.textColor(
-        //                                           AppColor.black12Color,
-        //                                         ),
-        //                               ),
-        //                               Text(
-        //                                 "20 push ups",
-        //                                 style:
-        //                                     TextStyle().normal14w500.textColor(
-        //                                           AppColor.grey4EColor,
-        //                                         ),
-        //                               ),
-        //                               Text(
-        //                                 "Completed",
-        //                                 style:
-        //                                     TextStyle().normal14w500.textColor(
-        //                                           AppColor.successColor,
-        //                                         ),
-        //                               ),
-        //                               Gap(8),
-        //                               CommonProgressBar(
-        //                                 value: "50",
-        //                                 width:
-        //                                     MediaQuery.of(context).size.width -
-        //                                         80,
-        //                               ),
-        //                             ],
-        //                           ),
-        //                         ),
-        //                         Gap(16),
-        //                       ],
-        //                     ),
-        //                   ),
-        //                 );
-        //               });
-        // }),
-      ],
+        ],
+      ),
     );
   }
 }

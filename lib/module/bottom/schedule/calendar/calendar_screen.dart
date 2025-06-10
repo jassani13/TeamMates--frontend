@@ -142,7 +142,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 itemCount: events.length,
                 itemBuilder: (context, index) {
                   final event = events[index];
-                  print(event);
                   final String summary = event['summary'] ?? 'No Title';
                   final String location = event['location'] ?? 'Unknown Location';
                   final String description = cleanDescription(event['description'] ?? '');

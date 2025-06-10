@@ -9,6 +9,15 @@ class DateUtilities {
   static const dd_MM_yyyy = 'dd MMMM yyyy';
 
 
+  static DateTime? parseDateTime(String dateTimeString) {
+    try {
+      if (dateTimeString.isEmpty) return null;
+      dateTimeString = dateTimeString.replaceAll(RegExp(r'\s+'), ' ').trim();
+      return DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTimeString);
+    } catch (e) {
+      return null;
+    }
+  }
   static String formatDateTime(DateTime? dt) {
     if (dt == null) return '';
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} - ${dt.day}/${dt.month}/${dt.year}';
@@ -82,7 +91,6 @@ class DateUtilities {
     }
 
     Duration difference = futureTime.difference(now);
-    print(difference);
     int seconds = difference.inSeconds;
     int minutes = difference.inMinutes;
     int hours = difference.inHours;

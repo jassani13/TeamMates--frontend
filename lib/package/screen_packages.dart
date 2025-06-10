@@ -3,6 +3,7 @@ export 'package:base_code/components/buttons.dart';
 export 'package:base_code/components/input_field.dart';
 export 'package:base_code/module/bottom/roster/roster_controller.dart';
 export 'package:base_code/module/bottom/chat/search_chat/search_chat_controller.dart';
+export 'package:base_code/module/bottom/home/home_controller.dart';
 
 export 'package:base_code/res/color_schema.dart';
 export 'package:base_code/res/text_style.dart';
@@ -63,9 +64,14 @@ export 'package:base_code/module/bottom/stats/createChallenge/create_challenge_s
 export 'package:base_code/module/onBoarding/on_boarding_screen.dart';
 export 'package:base_code/module/subscription/subscription_screen.dart';
 export 'package:flutter/foundation.dart';
+export 'package:base_code/module/bottom/stats/createChallenge/create_challenge_controller.dart';
+export 'package:base_code/module/bottom/stats/challangeMembers/challange_members_controller.dart';
+export 'package:base_code/utils/common_simple_dialog.dart';
+export 'package:base_code/module/bottom/stats/stats_controller.dart';
+export 'package:base_code/components/common_stat_card.dart';
+
 export '../../../data/network/end_point.dart';
 export 'package:base_code/components/common_icon_button.dart';
 export 'package:base_code/components/common_schdule_card.dart';
 export 'package:base_code/components/horizontal_list.dart';
 export '../../../components/no_data.dart';
-export 'package:base_code/module/bottom/schedule/schedule_controller.dart';

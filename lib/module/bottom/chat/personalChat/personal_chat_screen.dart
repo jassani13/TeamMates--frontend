@@ -411,7 +411,6 @@ class _PersonalChatScreenState extends State<PersonalChatScreen> {
 
   Align _buildReaction(bool isSentByMe, types.Message message) {
     List reactions = message.metadata?['reaction'] ?? [];
-    print(reactions);
     return Align(
       alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Row(

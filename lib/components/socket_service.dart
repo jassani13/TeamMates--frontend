@@ -10,7 +10,7 @@ class SocketService {
   SocketService._internal();
 
   void connect() {
-    socket = io.io('http://3.84.37.74:8080', <String, dynamic>{
+    socket = io.io('http://35.175.243.150:8080', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
     });
