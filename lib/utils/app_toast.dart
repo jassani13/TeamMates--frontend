@@ -13,13 +13,12 @@ class AppToast {
       return;
     }
     toastification.show(
-
       context: Get.context,
       description: Text(
         msg,
-        style: TextStyle().normal14w400.textColor(textColor ?? AppColor.white),
+        style: TextStyle().normal12w400.textColor(textColor ?? AppColor.white),
       ),
-      autoCloseDuration: const Duration(milliseconds: 1500),
+      autoCloseDuration: const Duration(milliseconds: 2000),
       type: ToastificationType.error,
       showProgressBar: false,
       icon: Icon(

@@ -1,3 +1,4 @@
+import 'package:base_code/main.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -158,7 +159,35 @@ class RosterScreen extends StatelessWidget {
                                               if (AppPref().role == 'coach')
                                                 GestureDetector(
                                                   onTap: () {
-                                                    if (AppPref().proUser == false) {
+                                                    if (AppPref().role == 'coach') {
+                                                      if (AppPref().proUser == true) {
+                                                        Get.toNamed(
+                                                          AppRouter.grpChat,
+                                                          arguments: {
+                                                            'chatData': ChatListData(
+                                                              teamName: roster.name,
+                                                              teamId: roster.teamId.toString(),
+                                                            ),
+                                                          },
+                                                        );
+                                                      } else {
+                                                        Get.defaultDialog(
+                                                          title: "Subscription Required",
+                                                          titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                                                          middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                                                          middleText: "Buy a subscription to\naccess Team Chat.",
+                                                          textConfirm: "Buy Now",
+                                                          confirmTextColor: AppColor.white,
+                                                          buttonColor: AppColor.black12Color,
+                                                          cancelTextColor: AppColor.black12Color,
+                                                          textCancel: "Cancel",
+                                                          onConfirm: () {
+                                                            Get.back();
+                                                            Get.toNamed(AppRouter.subscription);
+                                                          },
+                                                        );
+                                                      }
+                                                    } else {
                                                       Get.toNamed(
                                                         AppRouter.grpChat,
                                                         arguments: {
@@ -166,22 +195,6 @@ class RosterScreen extends StatelessWidget {
                                                             teamName: roster.name,
                                                             teamId: roster.teamId.toString(),
                                                           ),
-                                                        },
-                                                      );
-                                                    } else {
-                                                      Get.defaultDialog(
-                                                        title: "Subscription Required",
-                                                        titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                                                        middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                                                        middleText: "Buy a subscription to\naccess Team Chat.",
-                                                        textConfirm: "Buy Now",
-                                                        confirmTextColor: AppColor.white,
-                                                        buttonColor: AppColor.black12Color,
-                                                        cancelTextColor: AppColor.black12Color,
-                                                        textCancel: "Cancel",
-                                                        onConfirm: () {
-                                                          Get.back();
-                                                          Get.toNamed(AppRouter.subscription);
                                                         },
                                                       );
                                                     }

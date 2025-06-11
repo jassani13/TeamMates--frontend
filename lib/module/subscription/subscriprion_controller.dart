@@ -15,7 +15,7 @@ class SubscriptionController extends GetxController {
     "Create & Manage Teams (Build your team and manage up to 11 players)",
     "Game & Event Scheduling (Plan and organize matches or events with ease)",
     "Live Game Updates (Set games to In Progress, update scores and status in real-time)",
-    "Team Chat (Communicate directly with your players)",
+    "Private Chat (Communicate one-on-one or with the whole team)",
     "Challenges & Rewards (Create and delete challenges for players, View who participated and who completed them)"
   ];
 

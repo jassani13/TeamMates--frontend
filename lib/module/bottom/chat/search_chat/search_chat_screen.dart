@@ -1,3 +1,4 @@
+import 'package:base_code/main.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -96,13 +97,13 @@ class SearchChatScreen extends StatelessWidget {
         separatorBuilder: (_, __) => Divider(color: AppColor.greyF6Color),
         itemBuilder: (_, index) {
           final roster = teams[index];
-          return _buildTeamRow(roster);
+          return _buildTeamRow(roster, context);
         },
       );
     });
   }
 
-  Widget _buildTeamRow(Roster roster) {
+  Widget _buildTeamRow(Roster roster, context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
@@ -129,23 +130,32 @@ class SearchChatScreen extends StatelessWidget {
           const Gap(16),
           if (AppPref().role == 'coach')
             _buildChatButton(
-              onTap: () => _onTeamChatTap(roster.teamId.toString(), roster.name),
+              onTap: () => _onTeamChatTap(roster.teamId.toString(), roster.name, context),
             ),
         ],
       ),
     );
   }
 
-  void _onTeamChatTap(String teamId, String? teamName) {
-    if (AppPref().proUser == false) {
+  void _onTeamChatTap(String teamId, String? teamName, context) {
+    if (AppPref().role == 'coach') {
+      if (AppPref().proUser == true) {
+        Get.toNamed(
+          AppRouter.grpChat,
+          arguments: {
+            'chatData': ChatListData(teamName: teamName, teamId: teamId),
+          },
+        );
+      } else {
+        _showSubscriptionDialog(middleText: "Buy a subscription to\naccess Team Chat.");
+      }
+    } else {
       Get.toNamed(
         AppRouter.grpChat,
         arguments: {
           'chatData': ChatListData(teamName: teamName, teamId: teamId),
         },
       );
-    } else {
-      _showSubscriptionDialog(middleText: "Buy a subscription to\naccess Team Chat.");
     }
   }
 
@@ -201,33 +211,29 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   void _onPlayerChatTap(String userId, String firstName, String lastName) {
-    if (AppPref().proUser == false) {
-      Get.toNamed(AppRouter.personalChat, arguments: {
-        'chatData': ChatListData(firstName: firstName, lastName: lastName, otherId: userId),
-      });
-    } else {
-      _showSubscriptionDialog(middleText: "Buy a subscription tom access Personal Chat.");
-    }
+    Get.toNamed(AppRouter.personalChat, arguments: {
+      'chatData': ChatListData(firstName: firstName, lastName: lastName, otherId: userId),
+    });
   }
-
-  Widget _buildChatButton({required VoidCallback onTap}) => GestureDetector(
-        onTap: onTap,
-        child: Image.asset(AppImage.messenger, height: 20),
-      );
-
-  void _showSubscriptionDialog({required String middleText}) => Get.defaultDialog(
-        title: 'Subscription Required',
-        titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-        middleText: middleText,
-        middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-        textConfirm: 'Buy Now',
-        textCancel: 'Cancel',
-        confirmTextColor: AppColor.white,
-        buttonColor: AppColor.black12Color,
-        cancelTextColor: AppColor.black12Color,
-        onConfirm: () {
-          Get.back();
-          Get.toNamed(AppRouter.subscription);
-        },
-      );
 }
+
+Widget _buildChatButton({required VoidCallback onTap}) => GestureDetector(
+      onTap: onTap,
+      child: Image.asset(AppImage.messenger, height: 20),
+    );
+
+void _showSubscriptionDialog({required String middleText}) => Get.defaultDialog(
+      title: 'Subscription Required',
+      titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+      middleText: middleText,
+      middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+      textConfirm: 'Buy Now',
+      textCancel: 'Cancel',
+      confirmTextColor: AppColor.white,
+      buttonColor: AppColor.black12Color,
+      cancelTextColor: AppColor.black12Color,
+      onConfirm: () {
+        Get.back();
+        Get.toNamed(AppRouter.subscription);
+      },
+    );

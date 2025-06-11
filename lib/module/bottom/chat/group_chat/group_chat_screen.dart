@@ -42,7 +42,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     if (kDebugMode) {
       print('<------------ EMIT - _emitReaction ------------>');
-      print([messageId, userId, chatData.teamId,reactionData]);
+      print([messageId, userId, chatData.teamId, reactionData]);
     }
 
     socket.emit('addTeamReaction', [messageId, userId, chatData.teamId, reactionData]);
@@ -498,34 +498,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                 ],
                               ),
                             ),
-                            Visibility(
-                              visible: reactions.isNotEmpty,
-                              child: GestureDetector(
-                                onTap: () => _showReactionDetailsSheet(
-                                  oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
-                                  reactions: reactions,
-                                  currentUserId: AppPref().userId.toString(),
-                                  messageId: message.id,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 6.0),
-                                  child: Wrap(
-                                    children: reactions.map((reaction) {
-                                      final codePoints = reaction['reaction']
-                                          .toString()
-                                          .split(' ')
-                                          .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
-                                          .toList();
-
-                                      return Text(
-                                        String.fromCharCodes(codePoints),
-                                        style: const TextStyle(fontSize: 12),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            )
+                            _buildChatReaction(reactions, message)
                           ],
                         ),
                       ),
@@ -545,34 +518,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               ),
                             ),
                           ),
-                          Visibility(
-                            visible: reactions.isNotEmpty,
-                            child: GestureDetector(
-                              onTap: () => _showReactionDetailsSheet(
-                                oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
-                                reactions: reactions,
-                                currentUserId: AppPref().userId.toString(),
-                                messageId: message.id,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 6.0),
-                                child: Wrap(
-                                  children: reactions.map((reaction) {
-                                    final codePoints = reaction['reaction']
-                                        .toString()
-                                        .split(' ')
-                                        .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
-                                        .toList();
-
-                                    return Text(
-                                      String.fromCharCodes(codePoints),
-                                      style: const TextStyle(fontSize: 12),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          )
+                          _buildChatReaction(reactions, message)
                         ],
                       )
                     ] else ...[
@@ -609,43 +555,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                 ),
                               ),
                             ),
-                            Visibility(
-                              visible: reactions.isNotEmpty,
-                              child: GestureDetector(
-                                onTap: () => _showReactionDetailsSheet(
-                                  oppositeUserName: '${message.author.firstName??""} ${message.author.lastName??""}',
-                                  reactions: reactions,
-                                  currentUserId: AppPref().userId.toString(),
-                                  messageId: message.id,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 6.0),
-                                  child: Wrap(
-                                    children: reactions.map((reaction) {
-                                      final reactionString = reaction['reaction'].toString();
-
-                                      final codePoints = reactionString
-                                          .split(' ')
-                                          .map((e) {
-                                            try {
-                                              return int.parse(e.replaceFirst('U+', ''), radix: 16);
-                                            } catch (error) {
-                                              return null;
-                                            }
-                                          })
-                                          .where((e) => e != null)
-                                          .cast<int>()
-                                          .toList();
-
-                                      return Text(
-                                        String.fromCharCodes(codePoints),
-                                        style: const TextStyle(fontSize: 12),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            )
+                            _buildChatReaction(reactions, message)
                           ],
                         ),
                       ),
@@ -656,6 +566,68 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Visibility _buildChatReaction(List<dynamic> reactions, types.Message message) {
+    return Visibility(
+      visible: reactions.isNotEmpty,
+      child: GestureDetector(
+        onTap: () => _showReactionDetailsSheet(
+          oppositeUserName: '${message.author.firstName ?? ""} ${message.author.lastName ?? ""}',
+          reactions: reactions,
+          currentUserId: AppPref().userId.toString(),
+          messageId: message.id,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 6.0),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4.0,
+            children: () {
+              final maxVisible = 2;
+              final displayedReactions = reactions.take(maxVisible).toList();
+              final remainingCount = reactions.length - maxVisible;
+
+              List<Widget> children = displayedReactions.map((reaction) {
+                final reactionString = reaction['reaction'].toString();
+                final codePoints = reactionString
+                    .split(' ')
+                    .map((e) {
+                      try {
+                        return int.parse(e.replaceFirst('U+', ''), radix: 16);
+                      } catch (_) {
+                        return null;
+                      }
+                    })
+                    .where((e) => e != null)
+                    .cast<int>()
+                    .toList();
+
+                return Text(
+                  String.fromCharCodes(codePoints),
+                  style: const TextStyle(fontSize: 12),
+                );
+              }).toList();
+
+              if (remainingCount > 0) {
+                children.add(
+                  Text(
+                    '+$remainingCount',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.black12Color,
+                    ),
+                  ),
+                );
+              }
+
+              return children;
+            }(),
+          ),
+        ),
       ),
     );
   }

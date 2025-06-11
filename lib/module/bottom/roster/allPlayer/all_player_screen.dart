@@ -190,7 +190,6 @@ class AllPlayerScreen extends StatelessWidget {
                                           if (AppPref().role == 'coach')
                                             GestureDetector(
                                               onTap: () {
-                                                if (AppPref().proUser == false) {
                                                   hideKeyboard();
 
                                                   Get.toNamed(
@@ -203,23 +202,6 @@ class AllPlayerScreen extends StatelessWidget {
                                                       ),
                                                     },
                                                   );
-                                                } else {
-                                                  Get.defaultDialog(
-                                                    title: "Subscription Required",
-                                                    titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                                                    middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                                                    middleText: "Buy a subscription to access Personal Chat.",
-                                                    textConfirm: "Buy Now",
-                                                    confirmTextColor: AppColor.white,
-                                                    buttonColor: AppColor.black12Color,
-                                                    cancelTextColor: AppColor.black12Color,
-                                                    textCancel: "Cancel",
-                                                    onConfirm: () {
-                                                      Get.back();
-                                                      Get.toNamed(AppRouter.subscription);
-                                                    },
-                                                  );
-                                                }
                                               },
                                               child: Image.asset(
                                                 AppImage.messenger,
