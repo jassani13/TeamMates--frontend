@@ -56,8 +56,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _handleReactionUpdate(dynamic data) {
-    print("_handleReactionUpdate=====>");
-    final chatId = data['chatId'].toString();
+    final chatId = data['teamChatId'].toString();
     final newReactions = List<Map<String, dynamic>>.from(data['reactions'] ?? []);
     final index = _messages.indexWhere((msg) => msg.id == chatId);
     if (index != -1) {

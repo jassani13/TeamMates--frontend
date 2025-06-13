@@ -394,7 +394,7 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if(AppPref().role=='coach'){
+                  if (AppPref().role == 'coach') {
                     if (AppPref().proUser == true) {
                       Get.toNamed(
                         AppRouter.grpChat,
@@ -419,7 +419,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         },
                       );
                     }
-                  }else{
+                  } else {
                     Get.toNamed(
                       AppRouter.grpChat,
                       arguments: {
@@ -427,7 +427,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       },
                     );
                   }
-
                 },
                 behavior: HitTestBehavior.translucent,
                 child: Container(
