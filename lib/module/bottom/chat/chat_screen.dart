@@ -3,6 +3,7 @@ import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/foundation.dart';
 
 late IO.Socket socket;
 

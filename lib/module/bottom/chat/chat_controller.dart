@@ -1,5 +1,6 @@
 import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/package/config_packages.dart';
+import 'package:flutter/foundation.dart';
 
 class ChatScreenController extends GetxController{
   List chatList = [
