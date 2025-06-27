@@ -47,6 +47,16 @@ class SelectRoleController extends GetxController {
         AppPref().userModel = userModel;
         AppPref().role = selectedRole.value.role;
 
+        // Check subscription status after role update
+        try {
+          final purchaseController = Get.find<InAppPurchaseController>();
+          await purchaseController.checkActiveSubscription();
+        } catch (e) {
+          if (kDebugMode) {
+            print("Error checking subscription after role update: $e");
+          }
+        }
+
         if (AppPref().role != 'family') {
           AppPref().isLogin = true;
           Get.offAllNamed(AppRouter.creatingTeam);

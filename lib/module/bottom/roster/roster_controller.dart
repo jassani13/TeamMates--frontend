@@ -41,6 +41,19 @@ class RoasterController extends GetxController {
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((val) async {
       await getRosterApiCall();
+      
+      // Refresh subscription status when roster screen is loaded
+      try {
+        final purchaseController = Get.find<InAppPurchaseController>();
+        await purchaseController.refreshSubscriptionStatus();
+        if (kDebugMode) {
+          print("Roster screen - Subscription status refreshed - proUser: ${AppPref().proUser}");
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("Error refreshing subscription in roster screen: $e");
+        }
+      }
     });
   }
 }

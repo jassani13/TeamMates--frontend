@@ -394,8 +394,17 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
+                  if (kDebugMode) {
+                    print("Group chat list item tapped");
+                    print("Role: ${AppPref().role}");
+                    print("ProUser: ${AppPref().proUser}");
+                  }
+                  
                   if (AppPref().role == 'coach') {
                     if (AppPref().proUser == true) {
+                      if (kDebugMode) {
+                        print("Navigating to group chat - user has subscription");
+                      }
                       Get.toNamed(
                         AppRouter.grpChat,
                         arguments: {
@@ -403,6 +412,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         },
                       );
                     } else {
+                      if (kDebugMode) {
+                        print("Showing subscription dialog - user does not have subscription");
+                      }
                       Get.defaultDialog(
                         title: "Subscription Required",
                         titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
@@ -420,6 +432,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                     }
                   } else {
+                    if (kDebugMode) {
+                      print("Navigating to group chat - user is not coach");
+                    }
                     Get.toNamed(
                       AppRouter.grpChat,
                       arguments: {

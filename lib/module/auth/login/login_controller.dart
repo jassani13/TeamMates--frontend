@@ -116,6 +116,17 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
+        
+        // Check subscription status after login
+        try {
+          final purchaseController = Get.find<InAppPurchaseController>();
+          await purchaseController.checkActiveSubscription();
+        } catch (e) {
+          if (kDebugMode) {
+            print("Error checking subscription after login: $e");
+          }
+        }
+        
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else if (userModel.role == 'family') {
@@ -161,6 +172,16 @@ class LoginController extends GetxController {
           UserModel userModel = UserModel.fromJson(res?.data['data']["details"]);
           AppPref().userModel = userModel;
           AppPref().userId = userModel.userId;
+
+          // Check subscription status after login
+          try {
+            final purchaseController = Get.find<InAppPurchaseController>();
+            await purchaseController.checkActiveSubscription();
+          } catch (e) {
+            if (kDebugMode) {
+              print("Error checking subscription after SSO login: $e");
+            }
+          }
 
           if (userModel.role == null) {
             Get.toNamed(AppRouter.selectRole);
@@ -218,6 +239,17 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
+        
+        // Check subscription status after registration
+        try {
+          final purchaseController = Get.find<InAppPurchaseController>();
+          await purchaseController.checkActiveSubscription();
+        } catch (e) {
+          if (kDebugMode) {
+            print("Error checking subscription after registration: $e");
+          }
+        }
+        
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else {

@@ -37,7 +37,32 @@ class RosterScreen extends StatelessWidget {
                       children: [
                         CommonTitleText(text: "Roster"),
                         Spacer(),
-                        if (AppPref().role == 'coach')
+                        if (AppPref().role == 'coach') ...[
+                          // Temporary debug button - can be removed later
+                          if (kDebugMode)
+                            GestureDetector(
+                              onTap: () async {
+                                try {
+                                  final purchaseController = Get.find<InAppPurchaseController>();
+                                  await purchaseController.refreshSubscriptionStatus();
+                                  AppToast.showAppToast("Subscription status: ${AppPref().proUser}");
+                                } catch (e) {
+                                  AppToast.showAppToast("Error: $e");
+                                }
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColor.greyF6Color,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Debug",
+                                  style: TextStyle().normal12w500.textColor(AppColor.black12Color),
+                                ),
+                              ),
+                            ),
+                          Gap(8),
                           CommonIconButton(
                             image: AppImage.plus,
                             onTap: () {
@@ -45,6 +70,7 @@ class RosterScreen extends StatelessWidget {
                               Get.toNamed(AppRouter.addTeam);
                             },
                           ),
+                        ],
                       ],
                     ),
                     Text(
@@ -95,13 +121,13 @@ class RosterScreen extends StatelessWidget {
                                   )
                                 : ListView.builder(
                                     itemCount: roasterController.allRosterModelList
-                                        .where((roster) => (roster.name ?? "").toLowerCase().contains(roasterController.searchQuery.value))
+                                        .where((roster) => (roster.name ?? "").toLowerCase().contains(rosterController.searchQuery.value))
                                         .length,
                                     padding: EdgeInsets.zero,
                                     shrinkWrap: true,
                                     itemBuilder: (context, index) {
                                       var filteredList = roasterController.allRosterModelList
-                                          .where((roster) => (roster.name ?? "").toLowerCase().contains(roasterController.searchQuery.value))
+                                          .where((roster) => (roster.name ?? "").toLowerCase().contains(rosterController.searchQuery.value))
                                           .toList();
                                       Roster roster = filteredList[index];
                                       return GestureDetector(
@@ -159,8 +185,17 @@ class RosterScreen extends StatelessWidget {
                                               if (AppPref().role == 'coach')
                                                 GestureDetector(
                                                   onTap: () {
+                                                    if (kDebugMode) {
+                                                      print("Group chat button tapped");
+                                                      print("Role: ${AppPref().role}");
+                                                      print("ProUser: ${AppPref().proUser}");
+                                                    }
+                                                    
                                                     if (AppPref().role == 'coach') {
                                                       if (AppPref().proUser == true) {
+                                                        if (kDebugMode) {
+                                                          print("Navigating to group chat - user has subscription");
+                                                        }
                                                         Get.toNamed(
                                                           AppRouter.grpChat,
                                                           arguments: {
@@ -171,6 +206,9 @@ class RosterScreen extends StatelessWidget {
                                                           },
                                                         );
                                                       } else {
+                                                        if (kDebugMode) {
+                                                          print("Showing subscription dialog - user does not have subscription");
+                                                        }
                                                         Get.defaultDialog(
                                                           title: "Subscription Required",
                                                           titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
@@ -188,6 +226,9 @@ class RosterScreen extends StatelessWidget {
                                                         );
                                                       }
                                                     } else {
+                                                      if (kDebugMode) {
+                                                        print("Navigating to group chat - user is not coach");
+                                                      }
                                                       Get.toNamed(
                                                         AppRouter.grpChat,
                                                         arguments: {
