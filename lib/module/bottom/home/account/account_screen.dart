@@ -1,3 +1,4 @@
+import 'package:base_code/data/pref/app_preferences.dart' as SignInWithApple;
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
@@ -204,6 +205,8 @@ class AccountScreen extends StatelessWidget {
                     showAlertDialog(
                         context: context,
                         btn2Tap: () async {
+                          final GoogleSignIn googleSignIn = GoogleSignIn();
+                          await googleSignIn.signOut();
                           AppPref().clear();
                           AppPref().isFirstTime = true;
                           Get.offAllNamed(AppRouter.login);
