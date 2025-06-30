@@ -44,7 +44,7 @@ class AccountScreen extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
                           child: getImageView(
-                            finalUrl: '$publicImageUrl${accountController.userModel.value.profile ?? ""}',
+                            finalUrl: '${accountController.userModel.value.profile ?? ""}',
                             height: 48,
                             width: 48,
                             fit: BoxFit.cover,

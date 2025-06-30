@@ -130,7 +130,7 @@ class RosterScreen extends StatelessWidget {
                                                 borderRadius: BorderRadius.circular(24),
                                                 child: getImageView(
                                                     finalUrl:
-                                                        '$publicImageUrl${(roster.iconImage ?? "").isNotEmpty ? (roster.iconImage ?? "") : roster.teamImage ?? ""}',
+                                                        (roster.iconImage ?? "").isNotEmpty ? (roster.iconImage ?? "") : roster.teamImage ?? "",
                                                     fit: BoxFit.cover,
                                                     height: 48,
                                                     width: 48),
@@ -159,35 +159,35 @@ class RosterScreen extends StatelessWidget {
                                               if (AppPref().role == 'coach')
                                                 GestureDetector(
                                                   onTap: () {
-                                                    if (AppPref().role == 'coach') {
-                                                      if (AppPref().proUser == true) {
-                                                        Get.toNamed(
-                                                          AppRouter.grpChat,
-                                                          arguments: {
-                                                            'chatData': ChatListData(
-                                                              teamName: roster.name,
-                                                              teamId: roster.teamId.toString(),
-                                                            ),
-                                                          },
-                                                        );
-                                                      } else {
-                                                        Get.defaultDialog(
-                                                          title: "Subscription Required",
-                                                          titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                                                          middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                                                          middleText: "Buy a subscription to\naccess Team Chat.",
-                                                          textConfirm: "Buy Now",
-                                                          confirmTextColor: AppColor.white,
-                                                          buttonColor: AppColor.black12Color,
-                                                          cancelTextColor: AppColor.black12Color,
-                                                          textCancel: "Cancel",
-                                                          onConfirm: () {
-                                                            Get.back();
-                                                            Get.toNamed(AppRouter.subscription);
-                                                          },
-                                                        );
-                                                      }
-                                                    } else {
+                                                    // if (AppPref().role == 'coach') {
+                                                    //   if (AppPref().proUser == true) {
+                                                    //     Get.toNamed(
+                                                    //       AppRouter.grpChat,
+                                                    //       arguments: {
+                                                    //         'chatData': ChatListData(
+                                                    //           teamName: roster.name,
+                                                    //           teamId: roster.teamId.toString(),
+                                                    //         ),
+                                                    //       },
+                                                    //     );
+                                                    //   } else {
+                                                    //     Get.defaultDialog(
+                                                    //       title: "Subscription Required",
+                                                    //       titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                                                    //       middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                                                    //       middleText: "Buy a subscription to\naccess Team Chat.",
+                                                    //       textConfirm: "Buy Now",
+                                                    //       confirmTextColor: AppColor.white,
+                                                    //       buttonColor: AppColor.black12Color,
+                                                    //       cancelTextColor: AppColor.black12Color,
+                                                    //       textCancel: "Cancel",
+                                                    //       onConfirm: () {
+                                                    //         Get.back();
+                                                    //         Get.toNamed(AppRouter.subscription);
+                                                    //       },
+                                                    //     );
+                                                    //   }
+                                                    // } else {
                                                       Get.toNamed(
                                                         AppRouter.grpChat,
                                                         arguments: {
@@ -197,7 +197,7 @@ class RosterScreen extends StatelessWidget {
                                                           ),
                                                         },
                                                       );
-                                                    }
+                                                    // }
                                                   },
                                                   child: Image.asset(
                                                     AppImage.messenger,

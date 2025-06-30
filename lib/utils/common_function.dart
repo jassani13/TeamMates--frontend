@@ -1,6 +1,7 @@
 import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
 
+
 String cleanDescription(String raw) {
   return raw.replaceAll(r'\r\n', '\n');
 }
@@ -15,6 +16,7 @@ String capitalizeFirst(String? text) {
   if (text == null || text.isEmpty) return "";
   return text[0].toUpperCase() + text.substring(1);
 }
+
 void openPdf(String url) async {
   if (await canLaunch(url)) {
     await launch(url);
@@ -22,6 +24,7 @@ void openPdf(String url) async {
     print("Could not open the PDF file.");
   }
 }
+
 hideKeyboard() {
   Get.context?.let((it) {
     final currentFocus = FocusScope.of(it);
