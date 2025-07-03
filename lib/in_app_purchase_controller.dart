@@ -137,24 +137,11 @@ class InAppPurchaseController extends GetxController {
       await _updateSubscriptionStatus(customerInfo, isFromPurchase: isFromPurchase);
     } catch (e) {
       if (kDebugMode) {
-        print("Error in checkActiveSubscription: $e");
+        print(e);
       }
     } finally {
       if (isFromPurchase) {
         AppLoader().dismissLoader();
-      }
-    }
-  }
-
-  Future<void> refreshSubscriptionStatus() async {
-    try {
-      if (kDebugMode) {
-        print("Refreshing subscription status...");
-      }
-      await checkActiveSubscription();
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error refreshing subscription status: $e");
       }
     }
   }

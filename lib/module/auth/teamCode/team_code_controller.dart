@@ -22,17 +22,6 @@ class TeamCodeController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]['player_data']);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
-        
-        // Check subscription status after team code verification
-        try {
-          final purchaseController = Get.find<InAppPurchaseController>();
-          await purchaseController.checkActiveSubscription();
-        } catch (e) {
-          if (kDebugMode) {
-            print("Error checking subscription after team code verification: $e");
-          }
-        }
-        
         AppPref().isLogin = true;
         AppPref().role = 'player';
         Get.offAllNamed(AppRouter.bottom);
@@ -59,7 +48,7 @@ class TeamCodeController extends GetxController {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Ask for your team's\njoin code.",
+                "Ask for your team’s\njoin code.",
                 style: TextStyle(height: 1).normal32w500s.textColor(
                       AppColor.black12Color,
                     ),

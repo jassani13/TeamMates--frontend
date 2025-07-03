@@ -72,32 +72,12 @@ class BottomController extends GetxController {
       },
     );
   }
-
-  Future<void> checkSubscriptionStatus() async {
-    try {
-      // Get the InAppPurchaseController instance
-      final purchaseController = Get.find<InAppPurchaseController>();
-      
-      // Always refresh subscription status when entering the bottom screen
-      await purchaseController.refreshSubscriptionStatus();
-      
-      if (kDebugMode) {
-        print("Subscription status check completed - proUser: ${AppPref().proUser}");
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error checking subscription status: $e");
-      }
-    }
-  }
-
   @override
   void onInit() {
     // TODO: implement onInit
     super.onInit();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
        await askPermission();
-       await checkSubscriptionStatus();
     });
   }
 }

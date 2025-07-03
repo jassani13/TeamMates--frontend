@@ -11,23 +11,4 @@ class ChatScreenController extends GetxController{
   List<ChatListData> chatListData = <ChatListData>[];
   List<ChatListData> grpChatListData = <ChatListData>[];
   Map<String,dynamic> onlineUsers = {};
-
-  @override
-  void onInit() {
-    super.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((val) async {
-      // Refresh subscription status when chat screen is loaded
-      try {
-        final purchaseController = Get.find<InAppPurchaseController>();
-        await purchaseController.refreshSubscriptionStatus();
-        if (kDebugMode) {
-          print("Chat screen - Subscription status refreshed - proUser: ${AppPref().proUser}");
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print("Error refreshing subscription in chat screen: $e");
-        }
-      }
-    });
-  }
 }
