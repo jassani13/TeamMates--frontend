@@ -3,7 +3,6 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:flutter/foundation.dart';
 
 class LoginController extends GetxController {
   TextEditingController emailController = TextEditingController();
