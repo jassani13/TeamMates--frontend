@@ -3,6 +3,7 @@ class UserModel {
   String? firstName;
   String? lastName;
   String? email;
+  List<String>? userEmails; 
   String? role;
   int? playerCode;
   String? profile;
@@ -26,6 +27,7 @@ class UserModel {
       this.firstName,
       this.lastName,
       this.email,
+      this.userEmails,
       this.role,
       this.playerCode,
       this.profile,
@@ -49,6 +51,9 @@ class UserModel {
     firstName = json['first_name'];
     lastName = json['last_name'];
     email = json['email'];
+    if (json['user_emails'] != null) {
+      userEmails = List<String>.from(json['user_emails']);
+    }
     role = json['role'];
     playerCode = json['player_code'];
     profile = json['profile'];
@@ -74,6 +79,9 @@ class UserModel {
     data['first_name'] = firstName;
     data['last_name'] = lastName;
     data['email'] = email;
+    if (userEmails != null) {
+      data['user_emails'] = userEmails;
+    }
     data['role'] = role;
     data['player_code'] = playerCode;
     data['profile'] = profile;

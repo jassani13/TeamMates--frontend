@@ -9,11 +9,11 @@ BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
 
-const bool useLocalServer = false; // Change this to switch servers
+const bool useLocalServer = true; // Change this to switch servers
 
 const String productionBaseUrl = 'http://35.175.243.150/TeamMates';
-// const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
-const String localBaseUrl = 'http://3.86.202.141/TeamMates';
+const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+// const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
 
 const String baseUrl = useLocalServer && kDebugMode 
     ? localBaseUrl 
