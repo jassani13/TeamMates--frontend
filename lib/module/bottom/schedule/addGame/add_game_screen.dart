@@ -308,16 +308,42 @@ class AddGameScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Column(
-                    children: [
-                      Gap(16),
-                      FrequencyDaySelector(
-                        selectedDays: addGameController.selectedDays,
-                        onSelectionChanged: (days) {
-                          addGameController.selectedDays.value = days;
-                        },
-                      ),
-                    ],
+                  Visibility(
+                    visible: addGameController.activityDetail.value?.activityId != 0,
+                    child: Column(
+                      children: [
+                        Gap(16),
+                        FrequencyDaySelector(
+                          selectedDays: addGameController.selectedDays,
+                          onSelectionChanged: (days) {
+                            addGameController.selectedDays.value = days;
+                          },
+                        ),
+                        Gap(16),
+                        CommonTextField(
+                          hintText: "Frequency End Date",
+                          readOnly: true,
+                          suffixIcon: Icon(
+                            Icons.keyboard_arrow_down_sharp,
+                            color: AppColor.black12Color,
+                          ),
+                          controller: addGameController.freqEndDateController.value,
+                          onTap: () {
+                            addGameController.showEndDatePicker(context, 0, addGameController.freqEndDateController.value,
+                                initial: addGameController.freqEndDateController.value.text.isNotEmpty
+                                    ? DateTime.parse(addGameController.freqEndDateController.value.text)
+                                    : null);
+                          },
+                          validator: (val) {
+                            if ((val ?? "").isEmpty) {
+                              return "Please select date";
+                            } else {
+                              return null;
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   Gap(16),
                   Visibility(

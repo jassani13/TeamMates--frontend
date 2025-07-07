@@ -7,6 +7,7 @@ class ApiEndPoint {
   static const String createTeam = "/api/createTeam";
   static const String addMemberToTeam = "/api/addMemberToTeam";
   static const String getRosterList = "/api/getRosterList";
+  static const String deleteActivity = "/api/deleteActivity";
   static const String getRosterDetails = "/api/getRosterDetails";
   static const String getTeamPlayers = "/api/getTeamPlayers";
   static const String createActivity = "/api/createActivity";

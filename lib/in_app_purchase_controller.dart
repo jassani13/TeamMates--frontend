@@ -19,7 +19,6 @@ class InAppPurchaseController extends GetxController {
     await initPlatformState();
     await getProducts();
     await checkActiveSubscription();
-
   }
 
   getPurchasedPlan() {

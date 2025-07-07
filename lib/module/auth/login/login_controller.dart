@@ -1,4 +1,5 @@
 import 'package:base_code/data/network/api_client.dart';
+import 'package:base_code/in_app_purchase_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -132,6 +133,7 @@ class LoginController extends GetxController {
           AppPref().isLogin = true;
           Get.offAllNamed(AppRouter.bottom);
         }
+        Get.find<InAppPurchaseController>().checkActiveSubscription(isFromPurchase: false);
       }
     } catch (e) {
       if (kDebugMode) {

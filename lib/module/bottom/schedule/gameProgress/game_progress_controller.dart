@@ -7,6 +7,31 @@ class GameProgressController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isLive = false.obs;
 
+
+  Future<void> deleteActivity() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+        "activity_id": activityDetails.value.data?.activityId ?? 0,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.deleteActivity,
+          data: data,
+        ),
+        false,
+      );
+
+      if (res?.statusCode == 200) {
+        Get.back(result: "delete");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
   Future<void> getScheduleDetailApiCall() async {
     try {
       isLoading.value = true;

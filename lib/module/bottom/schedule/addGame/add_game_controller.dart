@@ -7,6 +7,7 @@ class AddGameController extends GetxController {
 
   Rx<TextEditingController> teamController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
+  Rx<TextEditingController> freqEndDateController = TextEditingController().obs;
   Rx<TextEditingController> activityNameController = TextEditingController().obs;
   Rx<TextEditingController> endTimeController = TextEditingController().obs;
   Rx<TextEditingController> startTimeController = TextEditingController().obs;
@@ -58,7 +59,8 @@ class AddGameController extends GetxController {
   Future<void> addActivityApi({String? activityType, bool? isGame}) async {
     try {
       FormData formData = FormData.fromMap({
-        "week_day": selectedDays,
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
+        "max_create_date": freqEndDateController.value.text.trim(),
         "user_id": AppPref().userId,
         "notify_team": notify.value == true ? 1 : 0,
         "activity_type": activityType,
@@ -105,7 +107,7 @@ class AddGameController extends GetxController {
   Future<void> editActivityApi({String? activityType, bool? isGame, required int activityId}) async {
     try {
       FormData formData = FormData.fromMap({
-        "week_day": selectedDays,
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
         "user_id": AppPref().userId,
         "activity_id": activityId,
         "notify_team": notify.value == true ? 1 : 0,
@@ -335,6 +337,73 @@ class AddGameController extends GetxController {
     );
   }
 
+  void showEndDatePicker(
+    BuildContext context,
+    int index,
+    TextEditingController storeValue, {
+    DateTime? initial,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            height: 280,
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Select Date",
+                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        if (storeValue.text.isEmpty) {
+                          storeValue.text = "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                        }
+                        Get.back();
+                      },
+                      child: Text(
+                        "Done",
+                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 210,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      minimumDate: DateTime.now(),
+                      maximumDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+                      initialDateTime: DateTime.now(),
+                      onDateTimeChanged: (DateTime newDate) {
+                        storeValue.text =
+                            "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void showDatePicker(
     BuildContext context,
     int index,
@@ -492,6 +561,7 @@ class AddGameController extends GetxController {
     }
   }
 
+
   Future<void> getRosterApiCall() async {
     try {
       var data = {
@@ -583,6 +653,7 @@ class AddGameController extends GetxController {
       selectedOpponent.refresh();
       if (activityDetail.value?.weekDay != null) {
         selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+        print(selectedDays);
       }
     }
     if (activityType.value == 'game') {
