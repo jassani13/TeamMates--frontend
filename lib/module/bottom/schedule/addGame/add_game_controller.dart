@@ -58,6 +58,10 @@ class AddGameController extends GetxController {
 
   Future<void> addActivityApi({String? activityType, bool? isGame}) async {
     try {
+      if (selectedDays.isNotEmpty && freqEndDateController.value.text.isEmpty) {
+        AppToast.showAppToast("An end date is required when a frequency is selected.");
+        return;
+      }
       FormData formData = FormData.fromMap({
         "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
         "max_create_date": freqEndDateController.value.text.trim(),
@@ -560,7 +564,6 @@ class AddGameController extends GetxController {
       }
     }
   }
-
 
   Future<void> getRosterApiCall() async {
     try {

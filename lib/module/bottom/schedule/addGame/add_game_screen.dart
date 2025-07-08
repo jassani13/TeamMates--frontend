@@ -309,7 +309,7 @@ class AddGameScreen extends StatelessWidget {
                     ],
                   ),
                   Visibility(
-                    visible: addGameController.activityDetail.value?.activityId != 0,
+                    visible: addGameController.activityDetail.value == null,
                     child: Column(
                       children: [
                         Gap(16),
@@ -334,13 +334,13 @@ class AddGameScreen extends StatelessWidget {
                                     ? DateTime.parse(addGameController.freqEndDateController.value.text)
                                     : null);
                           },
-                          validator: (val) {
-                            if ((val ?? "").isEmpty) {
-                              return "Please select date";
-                            } else {
-                              return null;
-                            }
-                          },
+                          // validator: (val) {
+                          //   if ((val ?? "").isEmpty) {
+                          //     return "Please select date";
+                          //   } else {
+                          //     return null;
+                          //   }
+                          // },
                         ),
                       ],
                     ),

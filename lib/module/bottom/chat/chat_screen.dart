@@ -394,39 +394,39 @@ class _ChatScreenState extends State<ChatScreen> {
               final chatData = chatController.grpChatListData[index];
               return GestureDetector(
                 onTap: () {
-                  if (AppPref().role == 'coach') {
-                    if (AppPref().proUser == true) {
-                      Get.toNamed(
-                        AppRouter.grpChat,
-                        arguments: {
-                          'chatData': chatData,
-                        },
-                      );
-                    } else {
-                      Get.defaultDialog(
-                        title: "Subscription Required",
-                        titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                        middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                        middleText: "Buy a subscription to\naccess Team Chat.",
-                        textConfirm: "Buy Now",
-                        confirmTextColor: AppColor.white,
-                        buttonColor: AppColor.black12Color,
-                        cancelTextColor: AppColor.black12Color,
-                        textCancel: "Cancel",
-                        onConfirm: () {
-                          Get.back();
-                          Get.toNamed(AppRouter.subscription);
-                        },
-                      );
-                    }
-                  } else {
+                  // if (AppPref().role == 'coach') {
+                  //   if (AppPref().proUser == true) {
+                  //     Get.toNamed(
+                  //       AppRouter.grpChat,
+                  //       arguments: {
+                  //         'chatData': chatData,
+                  //       },
+                  //     );
+                  //   } else {
+                  //     Get.defaultDialog(
+                  //       title: "Subscription Required",
+                  //       titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
+                  //       middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
+                  //       middleText: "Buy a subscription to\naccess Team Chat.",
+                  //       textConfirm: "Buy Now",
+                  //       confirmTextColor: AppColor.white,
+                  //       buttonColor: AppColor.black12Color,
+                  //       cancelTextColor: AppColor.black12Color,
+                  //       textCancel: "Cancel",
+                  //       onConfirm: () {
+                  //         Get.back();
+                  //         Get.toNamed(AppRouter.subscription);
+                  //       },
+                  //     );
+                  //   }
+                  // } else {
                     Get.toNamed(
                       AppRouter.grpChat,
                       arguments: {
                         'chatData': chatData,
                       },
                     );
-                  }
+                  // }
                 },
                 behavior: HitTestBehavior.translucent,
                 child: Container(

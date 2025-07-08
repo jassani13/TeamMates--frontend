@@ -15,6 +15,11 @@ class InAppPurchaseController extends GetxController {
   RxBool proUser = false.obs;
   List<StoreProduct> products = [];
 
+  // pro_plan_yearly:pro-plan-yearly
+  // pro_plan_monthly:pro-plan-monthly
+  // 12345
+  // pro_plan_monthly
+
   Future<void> _initLoad() async {
     await initPlatformState();
     await getProducts();
