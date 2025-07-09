@@ -103,7 +103,7 @@ class PushNotificationService {
     String? deviceToken;
 
     if (Platform.isIOS) {
-      deviceToken = await firebaseMessaging.getToken();
+      deviceToken = await firebaseMessaging.getAPNSToken();
       if (deviceToken == null) {
         if (kDebugMode) {
           print('=================> APNs token not available yet.');

@@ -30,21 +30,21 @@ abstract class AppTheme {
       selectedItemColor: AppColor.primaryBlackColor,
       unselectedItemColor: AppColor.greyB9Color,
     ),
-    tabBarTheme: TabBarTheme(
-        tabAlignment: TabAlignment.start,
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: AppColor.white,
-        unselectedLabelColor: AppColor.greyColor,
-        labelStyle: const TextStyle().normal14w400,
-        unselectedLabelStyle: const TextStyle().normal14w400,
-        indicator: const UnderlineTabIndicator(
-          // color for indicator (underline)
-          borderSide: BorderSide(
-            color: Colors.white,
-            width: 4,
-          ),
-        ),
-        dividerColor: Colors.transparent),
+    // tabBarTheme: TabBarTheme(
+    //     tabAlignment: TabAlignment.start,
+    //     indicatorSize: TabBarIndicatorSize.tab,
+    //     labelColor: AppColor.white,
+    //     unselectedLabelColor: AppColor.greyColor,
+    //     labelStyle: const TextStyle().normal14w400,
+    //     unselectedLabelStyle: const TextStyle().normal14w400,
+    //     indicator: const UnderlineTabIndicator(
+    //       // color for indicator (underline)
+    //       borderSide: BorderSide(
+    //         color: Colors.white,
+    //         width: 4,
+    //       ),
+    //     ),
+    //     dividerColor: Colors.transparent),
     appBarTheme: AppBarTheme(
       foregroundColor: AppColor.black,
       centerTitle: true,
@@ -118,18 +118,18 @@ abstract class AppTheme {
       selectedItemColor: AppColor.white,
       unselectedItemColor: AppColor.grey66Color,
     ),
-    tabBarTheme: TabBarTheme(
-        tabAlignment: TabAlignment.start,
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: AppColor.white,
-        unselectedLabelColor: AppColor.greyColor,
-        labelStyle: const TextStyle().normal14w400,
-        unselectedLabelStyle: const TextStyle().normal14w400,
-        indicator: const UnderlineTabIndicator(
-          // color for indicator (underline)
-          borderSide: BorderSide(color: Colors.white, width: 4),
-        ),
-        dividerColor: Colors.transparent),
+    // tabBarTheme: TabBarTheme(
+    //     tabAlignment: TabAlignment.start,
+    //     indicatorSize: TabBarIndicatorSize.tab,
+    //     labelColor: AppColor.white,
+    //     unselectedLabelColor: AppColor.greyColor,
+    //     labelStyle: const TextStyle().normal14w400,
+    //     unselectedLabelStyle: const TextStyle().normal14w400,
+    //     indicator: const UnderlineTabIndicator(
+    //       // color for indicator (underline)
+    //       borderSide: BorderSide(color: Colors.white, width: 4),
+    //     ),
+    //     dividerColor: Colors.transparent),
     appBarTheme: AppBarTheme(
       foregroundColor: AppColor.white,
       centerTitle: true,
