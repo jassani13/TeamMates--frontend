@@ -28,6 +28,7 @@ class ApiEndPoint {
   static const String createScore = "/api/createScore";
   static const String setChallengeStatus = "/api/setChallengeStatus";
   static const String setActivityStatus = "/api/setActivityStatus";
+  static const String sendRsvpNudge = "/api/sendRsvpNudge";
   static const String profileDetails = "/api/profileDetails";
   static const String homeDetails = "/api/homeDetails";
   static const String checkPlayerCode = "/api/checkPlayerCode";
