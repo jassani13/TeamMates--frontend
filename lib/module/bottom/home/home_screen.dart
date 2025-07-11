@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             : Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  CommonTitleText(text: "Upcoming Games"),
+                                                  CommonTitleText(text: "Upcoming"),
                                                   ListView.builder(
                                                     padding: EdgeInsets.only(top: 10),
                                                     physics: ScrollPhysics(),
