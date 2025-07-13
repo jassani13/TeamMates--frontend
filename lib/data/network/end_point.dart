@@ -41,5 +41,9 @@ class ApiEndPoint {
   static const String removeWebCalList = "/api/removeWebCalList";
   static const String setTransaction = "/api/setTransaction";
   static const String getTransactionList = "/api/getTransactionList";
-
+  // tag management endpoints
+  static const String getEventTags = "/api/getEventTags";
+  static const String createEventTag = "/api/createEventTag";
+  static const String updateEventTag = "/api/updateEventTag";
+  static const String deleteEventTag = "/api/deleteEventTag";
 }

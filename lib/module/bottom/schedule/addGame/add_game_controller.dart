@@ -1,19 +1,25 @@
+import 'package:base_code/model/event_tag_model.dart';
 import 'package:base_code/module/bottom/home/home_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
 class AddGameController extends GetxController {
   RxList<int> selectedDays = <int>[].obs;
+  RxList<EventTag> availableTags = <EventTag>[].obs;
+  RxList<EventTag> selectedTags = <EventTag>[].obs;
+  Rx<TextEditingController> tagController = TextEditingController().obs;
 
   Rx<TextEditingController> teamController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
-  Rx<TextEditingController> activityNameController = TextEditingController().obs;
+  Rx<TextEditingController> activityNameController =
+      TextEditingController().obs;
   Rx<TextEditingController> endTimeController = TextEditingController().obs;
   Rx<TextEditingController> startTimeController = TextEditingController().obs;
 
   Rx<TextEditingController> opponentController = TextEditingController().obs;
   Rx<TextEditingController> locationController = TextEditingController().obs;
-  Rx<TextEditingController> locationDetailsController = TextEditingController().obs;
+  Rx<TextEditingController> locationDetailsController =
+      TextEditingController().obs;
   Rx<TextEditingController> assignmentController = TextEditingController().obs;
   Rx<TextEditingController> durationController = TextEditingController().obs;
   Rx<TextEditingController> arriveController = TextEditingController().obs;
@@ -64,7 +70,8 @@ class AddGameController extends GetxController {
         "activity_type": activityType,
         "activity_name": activityNameController.value.text.trim(),
         if (isGame == true) "team_id": selectedTeam.value?.teamId ?? 0,
-        if (isGame == true) "opponent_id": selectedOpponent.value?.opponentId ?? 0,
+        if (isGame == true)
+          "opponent_id": selectedOpponent.value?.opponentId ?? 0,
         "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
         "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
@@ -83,6 +90,9 @@ class AddGameController extends GetxController {
         "standings": isStanding.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
+        // NEW: Add selected tag IDs
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
       });
       var response = await callApi(dio.post(
         ApiEndPoint.createActivity,
@@ -91,7 +101,8 @@ class AddGameController extends GetxController {
       if (response?.statusCode == 200) {
         AppToast.showAppToast(response?.data['ResponseMsg']);
 
-        ScheduleData scheduleData = ScheduleData.fromJson(response?.data['data']);
+        ScheduleData scheduleData =
+            ScheduleData.fromJson(response?.data['data']);
         Get.find<HomeController>().refreshKey.currentState?.show();
         Get.back(result: scheduleData);
       }
@@ -102,7 +113,8 @@ class AddGameController extends GetxController {
     }
   }
 
-  Future<void> editActivityApi({String? activityType, bool? isGame, required int activityId}) async {
+  Future<void> editActivityApi(
+      {String? activityType, bool? isGame, required int activityId}) async {
     try {
       FormData formData = FormData.fromMap({
         "week_day": selectedDays,
@@ -112,7 +124,8 @@ class AddGameController extends GetxController {
         "activity_type": activityType,
         "activity_name": activityNameController.value.text.trim(),
         if (isGame == true) "team_id": selectedTeam.value?.teamId ?? 0,
-        if (isGame == true) "opponent_id": selectedOpponent.value?.opponentId ?? 0,
+        if (isGame == true)
+          "opponent_id": selectedOpponent.value?.opponentId ?? 0,
         "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
         "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
@@ -131,13 +144,17 @@ class AddGameController extends GetxController {
         "standings": isStanding.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
+        // NEW: Add selected tag IDs
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
       });
       var response = await callApi(dio.post(
         ApiEndPoint.updateActivity,
         data: formData,
       ));
       if (response?.statusCode == 200) {
-        ScheduleData scheduleData = ScheduleData.fromJson(response?.data['data']);
+        ScheduleData scheduleData =
+            ScheduleData.fromJson(response?.data['data']);
 
         Get.find<GlobalController>().updateScheduleData(scheduleData);
         AppToast.showAppToast(response?.data['ResponseMsg']);
@@ -151,23 +168,27 @@ class AddGameController extends GetxController {
     }
   }
 
-  void showTimeZoneSheet(BuildContext context, {required List<String> list, required TextEditingController storeValue}) {
+  void showTimeZoneSheet(BuildContext context,
+      {required List<String> list, required TextEditingController storeValue}) {
     showCustomBottomSheet<String>(
       context: context,
       title: "Select Timezone",
       list: list,
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
       storeValue: storeValue,
       onItemSelected: (value) {},
       itemText: (value) => value,
     );
   }
 
-  void showArriveEarlySheet(BuildContext context, {required List<String> list, required TextEditingController storeValue}) {
+  void showArriveEarlySheet(BuildContext context,
+      {required List<String> list, required TextEditingController storeValue}) {
     showCustomBottomSheet<String>(
       context: context,
       title: "Arrive Early",
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
       list: list,
       storeValue: storeValue,
       onItemSelected: (value) {},
@@ -175,7 +196,8 @@ class AddGameController extends GetxController {
     );
   }
 
-  void allTeamList(BuildContext context, {required List<Roster> list, required TextEditingController storeValue}) {
+  void allTeamList(BuildContext context,
+      {required List<Roster> list, required TextEditingController storeValue}) {
     showCustomBottomSheet<Roster>(
       context: context,
       title: "Please select your\nTeam",
@@ -187,13 +209,16 @@ class AddGameController extends GetxController {
     );
   }
 
-  void showOpponentSheet(BuildContext context, {required List<OpponentModel> list, required TextEditingController storeValue}) {
+  void showOpponentSheet(BuildContext context,
+      {required List<OpponentModel> list,
+      required TextEditingController storeValue}) {
     showCustomBottomSheet<OpponentModel>(
       context: context,
       title: "Opponent",
       list: list,
       storeValue: storeValue,
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
       onItemSelected: (opponent) => selectedOpponent.value = opponent,
       itemText: (opponent) => opponent.opponentName ?? "",
       // icon: Icons.sports_soccer,
@@ -210,13 +235,16 @@ class AddGameController extends GetxController {
     );
   }
 
-  void showLocationSheet(BuildContext context, {required List<LocationData> list, required TextEditingController storeValue}) {
+  void showLocationSheet(BuildContext context,
+      {required List<LocationData> list,
+      required TextEditingController storeValue}) {
     showCustomBottomSheet<LocationData>(
       context: context,
       title: "Location",
       list: list,
       storeValue: storeValue,
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
       onItemSelected: (location) => selectedLocation.value = location,
       itemText: (location) => location.address ?? "",
       // icon: Icons.location_on_rounded,
@@ -295,7 +323,8 @@ class AddGameController extends GetxController {
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {
-                        storeValue.text = flagList[index].colorName ?? "Default";
+                        storeValue.text =
+                            flagList[index].colorName ?? "Default";
                         Get.back();
                       },
                       behavior: HitTestBehavior.translucent,
@@ -321,7 +350,9 @@ class AddGameController extends GetxController {
                             Gap(16),
                             Text(
                               flagList[index].colorName ?? "Default",
-                              style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                              style: TextStyle()
+                                  .normal14w500
+                                  .textColor(AppColor.black12Color),
                             ),
                           ],
                         ),
@@ -357,19 +388,24 @@ class AddGameController extends GetxController {
                   children: [
                     Text(
                       "Select Date",
-                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      style: const TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color),
                     ),
                     const Spacer(),
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
-                          storeValue.text = "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                          storeValue.text =
+                              "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
                         }
                         Get.back();
                       },
                       child: Text(
                         "Done",
-                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        style: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                   ],
@@ -379,13 +415,16 @@ class AddGameController extends GetxController {
                   child: CupertinoTheme(
                     data: CupertinoThemeData(
                       textTheme: CupertinoTextThemeData(
-                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        dateTimePickerTextStyle: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.date,
                       initialDateTime: initial ?? DateTime.now(),
-                      minimumDate: DateTime.now().subtract(Duration(seconds: 2)),
+                      minimumDate:
+                          DateTime.now().subtract(Duration(seconds: 2)),
                       maximumDate: DateTime.now().add(Duration(days: 366)),
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
@@ -424,20 +463,25 @@ class AddGameController extends GetxController {
                   children: [
                     Text(
                       "Select Time",
-                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      style: const TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color),
                     ),
                     const Spacer(),
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
                           DateTime newTime = DateTime.now();
-                          storeValue.text = "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
+                          storeValue.text =
+                              "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
                         }
                         Get.back();
                       },
                       child: Text(
                         "Done",
-                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        style: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                   ],
@@ -447,7 +491,9 @@ class AddGameController extends GetxController {
                   child: CupertinoTheme(
                     data: CupertinoThemeData(
                       textTheme: CupertinoTextThemeData(
-                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        dateTimePickerTextStyle: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                     child: CupertinoDatePicker(
@@ -455,7 +501,8 @@ class AddGameController extends GetxController {
                       initialDateTime: initial ?? DateTime.now(),
                       use24hFormat: true,
                       onDateTimeChanged: (DateTime newTime) {
-                        storeValue.text = "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
+                        storeValue.text =
+                            "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
                       },
                     ),
                   ),
@@ -482,7 +529,9 @@ class AddGameController extends GetxController {
       );
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        var list = (jsonData['data'] as List).map((e) => OpponentModel.fromJson(e)).toList();
+        var list = (jsonData['data'] as List)
+            .map((e) => OpponentModel.fromJson(e))
+            .toList();
         opponentList.assignAll(list);
       }
     } catch (e) {
@@ -507,7 +556,8 @@ class AddGameController extends GetxController {
 
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        var list = (jsonData['data'] as List).map((e) => Roster.fromJson(e)).toList();
+        var list =
+            (jsonData['data'] as List).map((e) => Roster.fromJson(e)).toList();
         allRosterModelList.assignAll(list);
       }
     } catch (e) {
@@ -531,13 +581,188 @@ class AddGameController extends GetxController {
       );
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        var list = (jsonData['data'] as List).map((e) => LocationData.fromMap(e)).toList();
+        var list = (jsonData['data'] as List)
+            .map((e) => LocationData.fromMap(e))
+            .toList();
         locationList.assignAll(list);
       }
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
+    }
+  }
+
+  // NEW: Get coach's tags (ADD AFTER EXISTING METHODS)
+  Future<void> getEventTagsApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getEventTags,
+          data: data,
+        ),
+        false,
+      );
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        if (jsonData['ResponseCode'] == 1) {
+          availableTags.clear();
+          if (jsonData['tags'] != null) {
+            List<dynamic> tagList = jsonData['tags'];
+            for (var tagJson in tagList) {
+              availableTags.add(EventTag.fromJson(tagJson));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+// NEW: Show tag selection sheet
+  void showTagSelectionSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  "Select Event Tags",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Spacer(),
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: Icon(Icons.close, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            if (availableTags.isEmpty) ...[
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.label_outline,
+                        size: 48, color: Colors.grey[400]),
+                    SizedBox(height: 8),
+                    Text(
+                      'No tags available',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Create tags in your profile first',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Choose tags for your event:',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableTags.map((tag) {
+                  return Obx(() {
+                    bool isSelected = selectedTags
+                        .any((selected) => selected.tagId == tag.tagId);
+                    return GestureDetector(
+                      onTap: () => _toggleTagSelection(tag),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? tag.color : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? tag.color : Colors.grey[300]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected)
+                              Icon(Icons.check, size: 16, color: Colors.white),
+                            if (isSelected) SizedBox(width: 4),
+                            Text(
+                              tag.displayName,
+                              style: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+                }).toList(),
+              ),
+              SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _updateTagDisplay();
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text('Done'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleTagSelection(EventTag tag) {
+    int existingIndex =
+        selectedTags.indexWhere((selected) => selected.tagId == tag.tagId);
+    if (existingIndex >= 0) {
+      selectedTags.removeAt(existingIndex);
+    } else {
+      selectedTags.add(tag);
+    }
+  }
+
+  void _updateTagDisplay() {
+    if (selectedTags.isEmpty) {
+      tagController.value.text = '';
+    } else {
+      tagController.value.text =
+          selectedTags.map((tag) => tag.displayName).join(', ');
     }
   }
 
@@ -548,16 +773,23 @@ class AddGameController extends GetxController {
     isGame.value = Get.arguments['activity'] == 'game';
     activityDetail.value = Get.arguments['activityDetail'];
     activityType.value = Get.arguments['activity'];
+    if (AppPref().role == 'coach') {
+      getEventTagsApiCall();
+    }
     if (activityDetail.value != null) {
       teamController.value.text = activityDetail.value?.team?.name ?? "";
-      activityNameController.value.text = activityDetail.value?.activityName ?? "";
+      activityNameController.value.text =
+          activityDetail.value?.activityName ?? "";
       dateController.value.text = activityDetail.value?.eventDate ?? "";
       startTimeController.value.text = activityDetail.value?.startTime ?? "";
       endTimeController.value.text = activityDetail.value?.endTime ?? "";
       // timeZoneController.value.text = activityDetail.value?.timeZone ?? "";
-      opponentController.value.text = activityDetail.value?.opponent?.opponentName ?? "";
-      locationController.value.text = activityDetail.value?.location?.address ?? "";
-      locationDetailsController.value.text = activityDetail.value?.locationDetails ?? "";
+      opponentController.value.text =
+          activityDetail.value?.opponent?.opponentName ?? "";
+      locationController.value.text =
+          activityDetail.value?.location?.address ?? "";
+      locationDetailsController.value.text =
+          activityDetail.value?.locationDetails ?? "";
       assignmentController.value.text = activityDetail.value?.assignments ?? "";
       durationController.value.text = activityDetail.value?.duration ?? "";
       arriveController.value.text = activityDetail.value?.arriveEarly ?? "";
@@ -567,7 +799,8 @@ class AddGameController extends GetxController {
       flagController.value.text = activityDetail.value?.flagColor ?? "";
       uniformController.value.text = activityDetail.value?.uniform ?? "";
       reasonController.value.text = activityDetail.value?.reason ?? "";
-      isAway.value = (activityDetail.value?.areaType ?? "").toLowerCase() == "away";
+      isAway.value =
+          (activityDetail.value?.areaType ?? "").toLowerCase() == "away";
       notify.value = activityDetail.value?.notifyTeam == 1;
       isTimeTBD.value = activityDetail.value?.isTimeTbd == 1;
       isStanding.value = activityDetail.value?.standings == 1;
@@ -576,14 +809,21 @@ class AddGameController extends GetxController {
       selectedOpponent.value ??= OpponentModel();
       selectedLocation.value ??= LocationData();
       selectedTeam.value?.teamId = activityDetail.value?.teamId ?? 0;
-      selectedOpponent.value?.opponentId = activityDetail.value?.opponentId ?? 0;
-      selectedLocation.value?.locationId = activityDetail.value?.locationId ?? 0;
+      selectedOpponent.value?.opponentId =
+          activityDetail.value?.opponentId ?? 0;
+      selectedLocation.value?.locationId =
+          activityDetail.value?.locationId ?? 0;
       selectedTeam.refresh();
       selectedLocation.refresh();
       selectedOpponent.refresh();
       if (activityDetail.value?.weekDay != null) {
         selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
       }
+    }
+    if (activityDetail.value?.tags != null &&
+        activityDetail.value!.tags!.isNotEmpty) {
+      selectedTags.assignAll(activityDetail.value!.tags!);
+      _updateTagDisplay();
     }
     if (activityType.value == 'game') {
       getRosterApiCall();

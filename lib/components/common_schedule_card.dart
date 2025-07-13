@@ -1,5 +1,6 @@
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:base_code/model/event_tag_model.dart';
 
 class CommonScheduleCard extends StatelessWidget {
   final ScheduleData? scheduleData;
@@ -23,13 +24,14 @@ class CommonScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    selectedSearchMethod1.value = selectedMethod1List.indexWhere((e) => e == (scheduleData?.activityUserStatus ?? ""));
+    selectedSearchMethod1.value = selectedMethod1List
+        .indexWhere((e) => e == (scheduleData?.activityUserStatus ?? ""));
     return Stack(
       alignment: Alignment.topRight,
       children: [
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.only(left: 16, top: 16, right: 8, bottom: 8),
           decoration: BoxDecoration(
             color: AppColor.greyF6Color,
             borderRadius: BorderRadius.circular(16),
@@ -67,15 +69,11 @@ class CommonScheduleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Text(
-              //   capitalizeFirst(scheduleData?.activityName),
-              //   style: TextStyle().normal16w500.textColor(
-              //         AppColor.black12Color,
-              //       ),
-              // ),
-              if (scheduleData?.startTime != null || scheduleData?.endTime != null)
+              if (scheduleData?.startTime != null ||
+                  scheduleData?.endTime != null)
                 Text(
-                  DateUtilities.formatTime(scheduleData?.startTime ?? "", scheduleData?.endTime ?? ""),
+                  DateUtilities.formatTime(scheduleData?.startTime ?? "",
+                      scheduleData?.endTime ?? ""),
                   style: TextStyle().normal16w500.textColor(
                         AppColor.black12Color,
                       ),
@@ -98,9 +96,11 @@ class CommonScheduleCard extends StatelessWidget {
                             AppColor.black12Color,
                           ),
                     ),
-                    if (AppPref().role != "family" && scheduleData?.totalParticipate != 0)
+                    if (AppPref().role != "family" &&
+                        scheduleData?.totalParticipate != 0)
                       TextSpan(
-                        text: " (${scheduleData?.totalParticipate ?? ""} total participants)",
+                        text:
+                            " (${scheduleData?.totalParticipate ?? ""} total participants)",
                         style: TextStyle().normal14w500.textColor(
                               AppColor.black12Color,
                             ),
@@ -123,23 +123,21 @@ class CommonScheduleCard extends StatelessWidget {
                         controller: controller1,
                         onItemSelected: (index) async {
                           selectedSearchMethod1.value = index;
-                          scheduleData?.activityUserStatus = selectedMethod1List[index];
-                          Get.find<ScheduleController>()
-                              .statusChangeApiCall(status: selectedMethod1List[index], aId: scheduleData?.activityId ?? 0, isHome: isHome ?? false);
+                          scheduleData?.activityUserStatus =
+                              selectedMethod1List[index];
+                          Get.find<ScheduleController>().statusChangeApiCall(
+                              status: selectedMethod1List[index],
+                              aId: scheduleData?.activityId ?? 0,
+                              isHome: isHome ?? false);
                         },
                       ),
                     ),
                   ),
                 ),
               ],
-              // Text(
-              //   scheduleData?.location?.location ?? "",
-              //   style: TextStyle().normal14w500.textColor(
-              //     AppColor.black12Color,
-              //   ),
-              // ),
               Visibility(
-                visible: scheduleData?.activityType == 'game' && scheduleData?.isLive == 1,
+                visible: scheduleData?.activityType == 'game' &&
+                    scheduleData?.isLive == 1,
                 child: GestureDetector(
                   onTap: () {
                     launchURL('https://watch.livebarn.com/en/signin');
@@ -177,9 +175,39 @@ class CommonScheduleCard extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // NEW: Tags display in bottom right corner
+              if (scheduleData?.hasTags == true) ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Spacer(), // Push tags to the right
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: (scheduleData?.tags ?? []).map((tag) {
+                        return Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: tag.color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            tag.displayName,
+                            style: TextStyle().normal16w500,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
+
+        // TOP RIGHT CORNER - Keep existing "Game"/"Event" label
         Container(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
@@ -190,13 +218,19 @@ class CommonScheduleCard extends StatelessWidget {
             ),
           ),
           child: Text(
-            (scheduleData?.isLive == 1) ? 'Live - ${capitalizeFirst(scheduleData?.activityType)}' : capitalizeFirst(scheduleData?.activityType),
+            (scheduleData?.isLive == 1)
+                ? 'Live - ${capitalizeFirst(scheduleData?.activityType)}'
+                : capitalizeFirst(scheduleData?.activityType),
             style: TextStyle().normal16w500.textColor(
-                  (scheduleData?.isLive == 1 || scheduleData?.activityType?.toLowerCase() == 'game') ? AppColor.redColor : AppColor.black12Color,
+                  (scheduleData?.isLive == 1 ||
+                          scheduleData?.activityType?.toLowerCase() == 'game')
+                      ? AppColor.redColor
+                      : AppColor.black12Color,
                 ),
           ),
         ),
       ],
     );
   }
+
 }

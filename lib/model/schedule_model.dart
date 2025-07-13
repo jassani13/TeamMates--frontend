@@ -1,5 +1,5 @@
-
 import 'package:base_code/package/config_packages.dart';
+import 'event_tag_model.dart';
 
 class ScheduleData {
   int? activityId;
@@ -32,40 +32,47 @@ class ScheduleData {
   String? reason;
   int? totalParticipate;
   String? activityUserStatus;
+  List<EventTag>? tags;
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
 
-  ScheduleData(
-      {this.activityId,this.challengeId,
-      this.activityType,
-      this.activityName,
-      this.notifyTeam,
-        this.weekDay,
-      this.isTimeTbd,
-      this.isLive,
-      this.eventDate,
-      this.startTime,
-      this.endTime,
-      this.activityUserStatus,
-      this.timeZone,
-      this.locationDetails,
-      this.assignments,
-      this.duration,
-      this.arriveEarly,
-      this.extraLabel,
-      this.areaType,
-      this.uniform,
-      this.flagColor,
-      this.notes,
-      this.standings,
-      this.locationId,this.totalParticipate,
-      this.opponentId,
-      this.userBy,
-      this.teamId,
-      this.status,
-      this.reason,
-      this.team,this.opponent});
+  ScheduleData({
+    this.activityId,
+    this.challengeId,
+    this.activityType,
+    this.activityName,
+    this.notifyTeam,
+    this.weekDay,
+    this.isTimeTbd,
+    this.isLive,
+    this.eventDate,
+    this.startTime,
+    this.endTime,
+    this.activityUserStatus,
+    this.timeZone,
+    this.locationDetails,
+    this.assignments,
+    this.duration,
+    this.arriveEarly,
+    this.extraLabel,
+    this.areaType,
+    this.uniform,
+    this.flagColor,
+    this.notes,
+    this.standings,
+    this.locationId,
+    this.totalParticipate,
+    this.opponentId,
+    this.userBy,
+    this.teamId,
+    this.status,
+    this.reason,
+    this.tags,
+    this.team,
+    this.opponent,
+    this.location,
+  });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
     weekDay = json['week_day'];
@@ -98,8 +105,18 @@ class ScheduleData {
     teamId = json['team_id'];
     status = json['status'];
     reason = json['reason'];
+
+    if (json['tags'] != null) {
+      tags = <EventTag>[];
+      json['tags'].forEach((tagJson) {
+        tags!.add(EventTag.fromJson(tagJson));
+      });
+    }
+
     team = json['team'] != null ? new Team.fromJson(json['team']) : null;
-    location = json['location'] != null ? new Locationn.fromJson(json['location']) : null;
+    location = json['location'] != null
+        ? new Locationn.fromJson(json['location'])
+        : null;
     opponent = json['opponent'] != null
         ? new OpponentModel.fromJson(json['opponent'])
         : null;
@@ -137,9 +154,15 @@ class ScheduleData {
     data['team_id'] = this.teamId;
     data['status'] = this.status;
     data['reason'] = this.reason;
+
+    if (this.tags != null) {
+      data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
+    }
+
     if (this.team != null) {
       data['team'] = this.team?.toJson();
-    } if (this.location != null) {
+    }
+    if (this.location != null) {
       data['team'] = this.location?.toJson();
     }
     if (this.opponent != null) {
@@ -147,8 +170,36 @@ class ScheduleData {
     }
     return data;
   }
-}
 
+  /// Get tag names as a comma-separated string
+  String get tagNames {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.displayName).join(', ');
+  }
+
+  /// Get the first tag's color (for backward compatibility)
+  String? get primaryTagColor {
+    if (tags != null && tags!.isNotEmpty) {
+      return tags!.first.tagColor;
+    }
+    return flagColor; // Fallback to existing flag_color
+  }
+
+  /// Check if activity has any tags
+  bool get hasTags => tags != null && tags!.isNotEmpty;
+
+  /// Get tag colors as a list
+  List<Color> get tagColors {
+    if (tags == null || tags!.isEmpty) return [];
+    return tags!.map((tag) => tag.color).toList();
+  }
+
+  /// Get tag IDs as comma-separated string (for API calls)
+  String get tagIdsString {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.tagId.toString()).join(',');
+  }
+}
 
 class ActivityDetailsModel {
   ScheduleData? data;
@@ -159,13 +210,14 @@ class ActivityDetailsModel {
 
   ActivityDetailsModel(
       {this.data,
-        this.responseCode,
-        this.responseMsg,
-        this.result,
-        this.serverTime});
+      this.responseCode,
+      this.responseMsg,
+      this.result,
+      this.serverTime});
 
   ActivityDetailsModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
+    data =
+        json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -185,8 +237,6 @@ class ActivityDetailsModel {
   }
 }
 
-
-
 class Locationn {
   int? locationId;
   int? userBy;
@@ -199,13 +249,13 @@ class Locationn {
 
   Locationn(
       {this.locationId,
-        this.userBy,
-        this.location,
-        this.address,
-        this.link,
-        this.notes,
-        this.latitude,
-        this.longitude});
+      this.userBy,
+      this.location,
+      this.address,
+      this.link,
+      this.notes,
+      this.latitude,
+      this.longitude});
 
   Locationn.fromJson(Map<String, dynamic> json) {
     locationId = json['location_id'];
@@ -243,12 +293,12 @@ class Opponent {
 
   Opponent(
       {this.opponentId,
-        this.userBy,
-        this.opponentName,
-        this.contactName,
-        this.phoneNumber,
-        this.email,
-        this.notes});
+      this.userBy,
+      this.opponentName,
+      this.contactName,
+      this.phoneNumber,
+      this.email,
+      this.notes});
 
   Opponent.fromJson(Map<String, dynamic> json) {
     opponentId = json['opponent_id'];
@@ -272,4 +322,3 @@ class Opponent {
     return data;
   }
 }
-

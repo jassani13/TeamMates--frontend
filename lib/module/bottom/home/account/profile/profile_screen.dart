@@ -1,6 +1,7 @@
 import 'package:base_code/module/bottom/home/account/profile/profile_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:base_code/module/bottom/home/account/profile/tagManagement/tag_management_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
@@ -21,13 +22,16 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             Obx(() {
               return CommonIconButton(
-                image: profileController.isEdit.value ? AppImage.check : AppImage.edit,
+                image: profileController.isEdit.value
+                    ? AppImage.check
+                    : AppImage.edit,
                 onTap: () async {
                   if (!profileController.isEdit.value) {
-                    profileController.isEdit.value = !profileController.isEdit.value;
+                    profileController.isEdit.value =
+                        !profileController.isEdit.value;
                   } else {
                     // if (formKey.currentState?.validate() ?? false) {
-                      profileController.updateProfile();
+                    profileController.updateProfile();
                     // }
                   }
                 },
@@ -62,21 +66,32 @@ class ProfileScreen extends StatelessWidget {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(60),
                                         child: Obx(() {
-                                          return profileController.profileImage.value.path.isEmpty
-                                              ? ((profileController.userModel.value.profile ?? "").isNotEmpty)
+                                          return profileController.profileImage
+                                                  .value.path.isEmpty
+                                              ? ((profileController.userModel
+                                                              .value.profile ??
+                                                          "")
+                                                      .isNotEmpty)
                                                   ? getImageView(
-                                                      finalUrl: publicImageUrl + (profileController.userModel.value.profile ?? ""),
+                                                      finalUrl: publicImageUrl +
+                                                          (profileController
+                                                                  .userModel
+                                                                  .value
+                                                                  .profile ??
+                                                              ""),
                                                       fit: BoxFit.cover,
                                                       width: 120,
                                                       height: 120,
                                                     )
                                                   : Icon(
                                                       Icons.account_circle,
-                                                      color: AppColor.grey6EColor,
+                                                      color:
+                                                          AppColor.grey6EColor,
                                                       size: 125,
                                                     )
                                               : Image.file(
-                                                  File(profileController.profileImage.value.path),
+                                                  File(profileController
+                                                      .profileImage.value.path),
                                                   fit: BoxFit.cover,
                                                   width: 120,
                                                   height: 120,
@@ -90,13 +105,19 @@ class ProfileScreen extends StatelessWidget {
                                         ? SizedBox()
                                         : GestureDetector(
                                             onTap: () {
-                                              profileController.showOptions(context);
+                                              profileController
+                                                  .showOptions(context);
                                             },
                                             child: Container(
-                                              decoration: BoxDecoration(color: AppColor.black12Color, borderRadius: BorderRadius.circular(50)),
+                                              decoration: BoxDecoration(
+                                                  color: AppColor.black12Color,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          50)),
                                               // margin: EdgeInsets.all(10),
                                               child: Padding(
-                                                padding: const EdgeInsets.all(6.0),
+                                                padding:
+                                                    const EdgeInsets.all(6.0),
                                                 child: Icon(
                                                   Icons.edit,
                                                   color: AppColor.white,
@@ -118,11 +139,15 @@ class ProfileScreen extends StatelessWidget {
                                     ),
                               ),
                             ),
-                            if (profileController.userModel.value.role == 'team') ...[
-                              if (profileController.userModel.value.position != null)
+                            if (profileController.userModel.value.role ==
+                                'team') ...[
+                              if (profileController.userModel.value.position !=
+                                  null)
                                 Center(
                                   child: Text(
-                                    profileController.userModel.value.position ?? "",
+                                    profileController
+                                            .userModel.value.position ??
+                                        "",
                                     style: TextStyle().normal14w500.textColor(
                                           AppColor.grey4EColor,
                                         ),
@@ -131,7 +156,9 @@ class ProfileScreen extends StatelessWidget {
                               Center(
                                 child: Text(
                                   "Player code ${profileController.userModel.value.playerCode ?? ""}",
-                                  style: TextStyle(height: 1).normal14w500.textColor(
+                                  style: TextStyle(height: 1)
+                                      .normal14w500
+                                      .textColor(
                                         AppColor.grey4EColor,
                                       ),
                                 ),
@@ -149,11 +176,13 @@ class ProfileScreen extends StatelessWidget {
                                         AutofillHints.namePrefix,
                                       ],
                                       inputFormatters: [
-                                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+                                        FilteringTextInputFormatter.allow(
+                                            RegExp(r'[A-Za-z]')),
                                         CapitalizedTextFormatter(),
                                       ],
                                       readOnly: !profileController.isEdit.value,
-                                      controller: profileController.fNameController,
+                                      controller:
+                                          profileController.fNameController,
                                       hintText: "First Name",
                                       validator: (val) {
                                         if ((val ?? "").isEmpty) {
@@ -173,11 +202,13 @@ class ProfileScreen extends StatelessWidget {
                                         AutofillHints.nameSuffix,
                                       ],
                                       inputFormatters: [
-                                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+                                        FilteringTextInputFormatter.allow(
+                                            RegExp(r'[A-Za-z]')),
                                         CapitalizedTextFormatter(),
                                       ],
                                       readOnly: !profileController.isEdit.value,
-                                      controller: profileController.lNameController,
+                                      controller:
+                                          profileController.lNameController,
                                       hintText: "Last Name",
                                       validator: (val) {
                                         if ((val ?? "").isEmpty) {
@@ -205,9 +236,12 @@ class ProfileScreen extends StatelessWidget {
                               },
                               onTap: () {
                                 if (profileController.isEdit.value) {
-                                  profileController.showDatePicker(context, 0, profileController.dobController,
-                                      initial: profileController.dobController.value.text.isNotEmpty
-                                          ? DateTime.parse(profileController.dobController.value.text)
+                                  profileController.showDatePicker(context, 0,
+                                      profileController.dobController,
+                                      initial: profileController.dobController
+                                              .value.text.isNotEmpty
+                                          ? DateTime.parse(profileController
+                                              .dobController.value.text)
                                           : null);
                                 }
                               },
@@ -217,25 +251,30 @@ class ProfileScreen extends StatelessWidget {
                               height: 45,
                               child: HorizontalSelectionList(
                                 items: profileController.selectedMethod2List,
-                                selectedIndex: profileController.selectedSearchMethod2,
+                                selectedIndex:
+                                    profileController.selectedSearchMethod2,
                                 controller: profileController.controller2,
                                 onItemSelected: (index) {
                                   if (profileController.isEdit.value) {
-                                    profileController.selectedSearchMethod2.value = index;
+                                    profileController
+                                        .selectedSearchMethod2.value = index;
                                   }
                                 },
                               ),
                             ),
                             Gap(16),
                             Visibility(
-                              visible: profileController.userModel.value.role == 'team',
+                              visible: profileController.userModel.value.role ==
+                                  'team',
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Obx(() {
                                       return CommonTextField(
-                                        readOnly: !profileController.isEdit.value,
-                                        controller: profileController.jerseyNumberController,
+                                        readOnly:
+                                            !profileController.isEdit.value,
+                                        controller: profileController
+                                            .jerseyNumberController,
                                         hintText: "Jersey Number",
                                         validator: (val) {
                                           if ((val ?? "").isEmpty) {
@@ -255,22 +294,25 @@ class ProfileScreen extends StatelessWidget {
                                           AutofillHints.nameSuffix,
                                         ],
                                         inputFormatters: [
-                                          FilteringTextInputFormatter.allow(RegExp(r'^[A-Za-z]{0,2}$')),
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'^[A-Za-z]{0,2}$')),
                                         ],
                                         keyboardType: TextInputType.name,
-                                        readOnly: !profileController.isEdit.value,
-                                        controller: profileController.positionController,
+                                        readOnly:
+                                            !profileController.isEdit.value,
+                                        controller: profileController
+                                            .positionController,
                                         hintText: "Position",
                                         validator: (val) {
                                           if ((val ?? "").isEmpty) {
                                             return "Please enter your position";
-                                          } else if (!RegExp(r'^[A-Za-z]{1,2}$').hasMatch(val!)) {
+                                          } else if (!RegExp(r'^[A-Za-z]{1,2}$')
+                                              .hasMatch(val!)) {
                                             return "Enter one or two letters (e.g., L, LW, GK)";
                                           }
                                           return null;
                                         },
                                       );
-
                                     }),
                                   ),
                                 ],
@@ -299,7 +341,8 @@ class ProfileScreen extends StatelessWidget {
                               return CommonTextField(
                                 keyboardType: TextInputType.phone,
                                 readOnly: !profileController.isEdit.value,
-                                controller: profileController.phoneNumberController,
+                                controller:
+                                    profileController.phoneNumberController,
                                 hintText: "Phone number",
                                 validator: (val) {
                                   if ((val ?? "").isEmpty) {
@@ -347,7 +390,8 @@ class ProfileScreen extends StatelessWidget {
                                   child: Obx(() {
                                     return CommonTextField(
                                       readOnly: !profileController.isEdit.value,
-                                      controller: profileController.stateController,
+                                      controller:
+                                          profileController.stateController,
                                       hintText: "State",
                                       validator: (val) {
                                         if ((val ?? "").isEmpty) {
@@ -364,10 +408,10 @@ class ProfileScreen extends StatelessWidget {
                                   child: Obx(() {
                                     return CommonTextField(
                                       readOnly: !profileController.isEdit.value,
-                                      controller: profileController.zipCodeController,
+                                      controller:
+                                          profileController.zipCodeController,
                                       hintText: "Zipcode",
                                       keyboardType: TextInputType.phone,
-
                                       validator: (val) {
                                         if ((val ?? "").isEmpty) {
                                           return "Please enter your zipcode";
@@ -409,48 +453,68 @@ class ProfileScreen extends StatelessWidget {
                                 children: [
                                   GestureDetector(
                                     onTap: () {
-                                      profileController.showOptions(context, isFromDocUpload: true);
+                                      profileController.showOptions(context,
+                                          isFromDocUpload: true);
                                     },
                                     child: Obx(() {
-                                      return profileController.documentImage.value.path.isEmpty
-                                          ? ((profileController.userModel.value.doc ?? "").isNotEmpty)
+                                      return profileController
+                                              .documentImage.value.path.isEmpty
+                                          ? ((profileController.userModel.value
+                                                          .doc ??
+                                                      "")
+                                                  .isNotEmpty)
                                               ? ClipRRect(
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                   child: getImageView(
-                                                    finalUrl: (profileController.userModel.value.doc ?? ""),
+                                                    finalUrl: (profileController
+                                                            .userModel
+                                                            .value
+                                                            .doc ??
+                                                        ""),
                                                     fit: BoxFit.contain,
                                                     width: double.infinity,
                                                     height: 300,
                                                   ),
                                                 )
                                               : Container(
-                                                height: 100,
-                                                width: double.infinity,
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  color: AppColor.greyEAColor,
-                                                ),
-                                                child: Center(
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
-                                                      Icon(
-                                                        Icons.add,
-                                                        color: AppColor.black,
-                                                      ),
-                                                      Gap(4),
-                                                      Text(
-                                                        "Add Document",
-                                                        style: TextStyle().normal16w400.textColor(AppColor.black),
-                                                      ),
-                                                    ],
+                                                  height: 100,
+                                                  width: double.infinity,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    color: AppColor.greyEAColor,
                                                   ),
-                                                ),
-                                              )
+                                                  child: Center(
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.add,
+                                                          color: AppColor.black,
+                                                        ),
+                                                        Gap(4),
+                                                        Text(
+                                                          "Add Document",
+                                                          style: TextStyle()
+                                                              .normal16w400
+                                                              .textColor(
+                                                                  AppColor
+                                                                      .black),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                )
                                           : ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                               child: Image.file(
-                                                File(profileController.documentImage.value.path),
+                                                File(profileController
+                                                    .documentImage.value.path),
                                                 fit: BoxFit.contain,
                                                 width: double.infinity,
                                                 height: 300,
@@ -461,6 +525,78 @@ class ProfileScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if (profileController.userModel.value.role ==
+                                'coach') ...[
+                              Gap(40),
+                              CommonTitleText(text: "Team Management"),
+                              Gap(12),
+                              GestureDetector(
+                                onTap: () => _navigateToTagManagement(),
+                                child: Container(
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border:
+                                        Border.all(color: AppColor.greyEAColor),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.label,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      Gap(12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Manage Event Tags",
+                                              style: TextStyle()
+                                                  .normal16w500
+                                                  .textColor(
+                                                      AppColor.black12Color),
+                                            ),
+                                            Gap(2),
+                                            Text(
+                                              "Create custom tags for your events",
+                                              style: TextStyle()
+                                                  .normal12w400
+                                                  .textColor(
+                                                      AppColor.grey4EColor),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: AppColor.grey4EColor,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                             Gap(40),
                           ],
                         ),
@@ -471,5 +607,10 @@ class ProfileScreen extends StatelessWidget {
         }),
       ),
     );
+  }
+
+  void _navigateToTagManagement() {
+    // Navigate directly to tag management - tags are coach-specific, not team-specific
+    Get.to(() => TagManagementScreen());
   }
 }
