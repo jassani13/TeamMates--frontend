@@ -8,10 +8,10 @@ late Dio dio;
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
-const String publicImageUrl = "http://35.175.243.150/TeamMates/public/";
+const String publicImageUrl = "http://34.205.17.49/TeamMates/public/";
 const String baseUrl = kDebugMode
-    ? 'http://35.175.243.150/TeamMates'
-    : 'http://35.175.243.150/TeamMates';
+    ? 'http://34.205.17.49/TeamMates'
+    : 'http://34.205.17.49/TeamMates';
 // https://team.notegiftcard.com/migrate-fresh DB clear
 
 Future<void> dioSetUp({int? language}) async {

@@ -30,7 +30,7 @@ abstract class AppTheme {
       selectedItemColor: AppColor.primaryBlackColor,
       unselectedItemColor: AppColor.greyB9Color,
     ),
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
         tabAlignment: TabAlignment.start,
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: AppColor.white,
@@ -118,7 +118,7 @@ abstract class AppTheme {
       selectedItemColor: AppColor.white,
       unselectedItemColor: AppColor.grey66Color,
     ),
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
         tabAlignment: TabAlignment.start,
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: AppColor.white,
