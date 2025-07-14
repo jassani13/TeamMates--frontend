@@ -1,4 +1,3 @@
-
 import 'package:base_code/package/config_packages.dart';
 
 class ScheduleData {
@@ -35,37 +34,48 @@ class ScheduleData {
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
+  int? isMultiDay; // Boolean flag (0 or 1)
+  String? startDate; // Start date for multi-day events
+  String? endDate; // End date for multi-day events
 
-  ScheduleData(
-      {this.activityId,this.challengeId,
-      this.activityType,
-      this.activityName,
-      this.notifyTeam,
-        this.weekDay,
-      this.isTimeTbd,
-      this.isLive,
-      this.eventDate,
-      this.startTime,
-      this.endTime,
-      this.activityUserStatus,
-      this.timeZone,
-      this.locationDetails,
-      this.assignments,
-      this.duration,
-      this.arriveEarly,
-      this.extraLabel,
-      this.areaType,
-      this.uniform,
-      this.flagColor,
-      this.notes,
-      this.standings,
-      this.locationId,this.totalParticipate,
-      this.opponentId,
-      this.userBy,
-      this.teamId,
-      this.status,
-      this.reason,
-      this.team,this.opponent});
+  ScheduleData({
+    this.activityId,
+    this.challengeId,
+    this.activityType,
+    this.activityName,
+    this.notifyTeam,
+    this.weekDay,
+    this.isTimeTbd,
+    this.isLive,
+    this.eventDate,
+    this.startTime,
+    this.endTime,
+    this.activityUserStatus,
+    this.timeZone,
+    this.locationDetails,
+    this.assignments,
+    this.duration,
+    this.arriveEarly,
+    this.extraLabel,
+    this.areaType,
+    this.uniform,
+    this.flagColor,
+    this.notes,
+    this.standings,
+    this.locationId,
+    this.totalParticipate,
+    this.opponentId,
+    this.userBy,
+    this.teamId,
+    this.status,
+    this.reason,
+    this.team,
+    this.opponent,
+    this.location,
+    this.isMultiDay,
+    this.startDate,
+    this.endDate,
+  });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
     weekDay = json['week_day'];
@@ -98,8 +108,14 @@ class ScheduleData {
     teamId = json['team_id'];
     status = json['status'];
     reason = json['reason'];
+    isMultiDay = json['is_multi_day'];
+    startDate = json['start_date'];
+    endDate = json['end_date'];
+
     team = json['team'] != null ? new Team.fromJson(json['team']) : null;
-    location = json['location'] != null ? new Locationn.fromJson(json['location']) : null;
+    location = json['location'] != null
+        ? new Locationn.fromJson(json['location'])
+        : null;
     opponent = json['opponent'] != null
         ? new OpponentModel.fromJson(json['opponent'])
         : null;
@@ -137,9 +153,15 @@ class ScheduleData {
     data['team_id'] = this.teamId;
     data['status'] = this.status;
     data['reason'] = this.reason;
+
+    data['is_multi_day'] = this.isMultiDay;
+    data['start_date'] = this.startDate;
+    data['end_date'] = this.endDate;
+
     if (this.team != null) {
       data['team'] = this.team?.toJson();
-    } if (this.location != null) {
+    }
+    if (this.location != null) {
       data['team'] = this.location?.toJson();
     }
     if (this.opponent != null) {
@@ -147,8 +169,66 @@ class ScheduleData {
     }
     return data;
   }
-}
 
+  // Multi-day helper methods
+
+  /// Check if this is a multi-day event
+  bool get isMultiDayEvent => isMultiDay == 1;
+
+  /// Get the effective start date (backward compatible)
+  String? get effectiveStartDate {
+    return isMultiDayEvent ? startDate : eventDate;
+  }
+
+  /// Get the effective end date (backward compatible)
+  String? get effectiveEndDate {
+    return isMultiDayEvent ? endDate : eventDate;
+  }
+
+  /// Get formatted date range string for display
+  String get dateRangeDisplay {
+    if (isMultiDayEvent && startDate != null && endDate != null) {
+      // Format: "Dec 15 - Dec 18, 2024" or "Dec 15 - Jan 2" (cross-month)
+      try {
+        final start = DateTime.parse(startDate!);
+        final end = DateTime.parse(endDate!);
+
+        final startFormatted = DateFormat('MMM d').format(start);
+        final endFormatted = start.year == end.year && start.month == end.month
+            ? DateFormat('d, y').format(end)
+            : DateFormat('MMM d, y').format(end);
+
+        return '$startFormatted - $endFormatted';
+      } catch (e) {
+        return '$startDate - $endDate';
+      }
+    } else if (eventDate != null) {
+      // Single day event
+      try {
+        final date = DateTime.parse(eventDate!);
+        return DateFormat('MMM d, y').format(date);
+      } catch (e) {
+        return eventDate!;
+      }
+    }
+    return 'No date';
+  }
+
+  /// Get duration in days for multi-day events
+  int get durationInDays {
+    if (isMultiDayEvent && startDate != null && endDate != null) {
+      try {
+        final start = DateTime.parse(startDate!);
+        final end = DateTime.parse(endDate!);
+        return end.difference(start).inDays +
+            1; // +1 to include both start and end days
+      } catch (e) {
+        return 1;
+      }
+    }
+    return 1; // Single day events have duration of 1 day
+  }
+}
 
 class ActivityDetailsModel {
   ScheduleData? data;
@@ -159,13 +239,14 @@ class ActivityDetailsModel {
 
   ActivityDetailsModel(
       {this.data,
-        this.responseCode,
-        this.responseMsg,
-        this.result,
-        this.serverTime});
+      this.responseCode,
+      this.responseMsg,
+      this.result,
+      this.serverTime});
 
   ActivityDetailsModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
+    data =
+        json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -185,8 +266,6 @@ class ActivityDetailsModel {
   }
 }
 
-
-
 class Locationn {
   int? locationId;
   int? userBy;
@@ -199,13 +278,13 @@ class Locationn {
 
   Locationn(
       {this.locationId,
-        this.userBy,
-        this.location,
-        this.address,
-        this.link,
-        this.notes,
-        this.latitude,
-        this.longitude});
+      this.userBy,
+      this.location,
+      this.address,
+      this.link,
+      this.notes,
+      this.latitude,
+      this.longitude});
 
   Locationn.fromJson(Map<String, dynamic> json) {
     locationId = json['location_id'];
@@ -243,12 +322,12 @@ class Opponent {
 
   Opponent(
       {this.opponentId,
-        this.userBy,
-        this.opponentName,
-        this.contactName,
-        this.phoneNumber,
-        this.email,
-        this.notes});
+      this.userBy,
+      this.opponentName,
+      this.contactName,
+      this.phoneNumber,
+      this.email,
+      this.notes});
 
   Opponent.fromJson(Map<String, dynamic> json) {
     opponentId = json['opponent_id'];
@@ -272,4 +351,3 @@ class Opponent {
     return data;
   }
 }
-

@@ -14,7 +14,10 @@ class AddGameScreen extends StatelessWidget {
       onTap: () => hideKeyboard(),
       child: Scaffold(
         appBar: AppBar(
-          title: CommonTitleText(text: addGameController.isGame.value == true ? "New game" : "New event"),
+          title: CommonTitleText(
+              text: addGameController.isGame.value == true
+                  ? "New game"
+                  : "New event"),
           centerTitle: false,
           actions: [
             CommonIconButton(
@@ -30,7 +33,9 @@ class AddGameScreen extends StatelessWidget {
                     addGameController.editActivityApi(
                       activityType: addGameController.activityType.value,
                       isGame: addGameController.isGame.value,
-                      activityId: addGameController.activityDetail.value?.activityId ?? 0,
+                      activityId:
+                          addGameController.activityDetail.value?.activityId ??
+                              0,
                     );
                   }
                 }
@@ -50,7 +55,8 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   GestureDetector(
                     onTap: () {
-                      addGameController.notify.value = !addGameController.notify.value;
+                      addGameController.notify.value =
+                          !addGameController.notify.value;
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -81,8 +87,11 @@ class AddGameScreen extends StatelessWidget {
                               checkColor: AppColor.black12Color,
                               activeColor: AppColor.white,
                               visualDensity: VisualDensity.compact,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              side: BorderSide(color: AppColor.white, width: 2), // Border color
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              side: BorderSide(
+                                  color: AppColor.white,
+                                  width: 2), // Border color
                             ),
                           ),
                         ],
@@ -91,7 +100,9 @@ class AddGameScreen extends StatelessWidget {
                   ),
                   Gap(24),
                   CommonTitleText(
-                    text: addGameController.isGame.value == true ? "Game info" : "Event info",
+                    text: addGameController.isGame.value == true
+                        ? "Game info"
+                        : "Event info",
                   ),
                   Gap(16),
                   Visibility(
@@ -110,7 +121,8 @@ class AddGameScreen extends StatelessWidget {
                             addGameController.allTeamList(
                               context,
                               list: addGameController.allRosterModelList,
-                              storeValue: addGameController.teamController.value,
+                              storeValue:
+                                  addGameController.teamController.value,
                             );
                           },
                           validator: (val) {
@@ -126,7 +138,9 @@ class AddGameScreen extends StatelessWidget {
                     ),
                   ),
                   CommonTextField(
-                    hintText: addGameController.isGame.value == true ? "Game Name" : "Event Name",
+                    hintText: addGameController.isGame.value == true
+                        ? "Game Name"
+                        : "Event Name",
                     controller: addGameController.activityNameController.value,
                     validator: (val) {
                       // if ((val ?? "").isEmpty) {
@@ -152,7 +166,8 @@ class AddGameScreen extends StatelessWidget {
                         () => Switch(
                             value: addGameController.isTimeTBD.value,
                             onChanged: (val) {
-                              addGameController.isTimeTBD.value = !addGameController.isTimeTBD.value;
+                              addGameController.isTimeTBD.value =
+                                  !addGameController.isTimeTBD.value;
                             }),
                       ),
                     ],
@@ -160,28 +175,139 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   Column(
                     children: [
-                      CommonTextField(
-                        hintText: "Date",
-                        readOnly: true,
-                        suffixIcon: Icon(
-                          Icons.keyboard_arrow_down_sharp,
-                          color: AppColor.black12Color,
-                        ),
-                        controller: addGameController.dateController.value,
-                        onTap: () {
-                          addGameController.showDatePicker(context, 0, addGameController.dateController.value,
-                              initial: addGameController.dateController.value.text.isNotEmpty
-                                  ? DateTime.parse(addGameController.dateController.value.text)
-                                  : null);
-                        },
-                        validator: (val) {
-                          if ((val ?? "").isEmpty) {
-                            return "Please select date";
-                          } else {
-                            return null;
-                          }
-                        },
+                      // Multi-day toggle
+                      Row(
+                        children: [
+                          Text(
+                            "Multi-day event",
+                            style: TextStyle()
+                                .normal16w500
+                                .textColor(AppColor.black12Color),
+                          ),
+                          Spacer(),
+                          Obx(() => Switch(
+                                value: addGameController.isMultiDay.value,
+                                onChanged: (val) =>
+                                    addGameController.toggleMultiDay(),
+                              )),
+                        ],
                       ),
+                      Gap(16),
+
+                      // Conditional date fields
+                      Obx(() => addGameController.isMultiDay.value
+                          ? Column(
+                              children: [
+                                // Start Date field
+                                CommonTextField(
+                                  hintText: "Start Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller: addGameController
+                                      .startDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        0,
+                                        addGameController
+                                            .startDateController.value,
+                                        initial: addGameController
+                                                .startDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .startDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select start date";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                Gap(16),
+                                // End Date field
+                                CommonTextField(
+                                  hintText: "End Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller:
+                                      addGameController.endDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        1,
+                                        addGameController
+                                            .endDateController.value,
+                                        initial: addGameController
+                                                .endDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .endDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select end date";
+                                    }
+
+                                    // Validate end date is not before start date
+                                    final startText = addGameController
+                                        .startDateController.value.text;
+                                    if (startText.isNotEmpty &&
+                                        val!.isNotEmpty) {
+                                      try {
+                                        final startDate =
+                                            DateTime.parse(startText);
+                                        final endDate = DateTime.parse(val);
+                                        if (endDate.isBefore(startDate)) {
+                                          return "End date cannot be before start date";
+                                        }
+                                      } catch (e) {
+                                        print("DEBUG: Date parsing error: $e");
+                                        return "Invalid date format";
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : CommonTextField(
+                              hintText: "Date",
+                              readOnly: true,
+                              suffixIcon: Icon(
+                                Icons.keyboard_arrow_down_sharp,
+                                color: AppColor.black12Color,
+                              ),
+                              controller:
+                                  addGameController.dateController.value,
+                              onTap: () {
+                                addGameController.showDatePicker(context, 0,
+                                    addGameController.dateController.value,
+                                    initial: addGameController.dateController
+                                            .value.text.isNotEmpty
+                                        ? DateTime.parse(addGameController
+                                            .dateController.value.text)
+                                        : null);
+                              },
+                              validator: (val) {
+                                if ((val ?? "").isEmpty) {
+                                  return "Please select date";
+                                }
+                                return null;
+                              },
+                            )),
                       Gap(16),
                     ],
                   ),
@@ -195,18 +321,25 @@ class AddGameScreen extends StatelessWidget {
                             }
 
                             final startText = val!;
-                            final endText = addGameController.endTimeController.value.text;
-                            final dateText = addGameController.dateController.value.text;
+                            final endText =
+                                addGameController.endTimeController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
 
                             if (endText.isNotEmpty) {
                               try {
-                                final start = DateTime.parse("$dateText $startText");
-                                final end = DateTime.parse("$dateText $endText");
+                                final start =
+                                    DateTime.parse("$dateText $startText");
+                                final end =
+                                    DateTime.parse("$dateText $endText");
 
                                 if (start.isAfter(end)) {
                                   return "Start time cannot be after end time";
                                 }
                               } catch (e) {
+                                print("DEBUG: Time parsing error: $e");
                                 return "Invalid time format";
                               }
                             }
@@ -219,17 +352,24 @@ class AddGameScreen extends StatelessWidget {
                             Icons.keyboard_arrow_down_sharp,
                             color: AppColor.black12Color,
                           ),
-                          controller: addGameController.startTimeController.value,
+                          controller:
+                              addGameController.startTimeController.value,
                           onTap: () {
-                            final dateText = addGameController.dateController.value.text;
-                            final timeText = addGameController.startTimeController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+                            final timeText = addGameController
+                                .startTimeController.value.text;
 
                             DateTime initialTime;
 
                             if (dateText.isNotEmpty && timeText.isNotEmpty) {
                               try {
-                                final format = DateFormat("yyyy-MM-dd HH:mm:ss");
-                                initialTime = format.parse("$dateText $timeText");
+                                final format =
+                                    DateFormat("yyyy-MM-dd HH:mm:ss");
+                                initialTime =
+                                    format.parse("$dateText $timeText");
                               } catch (e) {
                                 initialTime = DateTime.now();
                               }
@@ -257,15 +397,21 @@ class AddGameScreen extends StatelessWidget {
                           ),
                           controller: addGameController.endTimeController.value,
                           onTap: () {
-                            final dateText = addGameController.dateController.value.text;
-                            final timeText = addGameController.endTimeController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+                            final timeText =
+                                addGameController.endTimeController.value.text;
 
                             DateTime initialTime;
 
                             if (dateText.isNotEmpty && timeText.isNotEmpty) {
                               try {
-                                final format = DateFormat("yyyy-MM-dd HH:mm:ss");
-                                initialTime = format.parse("$dateText $timeText");
+                                final format =
+                                    DateFormat("yyyy-MM-dd HH:mm:ss");
+                                initialTime =
+                                    format.parse("$dateText $timeText");
                               } catch (e) {
                                 initialTime = DateTime.now();
                               }
@@ -286,18 +432,25 @@ class AddGameScreen extends StatelessWidget {
                             }
 
                             final endText = val!;
-                            final startText = addGameController.startTimeController.value.text;
-                            final dateText = addGameController.dateController.value.text;
+                            final startText = addGameController
+                                .startTimeController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
 
                             if (startText.isNotEmpty) {
                               try {
-                                final start = DateTime.parse("$dateText $startText");
-                                final end = DateTime.parse("$dateText $endText");
+                                final start =
+                                    DateTime.parse("$dateText $startText");
+                                final end =
+                                    DateTime.parse("$dateText $endText");
 
                                 if (end.isBefore(start)) {
                                   return "End time cannot be before start time";
                                 }
                               } catch (e) {
+                                print("DEBUG: Time parsing error: $e");
                                 return "Invalid time format";
                               }
                             }
@@ -331,12 +484,14 @@ class AddGameScreen extends StatelessWidget {
                             Icons.keyboard_arrow_down_sharp,
                             color: AppColor.black12Color,
                           ),
-                          controller: addGameController.opponentController.value,
+                          controller:
+                              addGameController.opponentController.value,
                           onTap: () async {
                             addGameController.showOpponentSheet(
                               context,
                               list: addGameController.opponentList,
-                              storeValue: addGameController.opponentController.value,
+                              storeValue:
+                                  addGameController.opponentController.value,
                             );
                           },
                           validator: (val) {
@@ -377,7 +532,8 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Location details",
-                    controller: addGameController.locationDetailsController.value,
+                    controller:
+                        addGameController.locationDetailsController.value,
                   ),
                   Gap(24),
                   CommonTitleText(
@@ -394,9 +550,13 @@ class AddGameScreen extends StatelessWidget {
                     ),
                     controller: addGameController.assignmentController.value,
                     onTap: () async {
-                      var result = await Get.toNamed(AppRouter.volunteerAssignments, arguments: addGameController.assignmentController.value.text);
+                      var result = await Get.toNamed(
+                          AppRouter.volunteerAssignments,
+                          arguments: addGameController
+                              .assignmentController.value.text);
                       if (result != null) {
-                        addGameController.assignmentController.value.text = result.join(", ");
+                        addGameController.assignmentController.value.text =
+                            result.join(", ");
                       }
                     },
                   ),
@@ -446,7 +606,8 @@ class AddGameScreen extends StatelessWidget {
                           flex: 2,
                           child: CommonTextField(
                             hintText: "Extra label",
-                            controller: addGameController.extraLabelController.value,
+                            controller:
+                                addGameController.extraLabelController.value,
                           )),
                       Gap(40),
                       Expanded(
@@ -458,17 +619,22 @@ class AddGameScreen extends StatelessWidget {
                             },
                             behavior: HitTestBehavior.translucent,
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
-                                  color: addGameController.isAway.value == false ? AppColor.white : AppColor.black12Color,
+                                  color: addGameController.isAway.value == false
+                                      ? AppColor.white
+                                      : AppColor.black12Color,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColor.grey6EColor)),
+                                  border:
+                                      Border.all(color: AppColor.grey6EColor)),
                               child: Center(
                                   child: Text(
                                 "Away",
-                                style: TextStyle()
-                                    .normal14w500
-                                    .textColor(addGameController.isAway.value == true ? AppColor.white : AppColor.black12Color),
+                                style: TextStyle().normal14w500.textColor(
+                                    addGameController.isAway.value == true
+                                        ? AppColor.white
+                                        : AppColor.black12Color),
                               )),
                             ),
                           ),
@@ -484,17 +650,22 @@ class AddGameScreen extends StatelessWidget {
                             },
                             behavior: HitTestBehavior.translucent,
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
-                                  color: addGameController.isAway.value == true ? AppColor.white : AppColor.black12Color,
+                                  color: addGameController.isAway.value == true
+                                      ? AppColor.white
+                                      : AppColor.black12Color,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColor.grey6EColor)),
+                                  border:
+                                      Border.all(color: AppColor.grey6EColor)),
                               child: Center(
                                   child: Text(
                                 "Home",
-                                style: TextStyle()
-                                    .normal14w500
-                                    .textColor(addGameController.isAway.value == false ? AppColor.white : AppColor.black12Color),
+                                style: TextStyle().normal14w500.textColor(
+                                    addGameController.isAway.value == false
+                                        ? AppColor.white
+                                        : AppColor.black12Color),
                               )),
                             ),
                           ),
@@ -517,7 +688,8 @@ class AddGameScreen extends StatelessWidget {
                     ),
                     controller: addGameController.flagController.value,
                     onTap: () {
-                      addGameController.showFlagSheet(context, storeValue: addGameController.flagController.value);
+                      addGameController.showFlagSheet(context,
+                          storeValue: addGameController.flagController.value);
                     },
                   ),
                   Gap(16),
@@ -540,7 +712,8 @@ class AddGameScreen extends StatelessWidget {
                           () => Switch(
                               value: addGameController.isStanding.value,
                               onChanged: (val) {
-                                addGameController.isStanding.value = !addGameController.isStanding.value;
+                                addGameController.isStanding.value =
+                                    !addGameController.isStanding.value;
                               }),
                         )
                       ],
@@ -559,9 +732,11 @@ class AddGameScreen extends StatelessWidget {
                         () => Switch(
                             value: addGameController.isCanceled.value,
                             onChanged: (val) {
-                              addGameController.isCanceled.value = !addGameController.isCanceled.value;
+                              addGameController.isCanceled.value =
+                                  !addGameController.isCanceled.value;
                               if (addGameController.isCanceled.value == false) {
-                                addGameController.reasonController.value.clear();
+                                addGameController.reasonController.value
+                                    .clear();
                               }
                             }),
                       )
@@ -575,7 +750,8 @@ class AddGameScreen extends StatelessWidget {
                           Gap(10),
                           CommonTextField(
                             hintText: "Cancel Reason",
-                            controller: addGameController.reasonController.value,
+                            controller:
+                                addGameController.reasonController.value,
                             validator: (val) {
                               if ((val ?? "").isEmpty) {
                                 return "Please enter reason for cancellation";
