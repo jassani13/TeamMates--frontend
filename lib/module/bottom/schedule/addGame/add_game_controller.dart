@@ -350,6 +350,11 @@ class AddGameController extends GetxController {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now;
+        DateTime maxDate = DateTime(now.year + 1, now.month, now.day);
+        DateTime effectiveInitial =
+        (initial != null && initial.isAfter(minDate)) ? initial : minDate;
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Container(
@@ -369,7 +374,8 @@ class AddGameController extends GetxController {
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
-                          storeValue.text = "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
                         }
                         Get.back();
                       },
@@ -390,9 +396,9 @@ class AddGameController extends GetxController {
                     ),
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.date,
-                      minimumDate: DateTime.now(),
-                      maximumDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-                      initialDateTime: DateTime.now(),
+                      minimumDate: minDate,
+                      maximumDate: maxDate,
+                      initialDateTime: effectiveInitial,
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
                             "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
@@ -414,9 +420,14 @@ class AddGameController extends GetxController {
     TextEditingController storeValue, {
     DateTime? initial,
   }) {
+
     showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now.subtract(const Duration(seconds: 2));
+        DateTime maxDate = now.add(const Duration(days: 366));
+        DateTime effectiveInitial = (initial != null && initial.isAfter(minDate)) ? initial : minDate;
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Container(
@@ -436,7 +447,8 @@ class AddGameController extends GetxController {
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
-                          storeValue.text = "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
                         }
                         Get.back();
                       },
@@ -457,9 +469,9 @@ class AddGameController extends GetxController {
                     ),
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.date,
-                      initialDateTime: initial ?? DateTime.now(),
-                      minimumDate: DateTime.now().subtract(Duration(seconds: 2)),
-                      maximumDate: DateTime.now().add(Duration(days: 366)),
+                      initialDateTime: effectiveInitial,
+                      minimumDate: minDate,
+                      maximumDate: maxDate,
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
                             "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";

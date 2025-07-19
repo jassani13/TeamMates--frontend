@@ -91,7 +91,7 @@ class StatsScreen extends StatelessWidget {
         children: [
           CommonTitleText(text: "Team challenges"),
           Gap(16),
-          Expanded(child: _buildChallengeList(context, isCoach: true)),
+          Expanded(child: Obx(()=> _buildChallengeList(context, isCoach: true))),
         ],
       );
     } else {
@@ -140,6 +140,7 @@ class StatsScreen extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         final challenge = challenges[index];
+        print(challenge);
         return GestureDetector(
           onTap: () {
             if (!isCoach && DateUtilities.getTimeLeft(challenge.endAt ?? "-") == "-") {

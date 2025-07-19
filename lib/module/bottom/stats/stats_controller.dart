@@ -30,6 +30,7 @@ class StatsController extends GetxController {
       if (response?.statusCode == 200) {
         final jsonData = response?.data["data"];
         allChallengeDetail.value = ChallengeModel.fromJson(jsonData);
+        allChallengeDetail.refresh();
       }
     } catch (e) {
       if (kDebugMode) print('Error in getChallengeApiCall: $e');

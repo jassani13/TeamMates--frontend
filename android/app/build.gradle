@@ -58,8 +58,8 @@ android {
         minSdkVersion 23
         multiDexEnabled true
         targetSdkVersion flutter.targetSdkVersion
-        versionCode 20
-        versionName '3.0.1'
+        versionCode 22
+        versionName '3.0.3'
     }
     signingConfigs {
         release {
