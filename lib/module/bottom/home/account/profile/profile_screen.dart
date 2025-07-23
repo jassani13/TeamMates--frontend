@@ -323,18 +323,84 @@ class ProfileScreen extends StatelessWidget {
                               text: "Contact information",
                             ),
                             Gap(20),
-                            CommonTextField(
-                              readOnly: true,
-                              controller: profileController.emailController,
-                              hintText: "E-mail",
-                              validator: (val) {
-                                if ((val ?? "").isEmpty) {
-                                  return "Please enter your email";
-                                } else if (!((val ?? "").isEmail)) {
-                                  return "Please enter your valid email";
-                                }
-                                return null;
-                              },
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Show multiple emails if available, otherwise show single email
+                                if (profileController
+                                            .userModel.value.userEmails !=
+                                        null &&
+                                    profileController.userModel.value
+                                        .userEmails!.isNotEmpty) ...[
+                                  // Multiple emails section
+                                  for (int i = 0;
+                                      i <
+                                          profileController.userModel.value
+                                              .userEmails!.length;
+                                      i++) ...[
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: CommonTextField(
+                                            readOnly: true,
+                                            controller: TextEditingController(
+                                                text: profileController
+                                                    .userModel
+                                                    .value
+                                                    .userEmails![i]),
+                                            hintText: i == 0
+                                                ? "Primary Email"
+                                                : "Additional Email",
+                                            validator: (val) {
+                                              if ((val ?? "").isEmpty) {
+                                                return "Please enter your email";
+                                              } else if (!((val ?? "")
+                                                  .isEmail)) {
+                                                return "Please enter your valid email";
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                        ),
+                                        Gap(8),
+                                        if (i == 0)
+                                          Icon(
+                                            Icons.star,
+                                            color: AppColor.primaryColor,
+                                            size: 20,
+                                          )
+                                        else
+                                          Icon(
+                                            Icons.email_outlined,
+                                            color: AppColor.grey4EColor,
+                                            size: 20,
+                                          ),
+                                      ],
+                                    ),
+                                    if (i <
+                                        profileController.userModel.value
+                                                .userEmails!.length -
+                                            1)
+                                      Gap(12),
+                                  ],
+                                ] else ...[
+                                  // Single email (fallback)
+                                  CommonTextField(
+                                    readOnly: true,
+                                    controller:
+                                        profileController.emailController,
+                                    hintText: "E-mail",
+                                    validator: (val) {
+                                      if ((val ?? "").isEmpty) {
+                                        return "Please enter your email";
+                                      } else if (!((val ?? "").isEmail)) {
+                                        return "Please enter your valid email";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ],
                             ),
                             Gap(16),
                             Obx(() {

@@ -8,10 +8,26 @@ late Dio dio;
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
-const String publicImageUrl = "http://35.175.243.150/TeamMates/public/";
-const String baseUrl = kDebugMode
-    ? 'https://nice-halibut-optimum.ngrok-free.app'
-    : 'https://nice-halibut-optimum.ngrok-free.app';
+
+//const String publicImageUrl = "http://35.175.243.150/TeamMates/public/";
+//const String baseUrl = kDebugMode
+//    ? 'https://nice-halibut-optimum.ngrok-free.app'
+//    : 'http://35.175.243.150/TeamMates';
+
+const bool useLocalServer = true; // Change this to switch servers
+
+const String productionBaseUrl = 'http://35.175.243.150/TeamMates';
+const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+// const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
+
+const String baseUrl = useLocalServer && kDebugMode 
+    ? localBaseUrl 
+    : productionBaseUrl;
+
+// Keep existing publicImageUrl logic
+const String publicImageUrl = useLocalServer && kDebugMode
+    ? "https://nice-halibut-optimum.ngrok-free.app/public/"
+    : "http://35.175.243.150/TeamMates/public/";
 // https://team.notegiftcard.com/migrate-fresh DB clear
 
 Future<void> dioSetUp({int? language}) async {
