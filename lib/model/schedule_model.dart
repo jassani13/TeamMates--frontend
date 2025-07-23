@@ -1,4 +1,3 @@
-
 import 'package:base_code/package/config_packages.dart';
 
 class ScheduleData {
@@ -32,40 +31,50 @@ class ScheduleData {
   String? reason;
   int? totalParticipate;
   String? activityUserStatus;
+  String? activityUserNote; // User's own RSVP note
+  bool? canSendNudge; // Whether coach can send nudge
+  String? lastNudgeSent; // When last nudge was sent
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
 
-  ScheduleData(
-      {this.activityId,this.challengeId,
-      this.activityType,
-      this.activityName,
-      this.notifyTeam,
-        this.weekDay,
-      this.isTimeTbd,
-      this.isLive,
-      this.eventDate,
-      this.startTime,
-      this.endTime,
-      this.activityUserStatus,
-      this.timeZone,
-      this.locationDetails,
-      this.assignments,
-      this.duration,
-      this.arriveEarly,
-      this.extraLabel,
-      this.areaType,
-      this.uniform,
-      this.flagColor,
-      this.notes,
-      this.standings,
-      this.locationId,this.totalParticipate,
-      this.opponentId,
-      this.userBy,
-      this.teamId,
-      this.status,
-      this.reason,
-      this.team,this.opponent});
+  ScheduleData({
+    this.activityId,
+    this.challengeId,
+    this.activityType,
+    this.activityName,
+    this.notifyTeam,
+    this.weekDay,
+    this.isTimeTbd,
+    this.isLive,
+    this.eventDate,
+    this.startTime,
+    this.endTime,
+    this.activityUserStatus,
+    this.timeZone,
+    this.locationDetails,
+    this.assignments,
+    this.duration,
+    this.arriveEarly,
+    this.extraLabel,
+    this.areaType,
+    this.uniform,
+    this.flagColor,
+    this.notes,
+    this.standings,
+    this.locationId,
+    this.totalParticipate,
+    this.opponentId,
+    this.userBy,
+    this.teamId,
+    this.status,
+    this.reason,
+    this.team,
+    this.opponent,
+    this.activityUserNote,
+    this.canSendNudge,
+    this.lastNudgeSent,
+  });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
     weekDay = json['week_day'];
@@ -82,6 +91,9 @@ class ScheduleData {
     timeZone = json['time_zone'];
     totalParticipate = json['total_participate'];
     activityUserStatus = json['activity_user_status'];
+    activityUserNote = json['activity_user_note'];
+    canSendNudge = json['can_send_nudge'];
+    lastNudgeSent = json['last_nudge_sent'];
     locationDetails = json['location_details'];
     assignments = json['assignments'];
     duration = json['duration'];
@@ -99,7 +111,9 @@ class ScheduleData {
     status = json['status'];
     reason = json['reason'];
     team = json['team'] != null ? new Team.fromJson(json['team']) : null;
-    location = json['location'] != null ? new Locationn.fromJson(json['location']) : null;
+    location = json['location'] != null
+        ? new Locationn.fromJson(json['location'])
+        : null;
     opponent = json['opponent'] != null
         ? new OpponentModel.fromJson(json['opponent'])
         : null;
@@ -139,16 +153,25 @@ class ScheduleData {
     data['reason'] = this.reason;
     if (this.team != null) {
       data['team'] = this.team?.toJson();
-    } if (this.location != null) {
+    }
+    if (this.location != null) {
       data['team'] = this.location?.toJson();
     }
     if (this.opponent != null) {
       data['opponent'] = this.opponent?.toJson();
     }
+    if (this.activityUserNote != null) {
+      data['activity_user_note'] = this.activityUserNote;
+    }
+    if (this.canSendNudge != null) {
+      data['can_send_nudge'] = this.canSendNudge;
+    }
+    if (this.lastNudgeSent != null) {
+      data['last_nudge_sent'] = this.lastNudgeSent;
+    }
     return data;
   }
 }
-
 
 class ActivityDetailsModel {
   ScheduleData? data;
@@ -159,13 +182,14 @@ class ActivityDetailsModel {
 
   ActivityDetailsModel(
       {this.data,
-        this.responseCode,
-        this.responseMsg,
-        this.result,
-        this.serverTime});
+      this.responseCode,
+      this.responseMsg,
+      this.result,
+      this.serverTime});
 
   ActivityDetailsModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
+    data =
+        json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -185,8 +209,6 @@ class ActivityDetailsModel {
   }
 }
 
-
-
 class Locationn {
   int? locationId;
   int? userBy;
@@ -199,13 +221,13 @@ class Locationn {
 
   Locationn(
       {this.locationId,
-        this.userBy,
-        this.location,
-        this.address,
-        this.link,
-        this.notes,
-        this.latitude,
-        this.longitude});
+      this.userBy,
+      this.location,
+      this.address,
+      this.link,
+      this.notes,
+      this.latitude,
+      this.longitude});
 
   Locationn.fromJson(Map<String, dynamic> json) {
     locationId = json['location_id'];
@@ -243,12 +265,12 @@ class Opponent {
 
   Opponent(
       {this.opponentId,
-        this.userBy,
-        this.opponentName,
-        this.contactName,
-        this.phoneNumber,
-        this.email,
-        this.notes});
+      this.userBy,
+      this.opponentName,
+      this.contactName,
+      this.phoneNumber,
+      this.email,
+      this.notes});
 
   Opponent.fromJson(Map<String, dynamic> json) {
     opponentId = json['opponent_id'];
@@ -272,4 +294,3 @@ class Opponent {
     return data;
   }
 }
-

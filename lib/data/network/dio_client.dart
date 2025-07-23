@@ -9,6 +9,11 @@ BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
 
+//const String publicImageUrl = "http://35.175.243.150/TeamMates/public/";
+//const String baseUrl = kDebugMode
+//    ? 'https://nice-halibut-optimum.ngrok-free.app'
+//    : 'http://35.175.243.150/TeamMates';
+
 const bool useLocalServer = true; // Change this to switch servers
 
 const String productionBaseUrl = 'http://35.175.243.150/TeamMates';

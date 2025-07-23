@@ -14,7 +14,8 @@ class ScheduleController extends GetxController {
 
   RxBool isLoading = false.obs;
 
-  Future<void> getScheduleListApiCall({String? filter, startDate, endDate}) async {
+  Future<void> getScheduleListApiCall(
+      {String? filter, startDate, endDate}) async {
     try {
       isLoading.value = true;
       sortedScheduleList.clear();
@@ -34,7 +35,9 @@ class ScheduleController extends GetxController {
       );
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        var list = (jsonData['data'] as List).map((e) => ScheduleData.fromJson(e)).toList();
+        var list = (jsonData['data'] as List)
+            .map((e) => ScheduleData.fromJson(e))
+            .toList();
         if (filter?.toLowerCase() == "past") {
           for (var item in list) {
             item.isLive = 0;
@@ -50,7 +53,9 @@ class ScheduleController extends GetxController {
           groupedData[date]!.add(item);
         }
 
-        sortedScheduleList.assignAll(groupedData.entries.map((entry) => ShortedData(date: entry.key, data: entry.value)).toList());
+        sortedScheduleList.assignAll(groupedData.entries
+            .map((entry) => ShortedData(date: entry.key, data: entry.value))
+            .toList());
       }
     } catch (e) {
       if (kDebugMode) {
@@ -61,12 +66,14 @@ class ScheduleController extends GetxController {
     }
   }
 
-  final GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
   Future<void> statusChangeApiCall({
     required String status,
     required int aId,
     required bool isHome,
+    String? rsvpNote, // NEW: Add this optional parameter
   }) async {
     try {
       var data = {
@@ -74,6 +81,12 @@ class ScheduleController extends GetxController {
         "activity_id": aId,
         "status": status,
       };
+
+      // NEW: Add note if provided (backward compatible)
+      if (rsvpNote != null && rsvpNote.trim().isNotEmpty) {
+        data["rsvp_note"] = rsvpNote.trim();
+      }
+
       var res = await callApi(
         dio.post(
           ApiEndPoint.setActivityStatus,
@@ -94,6 +107,37 @@ class ScheduleController extends GetxController {
         print(e);
       }
     } finally {}
+  }
+
+  Future<void> sendRsvpNudgeApiCall({
+    required int activityId,
+  }) async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+        "activity_id": activityId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.sendRsvpNudge,
+          data: data,
+        ),
+        true, // Show loading
+      );
+
+      if (res?.statusCode == 200) {
+        var responseData = res?.data;
+        var recipientCount = responseData['data']?['recipients_count'] ?? 0;
+        AppToast.showAppToast(
+            "Nudge sent successfully to $recipientCount team members!");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+      AppToast.showAppToast("Failed to send nudge. Please try again.");
+    }
   }
 
   @override
