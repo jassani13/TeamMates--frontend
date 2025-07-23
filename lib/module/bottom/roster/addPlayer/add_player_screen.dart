@@ -7,7 +7,8 @@ import 'package:base_code/utils/common_function.dart';
 class AddPlayerScreen extends StatelessWidget {
   AddPlayerScreen({super.key});
 
-  final addPlayerController = Get.put<AddPlayerController>(AddPlayerController());
+  final addPlayerController =
+      Get.put<AddPlayerController>(AddPlayerController());
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final arg = Get.arguments;
 
@@ -40,7 +41,8 @@ class AddPlayerScreen extends StatelessWidget {
               ),
             ],
           ),
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
+          padding: EdgeInsets.symmetric(
+              horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
           child: CommonAppButton(
             text: "Submit",
             onTap: () async {
@@ -80,7 +82,8 @@ class AddPlayerScreen extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
-                        final playerDetail = addPlayerController.playerList[index];
+                        final playerDetail =
+                            addPlayerController.playerList[index];
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -90,7 +93,8 @@ class AddPlayerScreen extends StatelessWidget {
                                 if (addPlayerController.playerList.length > 1)
                                   GestureDetector(
                                     onTap: () {
-                                      addPlayerController.playerList.remove(playerDetail);
+                                      addPlayerController.playerList
+                                          .remove(playerDetail);
                                     },
                                     behavior: HitTestBehavior.translucent,
                                     child: Container(
@@ -98,7 +102,10 @@ class AddPlayerScreen extends StatelessWidget {
                                         color: AppColor.white,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Padding(padding: const EdgeInsets.all(6.0), child: SvgPicture.asset(AppImage.delete)),
+                                      child: Padding(
+                                          padding: const EdgeInsets.all(6.0),
+                                          child: SvgPicture.asset(
+                                              AppImage.delete)),
                                     ),
                                   )
                               ],
@@ -109,7 +116,8 @@ class AddPlayerScreen extends StatelessWidget {
                                 AutofillHints.namePrefix,
                               ],
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[A-Za-z]')),
                                 CapitalizedTextFormatter(),
                               ],
                               validator: (val) {
@@ -120,27 +128,27 @@ class AddPlayerScreen extends StatelessWidget {
                                 }
                               },
                               onFieldSubmitted: (_) {
-                                FocusScope.of(context).requestFocus(playerDetail.lNameFocusNode);
+                                FocusScope.of(context)
+                                    .requestFocus(playerDetail.lNameFocusNode);
                               },
                               focusNode: playerDetail.fNameFocusNode,
-
                               hintText: "First Name",
                               keyboardType: TextInputType.name,
                               controller: playerDetail.fNameController,
                             ),
                             Gap(20),
                             CommonTextField(
-
                               onFieldSubmitted: (_) {
-                                FocusScope.of(context).requestFocus(playerDetail.emailFocusNode);
+                                FocusScope.of(context).requestFocus(
+                                    playerDetail.emailFocusNodes[0]);
                               },
                               focusNode: playerDetail.lNameFocusNode,
-
                               autofillHints: const [
                                 AutofillHints.nameSuffix,
                               ],
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[A-Za-z]')),
                                 CapitalizedTextFormatter(),
                               ],
                               controller: playerDetail.lNameController,
@@ -155,24 +163,68 @@ class AddPlayerScreen extends StatelessWidget {
                               },
                             ),
                             const Gap(20),
-                            CommonTextField(
-                              focusNode: playerDetail.emailFocusNode,
-                              autofillHints: const [
-                                AutofillHints.email,
+                            Column(
+                              children: [
+                                for (int emailIndex = 0;
+                                    emailIndex <
+                                        playerDetail.emailControllers.length;
+                                    emailIndex++)
+                                  Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: CommonTextField(
+                                              focusNode: playerDetail
+                                                  .emailFocusNodes[emailIndex],
+                                              autofillHints: const [
+                                                AutofillHints.email
+                                              ],
+                                              controller: playerDetail
+                                                  .emailControllers[emailIndex],
+                                              hintText: emailIndex == 0
+                                                  ? "Primary Email"
+                                                  : "Additional Email",
+                                              textInputAction:
+                                                  TextInputAction.done,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              validator: (val) {
+                                                if (emailIndex == 0 &&
+                                                    (val ?? "").isEmpty) {
+                                                  return "Please enter primary email address";
+                                                } else if ((val ?? "")
+                                                        .isNotEmpty &&
+                                                    !(val ?? "").isEmail) {
+                                                  return "Please enter a valid email address";
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ),
+                                          if (emailIndex >
+                                              0) // Show remove button for additional emails
+                                            IconButton(
+                                              onPressed: () =>
+                                                  addPlayerController
+                                                      .removeEmailField(
+                                                          index, emailIndex),
+                                              icon: Icon(Icons.remove_circle,
+                                                  color: Colors.red),
+                                            ),
+                                        ],
+                                      ),
+                                      Gap(16),
+                                    ],
+                                  ),
+                                // Add email button
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      addPlayerController.addEmailField(index),
+                                  icon: Icon(Icons.add),
+                                  label: Text("Add Another Email"),
+                                ),
                               ],
-                              controller: playerDetail.emailController,
-                              hintText: "Email",
-                              textInputAction: TextInputAction.done,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (val) {
-                                if ((val ?? "").isEmpty) {
-                                  return "Please enter your email address";
-                                } else if (!(val ?? "").isEmail) {
-                                  return "Please enter a valid email address";
-                                } else {
-                                  return null;
-                                }
-                              },
                             ),
                             const Gap(24),
                           ],
