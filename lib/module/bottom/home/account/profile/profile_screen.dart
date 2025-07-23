@@ -1,6 +1,7 @@
 import 'package:base_code/module/bottom/home/account/profile/profile_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:base_code/module/bottom/home/account/profile/tagManagement/tag_management_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
@@ -590,6 +591,78 @@ class ProfileScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if (profileController.userModel.value.role ==
+                                'coach') ...[
+                              Gap(40),
+                              CommonTitleText(text: "Team Management"),
+                              Gap(12),
+                              GestureDetector(
+                                onTap: () => _navigateToTagManagement(),
+                                child: Container(
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border:
+                                        Border.all(color: AppColor.greyEAColor),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.label,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      Gap(12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Manage Event Tags",
+                                              style: TextStyle()
+                                                  .normal16w500
+                                                  .textColor(
+                                                      AppColor.black12Color),
+                                            ),
+                                            Gap(2),
+                                            Text(
+                                              "Create custom tags for your events",
+                                              style: TextStyle()
+                                                  .normal12w400
+                                                  .textColor(
+                                                      AppColor.grey4EColor),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: AppColor.grey4EColor,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                             Gap(40),
                           ],
                         ),
@@ -600,5 +673,10 @@ class ProfileScreen extends StatelessWidget {
         }),
       ),
     );
+  }
+
+  void _navigateToTagManagement() {
+    // Navigate directly to tag management - tags are coach-specific, not team-specific
+    Get.to(() => TagManagementScreen());
   }
 }

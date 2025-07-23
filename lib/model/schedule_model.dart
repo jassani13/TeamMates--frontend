@@ -1,4 +1,5 @@
 import 'package:base_code/package/config_packages.dart';
+import 'event_tag_model.dart';
 
 class ScheduleData {
   int? activityId;
@@ -31,9 +32,7 @@ class ScheduleData {
   String? reason;
   int? totalParticipate;
   String? activityUserStatus;
-  String? activityUserNote; // User's own RSVP note
-  bool? canSendNudge; // Whether coach can send nudge
-  String? lastNudgeSent; // When last nudge was sent
+  List<EventTag>? tags;
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
@@ -69,11 +68,10 @@ class ScheduleData {
     this.teamId,
     this.status,
     this.reason,
+    this.tags,
     this.team,
     this.opponent,
-    this.activityUserNote,
-    this.canSendNudge,
-    this.lastNudgeSent,
+    this.location,
   });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
@@ -91,9 +89,6 @@ class ScheduleData {
     timeZone = json['time_zone'];
     totalParticipate = json['total_participate'];
     activityUserStatus = json['activity_user_status'];
-    activityUserNote = json['activity_user_note'];
-    canSendNudge = json['can_send_nudge'];
-    lastNudgeSent = json['last_nudge_sent'];
     locationDetails = json['location_details'];
     assignments = json['assignments'];
     duration = json['duration'];
@@ -110,6 +105,14 @@ class ScheduleData {
     teamId = json['team_id'];
     status = json['status'];
     reason = json['reason'];
+
+    if (json['tags'] != null) {
+      tags = <EventTag>[];
+      json['tags'].forEach((tagJson) {
+        tags!.add(EventTag.fromJson(tagJson));
+      });
+    }
+
     team = json['team'] != null ? new Team.fromJson(json['team']) : null;
     location = json['location'] != null
         ? new Locationn.fromJson(json['location'])
@@ -151,6 +154,11 @@ class ScheduleData {
     data['team_id'] = this.teamId;
     data['status'] = this.status;
     data['reason'] = this.reason;
+
+    if (this.tags != null) {
+      data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
+    }
+
     if (this.team != null) {
       data['team'] = this.team?.toJson();
     }
@@ -160,16 +168,36 @@ class ScheduleData {
     if (this.opponent != null) {
       data['opponent'] = this.opponent?.toJson();
     }
-    if (this.activityUserNote != null) {
-      data['activity_user_note'] = this.activityUserNote;
-    }
-    if (this.canSendNudge != null) {
-      data['can_send_nudge'] = this.canSendNudge;
-    }
-    if (this.lastNudgeSent != null) {
-      data['last_nudge_sent'] = this.lastNudgeSent;
-    }
     return data;
+  }
+
+  /// Get tag names as a comma-separated string
+  String get tagNames {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.displayName).join(', ');
+  }
+
+  /// Get the first tag's color (for backward compatibility)
+  String? get primaryTagColor {
+    if (tags != null && tags!.isNotEmpty) {
+      return tags!.first.tagColor;
+    }
+    return flagColor; // Fallback to existing flag_color
+  }
+
+  /// Check if activity has any tags
+  bool get hasTags => tags != null && tags!.isNotEmpty;
+
+  /// Get tag colors as a list
+  List<Color> get tagColors {
+    if (tags == null || tags!.isEmpty) return [];
+    return tags!.map((tag) => tag.color).toList();
+  }
+
+  /// Get tag IDs as comma-separated string (for API calls)
+  String get tagIdsString {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.tagId.toString()).join(',');
   }
 }
 
