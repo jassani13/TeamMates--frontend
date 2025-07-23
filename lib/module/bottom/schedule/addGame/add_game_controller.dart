@@ -38,6 +38,7 @@ class AddGameController extends GetxController {
   RxString activityType = ''.obs;
 
   List<String> arriveEarly = [
+    "Clear",
     "30 minutes early",
     "45 minutes early",
     "1 hour early",
@@ -74,7 +75,7 @@ class AddGameController extends GetxController {
         "location_details": locationDetailsController.value.text.trim(),
         "assignments": assignmentController.value.text.trim(),
         "duration": durationController.value.text.trim(),
-        "arrive_early": arriveController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
         "extra_label": extraLabelController.value.text.trim(),
         "area_type": isAway.value == true ? 'Away' : 'Home',
         "uniform": uniformController.value.text.trim(),
@@ -122,7 +123,7 @@ class AddGameController extends GetxController {
         "location_details": locationDetailsController.value.text.trim(),
         "assignments": assignmentController.value.text.trim(),
         "duration": durationController.value.text.trim(),
-        "arrive_early": arriveController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
         "extra_label": extraLabelController.value.text.trim(),
         "area_type": isAway.value == true ? 'Away' : 'Home',
         "uniform": uniformController.value.text.trim(),
@@ -170,7 +171,7 @@ class AddGameController extends GetxController {
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
       list: list,
       storeValue: storeValue,
-      onItemSelected: (value) {},
+      onItemSelected: (value) => storeValue.text = value,
       itemText: (value) => value,
     );
   }
