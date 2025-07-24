@@ -1,4 +1,5 @@
 import 'package:base_code/package/config_packages.dart';
+import 'event_tag_model.dart';
 
 class ScheduleData {
   int? activityId;
@@ -31,6 +32,7 @@ class ScheduleData {
   String? reason;
   int? totalParticipate;
   String? activityUserStatus;
+  List<EventTag>? tags;
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
@@ -108,9 +110,13 @@ class ScheduleData {
     teamId = json['team_id'];
     status = json['status'];
     reason = json['reason'];
-    isMultiDay = json['is_multi_day'];
-    startDate = json['start_date'];
-    endDate = json['end_date'];
+
+    if (json['tags'] != null) {
+      tags = <EventTag>[];
+      json['tags'].forEach((tagJson) {
+        tags!.add(EventTag.fromJson(tagJson));
+      });
+    }
 
     team = json['team'] != null ? new Team.fromJson(json['team']) : null;
     location = json['location'] != null
@@ -154,9 +160,15 @@ class ScheduleData {
     data['status'] = this.status;
     data['reason'] = this.reason;
 
+
     data['is_multi_day'] = this.isMultiDay;
     data['start_date'] = this.startDate;
     data['end_date'] = this.endDate;
+
+    if (this.tags != null) {
+      data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
+    }
+
 
     if (this.team != null) {
       data['team'] = this.team?.toJson();
@@ -169,6 +181,7 @@ class ScheduleData {
     }
     return data;
   }
+
 
   // Multi-day helper methods
 
@@ -227,6 +240,35 @@ class ScheduleData {
       }
     }
     return 1; // Single day events have duration of 1 day
+
+  /// Get tag names as a comma-separated string
+  String get tagNames {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.displayName).join(', ');
+  }
+
+  /// Get the first tag's color (for backward compatibility)
+  String? get primaryTagColor {
+    if (tags != null && tags!.isNotEmpty) {
+      return tags!.first.tagColor;
+    }
+    return flagColor; // Fallback to existing flag_color
+  }
+
+  /// Check if activity has any tags
+  bool get hasTags => tags != null && tags!.isNotEmpty;
+
+  /// Get tag colors as a list
+  List<Color> get tagColors {
+    if (tags == null || tags!.isEmpty) return [];
+    return tags!.map((tag) => tag.color).toList();
+  }
+
+  /// Get tag IDs as comma-separated string (for API calls)
+  String get tagIdsString {
+    if (tags == null || tags!.isEmpty) return '';
+    return tags!.map((tag) => tag.tagId.toString()).join(',');
+
   }
 }
 

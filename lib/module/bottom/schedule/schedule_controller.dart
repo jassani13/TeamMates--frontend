@@ -14,8 +14,6 @@ class ScheduleController extends GetxController {
 
   RxBool isLoading = false.obs;
 
-  // REPLACE the entire getScheduleListApiCall method in ScheduleController with this:
-
   Future<void> getScheduleListApiCall(
       {String? filter, startDate, endDate}) async {
     try {
@@ -106,6 +104,7 @@ class ScheduleController extends GetxController {
           String displayDate = _formatDateForDisplay(entry.key);
           return ShortedData(date: displayDate, data: entry.value);
         }).toList());
+
       }
     } catch (e) {
       if (kDebugMode) {
@@ -213,6 +212,7 @@ class ScheduleController extends GetxController {
     required String status,
     required int aId,
     required bool isHome,
+    String? rsvpNote, // NEW: Add this optional parameter
   }) async {
     try {
       var data = {
@@ -220,6 +220,12 @@ class ScheduleController extends GetxController {
         "activity_id": aId,
         "status": status,
       };
+
+      // NEW: Add note if provided (backward compatible)
+      if (rsvpNote != null && rsvpNote.trim().isNotEmpty) {
+        data["rsvp_note"] = rsvpNote.trim();
+      }
+
       var res = await callApi(
         dio.post(
           ApiEndPoint.setActivityStatus,
@@ -240,6 +246,37 @@ class ScheduleController extends GetxController {
         print(e);
       }
     } finally {}
+  }
+
+  Future<void> sendRsvpNudgeApiCall({
+    required int activityId,
+  }) async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+        "activity_id": activityId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.sendRsvpNudge,
+          data: data,
+        ),
+        true, // Show loading
+      );
+
+      if (res?.statusCode == 200) {
+        var responseData = res?.data;
+        var recipientCount = responseData['data']?['recipients_count'] ?? 0;
+        AppToast.showAppToast(
+            "Nudge sent successfully to $recipientCount team members!");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+      AppToast.showAppToast("Failed to send nudge. Please try again.");
+    }
   }
 
   @override

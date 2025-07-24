@@ -1,4 +1,5 @@
 import 'package:base_code/module/bottom/schedule/addGame/widget/frequncy_day_selector.dart';
+import 'package:base_code/model/event_tag_model.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -323,10 +324,12 @@ class AddGameScreen extends StatelessWidget {
                             final startText = val!;
                             final endText =
                                 addGameController.endTimeController.value.text;
+
                             final dateText = addGameController.isMultiDay.value
                                 ? addGameController
                                     .startDateController.value.text
                                 : addGameController.dateController.value.text;
+
 
                             if (endText.isNotEmpty) {
                               try {
@@ -359,6 +362,7 @@ class AddGameScreen extends StatelessWidget {
                                 ? addGameController
                                     .startDateController.value.text
                                 : addGameController.dateController.value.text;
+
                             final timeText = addGameController
                                 .startTimeController.value.text;
 
@@ -401,6 +405,7 @@ class AddGameScreen extends StatelessWidget {
                                 ? addGameController
                                     .startDateController.value.text
                                 : addGameController.dateController.value.text;
+
                             final timeText =
                                 addGameController.endTimeController.value.text;
 
@@ -438,6 +443,7 @@ class AddGameScreen extends StatelessWidget {
                                 ? addGameController
                                     .startDateController.value.text
                                 : addGameController.dateController.value.text;
+
 
                             if (startText.isNotEmpty) {
                               try {
@@ -693,6 +699,72 @@ class AddGameScreen extends StatelessWidget {
                     },
                   ),
                   Gap(16),
+                  if (AppPref().role == 'coach') ...[
+                    CommonTextField(
+                      hintText: "Event Tags (Optional)",
+                      readOnly: true,
+                      suffixIcon: Icon(
+                        Icons.keyboard_arrow_down_sharp,
+                        color: AppColor.black12Color,
+                      ),
+                      controller: addGameController.tagController.value,
+                      onTap: () {
+                        addGameController.showTagSelectionSheet(context);
+                      },
+                    ),
+
+                    // NEW: Selected Tags Preview
+                    Gap(8),
+                    Obx(() {
+                      if (addGameController.selectedTags.isEmpty) {
+                        return SizedBox.shrink();
+                      }
+                      return Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColor.greyF6Color,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColor.greyEAColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Selected Tags:',
+                              style: TextStyle()
+                                  .normal12w500
+                                  .textColor(AppColor.grey6EColor),
+                            ),
+                            Gap(8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children:
+                                  addGameController.selectedTags.map((tag) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: tag.color,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    tag.displayName,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    Gap(16),
+                  ],
                   CommonTextField(
                     hintText: "Notes",
                     controller: addGameController.noteController.value,

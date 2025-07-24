@@ -1,9 +1,13 @@
+import 'package:base_code/model/event_tag_model.dart';
 import 'package:base_code/module/bottom/home/home_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
 class AddGameController extends GetxController {
   RxList<int> selectedDays = <int>[].obs;
+  RxList<EventTag> availableTags = <EventTag>[].obs;
+  RxList<EventTag> selectedTags = <EventTag>[].obs;
+  Rx<TextEditingController> tagController = TextEditingController().obs;
 
   Rx<TextEditingController> teamController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
@@ -96,6 +100,9 @@ class AddGameController extends GetxController {
         "standings": isStanding.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
+        // NEW: Add selected tag IDs
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
       });
       var response = await callApi(dio.post(
         ApiEndPoint.createActivity,
@@ -152,6 +159,9 @@ class AddGameController extends GetxController {
         "standings": isStanding.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
+        // NEW: Add selected tag IDs
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
       });
       var response = await callApi(dio.post(
         ApiEndPoint.updateActivity,
@@ -404,6 +414,7 @@ class AddGameController extends GetxController {
                           final now = DateTime.now();
                           storeValue.text =
                               "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
                         }
                         Get.back();
                       },
@@ -599,16 +610,177 @@ class AddGameController extends GetxController {
     }
   }
 
-  // ADD this new method for toggling multi-day mode:
-  void toggleMultiDay() {
-    isMultiDay.value = !isMultiDay.value;
-    if (!isMultiDay.value) {
-      // Clear multi-day fields when switching to single-day
-      startDateController.value.clear();
-      endDateController.value.clear();
+
+  // NEW: Get coach's tags (ADD AFTER EXISTING METHODS)
+  Future<void> getEventTagsApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getEventTags,
+          data: data,
+        ),
+        false,
+      );
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        if (jsonData['ResponseCode'] == 1) {
+          availableTags.clear();
+          if (jsonData['tags'] != null) {
+            List<dynamic> tagList = jsonData['tags'];
+            for (var tagJson in tagList) {
+              availableTags.add(EventTag.fromJson(tagJson));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+// NEW: Show tag selection sheet
+  void showTagSelectionSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  "Select Event Tags",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Spacer(),
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: Icon(Icons.close, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            if (availableTags.isEmpty) ...[
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.label_outline,
+                        size: 48, color: Colors.grey[400]),
+                    SizedBox(height: 8),
+                    Text(
+                      'No tags available',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Create tags in your profile first',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Choose tags for your event:',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableTags.map((tag) {
+                  return Obx(() {
+                    bool isSelected = selectedTags
+                        .any((selected) => selected.tagId == tag.tagId);
+                    return GestureDetector(
+                      onTap: () => _toggleTagSelection(tag),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? tag.color : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? tag.color : Colors.grey[300]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected)
+                              Icon(Icons.check, size: 16, color: Colors.white),
+                            if (isSelected) SizedBox(width: 4),
+                            Text(
+                              tag.displayName,
+                              style: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+                }).toList(),
+              ),
+              SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _updateTagDisplay();
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text('Done'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleTagSelection(EventTag tag) {
+    int existingIndex =
+        selectedTags.indexWhere((selected) => selected.tagId == tag.tagId);
+    if (existingIndex >= 0) {
+      selectedTags.removeAt(existingIndex);
     } else {
-      // Clear single-day field when switching to multi-day
-      dateController.value.clear();
+      selectedTags.add(tag);
+    }
+  }
+
+  void _updateTagDisplay() {
+    if (selectedTags.isEmpty) {
+      tagController.value.text = '';
+    } else {
+      tagController.value.text =
+          selectedTags.map((tag) => tag.displayName).join(', ');
     }
   }
 
@@ -619,6 +791,9 @@ class AddGameController extends GetxController {
     isGame.value = Get.arguments['activity'] == 'game';
     activityDetail.value = Get.arguments['activityDetail'];
     activityType.value = Get.arguments['activity'];
+    if (AppPref().role == 'coach') {
+      getEventTagsApiCall();
+    }
     if (activityDetail.value != null) {
       teamController.value.text = activityDetail.value?.team?.name ?? "";
       activityNameController.value.text =
@@ -669,6 +844,11 @@ class AddGameController extends GetxController {
       } else {
         dateController.value.text = activityDetail.value?.eventDate ?? "";
       }
+    }
+    if (activityDetail.value?.tags != null &&
+        activityDetail.value!.tags!.isNotEmpty) {
+      selectedTags.assignAll(activityDetail.value!.tags!);
+      _updateTagDisplay();
     }
     if (activityType.value == 'game') {
       getRosterApiCall();
