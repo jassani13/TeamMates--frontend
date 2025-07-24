@@ -36,6 +36,9 @@ class ScheduleData {
   Team? team;
   OpponentModel? opponent;
   Locationn? location;
+  int? isMultiDay; // Boolean flag (0 or 1)
+  String? startDate; // Start date for multi-day events
+  String? endDate; // End date for multi-day events
 
   ScheduleData({
     this.activityId,
@@ -68,10 +71,12 @@ class ScheduleData {
     this.teamId,
     this.status,
     this.reason,
-    this.tags,
     this.team,
     this.opponent,
     this.location,
+    this.isMultiDay,
+    this.startDate,
+    this.endDate,
   });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
@@ -155,9 +160,15 @@ class ScheduleData {
     data['status'] = this.status;
     data['reason'] = this.reason;
 
+
+    data['is_multi_day'] = this.isMultiDay;
+    data['start_date'] = this.startDate;
+    data['end_date'] = this.endDate;
+
     if (this.tags != null) {
       data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
     }
+
 
     if (this.team != null) {
       data['team'] = this.team?.toJson();
@@ -170,6 +181,65 @@ class ScheduleData {
     }
     return data;
   }
+
+
+  // Multi-day helper methods
+
+  /// Check if this is a multi-day event
+  bool get isMultiDayEvent => isMultiDay == 1;
+
+  /// Get the effective start date (backward compatible)
+  String? get effectiveStartDate {
+    return isMultiDayEvent ? startDate : eventDate;
+  }
+
+  /// Get the effective end date (backward compatible)
+  String? get effectiveEndDate {
+    return isMultiDayEvent ? endDate : eventDate;
+  }
+
+  /// Get formatted date range string for display
+  String get dateRangeDisplay {
+    if (isMultiDayEvent && startDate != null && endDate != null) {
+      // Format: "Dec 15 - Dec 18, 2024" or "Dec 15 - Jan 2" (cross-month)
+      try {
+        final start = DateTime.parse(startDate!);
+        final end = DateTime.parse(endDate!);
+
+        final startFormatted = DateFormat('MMM d').format(start);
+        final endFormatted = start.year == end.year && start.month == end.month
+            ? DateFormat('d, y').format(end)
+            : DateFormat('MMM d, y').format(end);
+
+        return '$startFormatted - $endFormatted';
+      } catch (e) {
+        return '$startDate - $endDate';
+      }
+    } else if (eventDate != null) {
+      // Single day event
+      try {
+        final date = DateTime.parse(eventDate!);
+        return DateFormat('MMM d, y').format(date);
+      } catch (e) {
+        return eventDate!;
+      }
+    }
+    return 'No date';
+  }
+
+  /// Get duration in days for multi-day events
+  int get durationInDays {
+    if (isMultiDayEvent && startDate != null && endDate != null) {
+      try {
+        final start = DateTime.parse(startDate!);
+        final end = DateTime.parse(endDate!);
+        return end.difference(start).inDays +
+            1; // +1 to include both start and end days
+      } catch (e) {
+        return 1;
+      }
+    }
+    return 1; // Single day events have duration of 1 day
 
   /// Get tag names as a comma-separated string
   String get tagNames {
@@ -198,6 +268,7 @@ class ScheduleData {
   String get tagIdsString {
     if (tags == null || tags!.isEmpty) return '';
     return tags!.map((tag) => tag.tagId.toString()).join(',');
+
   }
 }
 

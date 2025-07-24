@@ -176,31 +176,139 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   Column(
                     children: [
-                      CommonTextField(
-                        hintText: "Date",
-                        readOnly: true,
-                        suffixIcon: Icon(
-                          Icons.keyboard_arrow_down_sharp,
-                          color: AppColor.black12Color,
-                        ),
-                        controller: addGameController.dateController.value,
-                        onTap: () {
-                          addGameController.showDatePicker(context, 0,
-                              addGameController.dateController.value,
-                              initial: addGameController
-                                      .dateController.value.text.isNotEmpty
-                                  ? DateTime.parse(addGameController
-                                      .dateController.value.text)
-                                  : null);
-                        },
-                        validator: (val) {
-                          if ((val ?? "").isEmpty) {
-                            return "Please select date";
-                          } else {
-                            return null;
-                          }
-                        },
+                      // Multi-day toggle
+                      Row(
+                        children: [
+                          Text(
+                            "Multi-day event",
+                            style: TextStyle()
+                                .normal16w500
+                                .textColor(AppColor.black12Color),
+                          ),
+                          Spacer(),
+                          Obx(() => Switch(
+                                value: addGameController.isMultiDay.value,
+                                onChanged: (val) =>
+                                    addGameController.toggleMultiDay(),
+                              )),
+                        ],
                       ),
+                      Gap(16),
+
+                      // Conditional date fields
+                      Obx(() => addGameController.isMultiDay.value
+                          ? Column(
+                              children: [
+                                // Start Date field
+                                CommonTextField(
+                                  hintText: "Start Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller: addGameController
+                                      .startDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        0,
+                                        addGameController
+                                            .startDateController.value,
+                                        initial: addGameController
+                                                .startDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .startDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select start date";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                Gap(16),
+                                // End Date field
+                                CommonTextField(
+                                  hintText: "End Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller:
+                                      addGameController.endDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        1,
+                                        addGameController
+                                            .endDateController.value,
+                                        initial: addGameController
+                                                .endDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .endDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select end date";
+                                    }
+
+                                    // Validate end date is not before start date
+                                    final startText = addGameController
+                                        .startDateController.value.text;
+                                    if (startText.isNotEmpty &&
+                                        val!.isNotEmpty) {
+                                      try {
+                                        final startDate =
+                                            DateTime.parse(startText);
+                                        final endDate = DateTime.parse(val);
+                                        if (endDate.isBefore(startDate)) {
+                                          return "End date cannot be before start date";
+                                        }
+                                      } catch (e) {
+                                        print("DEBUG: Date parsing error: $e");
+                                        return "Invalid date format";
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : CommonTextField(
+                              hintText: "Date",
+                              readOnly: true,
+                              suffixIcon: Icon(
+                                Icons.keyboard_arrow_down_sharp,
+                                color: AppColor.black12Color,
+                              ),
+                              controller:
+                                  addGameController.dateController.value,
+                              onTap: () {
+                                addGameController.showDatePicker(context, 0,
+                                    addGameController.dateController.value,
+                                    initial: addGameController.dateController
+                                            .value.text.isNotEmpty
+                                        ? DateTime.parse(addGameController
+                                            .dateController.value.text)
+                                        : null);
+                              },
+                              validator: (val) {
+                                if ((val ?? "").isEmpty) {
+                                  return "Please select date";
+                                }
+                                return null;
+                              },
+                            )),
                       Gap(16),
                     ],
                   ),
@@ -216,8 +324,12 @@ class AddGameScreen extends StatelessWidget {
                             final startText = val!;
                             final endText =
                                 addGameController.endTimeController.value.text;
-                            final dateText =
-                                addGameController.dateController.value.text;
+
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+
 
                             if (endText.isNotEmpty) {
                               try {
@@ -230,6 +342,7 @@ class AddGameScreen extends StatelessWidget {
                                   return "Start time cannot be after end time";
                                 }
                               } catch (e) {
+                                print("DEBUG: Time parsing error: $e");
                                 return "Invalid time format";
                               }
                             }
@@ -245,8 +358,11 @@ class AddGameScreen extends StatelessWidget {
                           controller:
                               addGameController.startTimeController.value,
                           onTap: () {
-                            final dateText =
-                                addGameController.dateController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+
                             final timeText = addGameController
                                 .startTimeController.value.text;
 
@@ -285,8 +401,11 @@ class AddGameScreen extends StatelessWidget {
                           ),
                           controller: addGameController.endTimeController.value,
                           onTap: () {
-                            final dateText =
-                                addGameController.dateController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+
                             final timeText =
                                 addGameController.endTimeController.value.text;
 
@@ -320,8 +439,11 @@ class AddGameScreen extends StatelessWidget {
                             final endText = val!;
                             final startText = addGameController
                                 .startTimeController.value.text;
-                            final dateText =
-                                addGameController.dateController.value.text;
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController
+                                    .startDateController.value.text
+                                : addGameController.dateController.value.text;
+
 
                             if (startText.isNotEmpty) {
                               try {
@@ -334,6 +456,7 @@ class AddGameScreen extends StatelessWidget {
                                   return "End time cannot be before start time";
                                 }
                               } catch (e) {
+                                print("DEBUG: Time parsing error: $e");
                                 return "Invalid time format";
                               }
                             }

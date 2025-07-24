@@ -31,6 +31,11 @@ class AddGameController extends GetxController {
   RxList<OpponentModel> opponentList = <OpponentModel>[].obs;
   RxList<LocationData> locationList = <LocationData>[].obs;
   RxList<Roster> allRosterModelList = <Roster>[].obs;
+  // Multi-day event
+  RxBool isMultiDay = false.obs;
+  Rx<TextEditingController> startDateController = TextEditingController().obs;
+  Rx<TextEditingController> endDateController = TextEditingController().obs;
+
   var selectedOpponent = Rxn<OpponentModel>();
   var selectedLocation = Rxn<LocationData>();
   var selectedTeam = Rxn<Roster>();
@@ -73,7 +78,12 @@ class AddGameController extends GetxController {
         if (isGame == true)
           "opponent_id": selectedOpponent.value?.opponentId ?? 0,
         "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
-        "event_date": dateController.value.text.trim(),
+        "is_multi_day": isMultiDay.value ? 1 : 0,
+        if (isMultiDay.value) ...{
+          "start_date": startDateController.value.text.trim(),
+          "end_date": endDateController.value.text.trim(),
+        } else
+          "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
         "end_time": endTimeController.value.text.trim(),
         "time_zone": "",
@@ -127,7 +137,12 @@ class AddGameController extends GetxController {
         if (isGame == true)
           "opponent_id": selectedOpponent.value?.opponentId ?? 0,
         "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
-        "event_date": dateController.value.text.trim(),
+        "is_multi_day": isMultiDay.value ? 1 : 0,
+        if (isMultiDay.value) ...{
+          "start_date": startDateController.value.text.trim(),
+          "end_date": endDateController.value.text.trim(),
+        } else
+          "event_date": dateController.value.text.trim(),
         "start_time": startTimeController.value.text.trim(),
         "end_time": endTimeController.value.text.trim(),
         "time_zone": "",
@@ -396,8 +411,10 @@ class AddGameController extends GetxController {
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
+                          final now = DateTime.now();
                           storeValue.text =
-                              "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                              "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
                         }
                         Get.back();
                       },
@@ -592,6 +609,7 @@ class AddGameController extends GetxController {
       }
     }
   }
+
 
   // NEW: Get coach's tags (ADD AFTER EXISTING METHODS)
   Future<void> getEventTagsApiCall() async {
@@ -818,6 +836,13 @@ class AddGameController extends GetxController {
       selectedOpponent.refresh();
       if (activityDetail.value?.weekDay != null) {
         selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+      }
+      isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
+      if (isMultiDay.value) {
+        startDateController.value.text = activityDetail.value?.startDate ?? "";
+        endDateController.value.text = activityDetail.value?.endDate ?? "";
+      } else {
+        dateController.value.text = activityDetail.value?.eventDate ?? "";
       }
     }
     if (activityDetail.value?.tags != null &&
