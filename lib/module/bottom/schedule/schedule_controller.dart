@@ -14,7 +14,10 @@ class ScheduleController extends GetxController {
 
   RxBool isLoading = false.obs;
 
-  Future<void> getScheduleListApiCall({String? filter, startDate, endDate}) async {
+  // REPLACE the entire getScheduleListApiCall method in ScheduleController with this:
+
+  Future<void> getScheduleListApiCall(
+      {String? filter, startDate, endDate}) async {
     try {
       isLoading.value = true;
       sortedScheduleList.clear();
@@ -34,23 +37,75 @@ class ScheduleController extends GetxController {
       );
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        var list = (jsonData['data'] as List).map((e) => ScheduleData.fromJson(e)).toList();
+        var list = (jsonData['data'] as List)
+            .map((e) => ScheduleData.fromJson(e))
+            .toList();
         if (filter?.toLowerCase() == "past") {
           for (var item in list) {
             item.isLive = 0;
           }
         }
+
         Map<String, List<ScheduleData>> groupedData = {};
 
         for (var item in list) {
-          String date = item.eventDate ?? "";
-          if (!groupedData.containsKey(date)) {
-            groupedData[date] = [];
+          if (item.isMultiDayEvent) {
+            // Multi-day event: add to all dates in the range
+            try {
+              DateTime start = DateTime.parse(item.startDate!);
+              DateTime end = DateTime.parse(item.endDate!);
+
+              for (DateTime date = start;
+                  date.isBefore(end.add(Duration(days: 1)));
+                  date = date.add(Duration(days: 1))) {
+                String dateKey =
+                    "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+                if (!groupedData.containsKey(dateKey)) {
+                  groupedData[dateKey] = [];
+                }
+                groupedData[dateKey]!.add(item);
+              }
+            } catch (e) {
+              // If date parsing fails, fall back to start date only
+              String date = item.effectiveStartDate ?? "";
+              if (date.isNotEmpty) {
+                if (!groupedData.containsKey(date)) {
+                  groupedData[date] = [];
+                }
+                groupedData[date]!.add(item);
+              }
+            }
+          } else {
+            // Single-day event: use effective start date
+            String date = item.effectiveStartDate ?? "";
+            if (date.isNotEmpty) {
+              if (!groupedData.containsKey(date)) {
+                groupedData[date] = [];
+              }
+              groupedData[date]!.add(item);
+            }
           }
-          groupedData[date]!.add(item);
         }
 
-        sortedScheduleList.assignAll(groupedData.entries.map((entry) => ShortedData(date: entry.key, data: entry.value)).toList());
+        // Convert to sorted list and format dates for display
+        var sortedEntries = groupedData.entries.toList();
+        sortedEntries.sort((a, b) => a.key.compareTo(b.key));
+
+        // Apply additional filtering based on the selected filter OR date range
+        if (filter != null) {
+          sortedEntries =
+              _filterEntriesByDate(sortedEntries, filter.toLowerCase());
+        } else if (startDate != null && endDate != null) {
+          // Handle manual date range filtering
+          sortedEntries =
+              _filterEntriesByDateRange(sortedEntries, startDate, endDate);
+        }
+
+        sortedScheduleList.assignAll(sortedEntries.map((entry) {
+          // Format date for display
+          String displayDate = _formatDateForDisplay(entry.key);
+          return ShortedData(date: displayDate, data: entry.value);
+        }).toList());
       }
     } catch (e) {
       if (kDebugMode) {
@@ -61,7 +116,98 @@ class ScheduleController extends GetxController {
     }
   }
 
-  final GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
+// ADD this helper method to ScheduleController class:
+  String _formatDateForDisplay(String dateKey) {
+    try {
+      if (dateKey.isEmpty) return "No Date";
+
+      DateTime date = DateTime.parse(dateKey);
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+      DateTime eventDate = DateTime(date.year, date.month, date.day);
+
+      if (eventDate == today) {
+        return "Today - ${DateFormat('MMM d, y').format(date)}";
+      } else if (eventDate == today.subtract(Duration(days: 1))) {
+        return "Yesterday - ${DateFormat('MMM d, y').format(date)}";
+      } else if (eventDate == today.add(Duration(days: 1))) {
+        return "Tomorrow - ${DateFormat('MMM d, y').format(date)}";
+      } else {
+        return DateFormat('EEEE, MMM d, y').format(date);
+      }
+    } catch (e) {
+      return dateKey.isEmpty ? "No Date" : dateKey;
+    }
+  }
+
+// ADD this additional helper method:
+  List<MapEntry<String, List<ScheduleData>>> _filterEntriesByDate(
+      List<MapEntry<String, List<ScheduleData>>> entries, String filter) {
+    try {
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+      String todayString =
+          "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+      switch (filter) {
+        case 'today':
+          return entries.where((entry) => entry.key == todayString).toList();
+
+        case 'past':
+          return entries.where((entry) {
+            try {
+              DateTime entryDate = DateTime.parse(entry.key);
+              return entryDate.isBefore(today);
+            } catch (e) {
+              return false;
+            }
+          }).toList();
+
+        case 'upcoming':
+          return entries.where((entry) {
+            try {
+              DateTime entryDate = DateTime.parse(entry.key);
+              return entryDate.isAfter(today) ||
+                  entryDate.isAtSameMomentAs(today);
+            } catch (e) {
+              return false;
+            }
+          }).toList();
+
+        default:
+          return entries;
+      }
+    } catch (e) {
+      return entries;
+    }
+  }
+
+// ADD this method for manual date range filtering:
+  List<MapEntry<String, List<ScheduleData>>> _filterEntriesByDateRange(
+      List<MapEntry<String, List<ScheduleData>>> entries,
+      String startDate,
+      String endDate) {
+    try {
+      DateTime start = DateTime.parse(startDate);
+      DateTime end = DateTime.parse(endDate);
+
+      return entries.where((entry) {
+        try {
+          DateTime entryDate = DateTime.parse(entry.key);
+          return (entryDate.isAfter(start) ||
+                  entryDate.isAtSameMomentAs(start)) &&
+              (entryDate.isBefore(end) || entryDate.isAtSameMomentAs(end));
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+    } catch (e) {
+      return entries;
+    }
+  }
+
+  final GlobalKey<RefreshIndicatorState> refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
   Future<void> statusChangeApiCall({
     required String status,
