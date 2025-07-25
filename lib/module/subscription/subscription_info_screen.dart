@@ -11,7 +11,7 @@ class SubscriptionInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = isMonthly ? "Monthly plan" : "Yearly plan";
+    final title = isMonthly ? "Monthly plan" : "Annual plan";
     final duration = isMonthly ? "1 Month" : "1 Year";
 
     return Scaffold(

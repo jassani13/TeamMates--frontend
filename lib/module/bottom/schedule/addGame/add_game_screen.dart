@@ -152,11 +152,13 @@ class AddGameScreen extends StatelessWidget {
                     },
                   ),
                   Gap(16),
+                  if(addGameController.isGame.value != true)
+                  ... [
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          "Only for practice",
+                          "Practice",
                           style: TextStyle().normal16w500.textColor(
                                 AppColor.black12Color,
                               ),
@@ -174,6 +176,7 @@ class AddGameScreen extends StatelessWidget {
                     ],
                   ),
                   Gap(16),
+                  ],
                   Column(
                     children: [
                       // Multi-day toggle

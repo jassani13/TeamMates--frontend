@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:base_code/package/screen_packages.dart';
 
 class AddStaffForm extends StatefulWidget {
   final int teamId;
@@ -45,7 +46,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
             if (_formKey.currentState!.validate()) {
               _formKey.currentState!.save();
               // Call API to add staff
-              await apiClient.post('/api/team/add-member', {
+              await dio.post('/api/team/add-member', data: {
                 'name': name,
                 'team_id': widget.teamId,
                 'role_type': 'staff',
