@@ -32,6 +32,8 @@ class ScheduleData {
   String? reason;
   int? totalParticipate;
   String? activityUserStatus;
+  bool? canSendNudge; // Whether coach can send nudge
+  String? lastNudgeSent; // When last nudge was sent
   List<EventTag>? tags;
   Team? team;
   OpponentModel? opponent;
@@ -77,6 +79,8 @@ class ScheduleData {
     this.isMultiDay,
     this.startDate,
     this.endDate,
+    this.canSendNudge,
+    this.lastNudgeSent,
   });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
@@ -95,6 +99,8 @@ class ScheduleData {
     totalParticipate = json['total_participate'];
     activityUserStatus = json['activity_user_status'];
     locationDetails = json['location_details'];
+    canSendNudge = json['can_send_nudge'];
+    lastNudgeSent = json['last_nudge_sent'];
     assignments = json['assignments'];
     duration = json['duration'];
     arriveEarly = json['arrive_early'];
@@ -178,6 +184,12 @@ class ScheduleData {
     }
     if (this.opponent != null) {
       data['opponent'] = this.opponent?.toJson();
+    }
+    if (this.canSendNudge != null) {
+      data['can_send_nudge'] = this.canSendNudge;
+    }
+    if (this.lastNudgeSent != null) {
+      data['last_nudge_sent'] = this.lastNudgeSent;
     }
     return data;
   }
