@@ -100,7 +100,7 @@ class AddTeamController extends GetxController {
   }
 
   Future getImage({required ImageSource source}) async {
-    final pickedFile = await picker.pickImage(source: source);
+    final pickedFile = await picker.pickImage(source: source,imageQuality: 70);
 
     if (pickedFile != null) {
       image.value = File(pickedFile.path);

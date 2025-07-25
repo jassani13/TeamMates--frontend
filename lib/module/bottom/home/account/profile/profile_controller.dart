@@ -39,12 +39,11 @@ class ProfileController extends GetxController {
   AutoScrollController controller2 = AutoScrollController();
   RxInt selectedSearchMethod2 = 0.obs;
 
-  void showDatePicker(
-    BuildContext context,
-    int index,
-    TextEditingController storeValue, {
-    DateTime? initial,
-  }) {
+  void showDatePicker(BuildContext context,
+      int index,
+      TextEditingController storeValue, {
+        DateTime? initial,
+      }) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
@@ -70,7 +69,16 @@ class ProfileController extends GetxController {
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
                           storeValue.text =
-                              "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                          "${DateTime
+                              .now()
+                              .year
+                              .toString()}-${DateTime
+                              .now()
+                              .month
+                              .toString()}-${DateTime
+                              .now()
+                              .day
+                              .toString()}";
                         }
                         Get.back();
                       },
@@ -100,7 +108,7 @@ class ProfileController extends GetxController {
                       maximumDate: DateTime.now(),
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
-                            "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
+                        "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
                       },
                     ),
                   ),
@@ -113,21 +121,20 @@ class ProfileController extends GetxController {
     );
   }
 
-  Future getImage({required ImageSource source,bool isFromDocUpload = false}) async {
-    final pickedFile = await picker.pickImage(source: source);
+  Future getImage({required ImageSource source, bool isFromDocUpload = false}) async {
+    final pickedFile = await picker.pickImage(source: source,imageQuality: 70);
 
-    if(isFromDocUpload){
+    if (isFromDocUpload) {
       if (pickedFile != null) {
         selectedDocumentImage.value = '';
         documentImage.value = File(pickedFile.path);
       }
-    }else{
+    } else {
       if (pickedFile != null) {
         selectedProfileImage.value = '';
         profileImage.value = File(pickedFile.path);
       }
     }
-
   }
 
   Future<void> updateProfile() async {
@@ -148,8 +155,8 @@ class ProfileController extends GetxController {
 
         'jersey_number': jerseyNumberController.text.trim(),
         'position': positionController.text.trim(),
-        if(AppPref().role=="coach")
-        'emergency_contact': eNumController.text.trim(),
+        if(AppPref().role == "coach")
+          'emergency_contact': eNumController.text.trim(),
 
         if (profileImage.value.path.isNotEmpty)
           'profile': [
@@ -224,7 +231,7 @@ class ProfileController extends GetxController {
     stateController.text = userModel.value.state ?? "";
     cityController.text = userModel.value.city ?? "";
     addressController.text = userModel.value.address ?? "";
-    phoneNumberController.text =(userModel.value.phoneNumber??"");
+    phoneNumberController.text = (userModel.value.phoneNumber ?? "");
     jerseyNumberController.text = userModel.value.jerseyNumber ?? "";
     positionController.text = userModel.value.position ?? "";
     genderController.text = userModel.value.gender ?? "";
@@ -238,33 +245,34 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future showOptions(context,{bool isFromDocUpload = false}) async {
+  Future showOptions(context, {bool isFromDocUpload = false}) async {
     showCupertinoModalPopup(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: [
-          CupertinoActionSheetAction(
-            child: Text(
-              'Photo Gallery',
-              style: TextStyle().normal14w500.textColor(AppColor.black12Color),
-            ),
-            onPressed: () {
-              Get.back();
-              getImage(source: ImageSource.gallery,isFromDocUpload: isFromDocUpload);
-            },
+      builder: (context) =>
+          CupertinoActionSheet(
+            actions: [
+              CupertinoActionSheetAction(
+                child: Text(
+                  'Photo Gallery',
+                  style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                ),
+                onPressed: () {
+                  Get.back();
+                  getImage(source: ImageSource.gallery, isFromDocUpload: isFromDocUpload);
+                },
+              ),
+              CupertinoActionSheetAction(
+                child: Text(
+                  'Camera',
+                  style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                ),
+                onPressed: () {
+                  Get.back();
+                  getImage(source: ImageSource.camera, isFromDocUpload: isFromDocUpload);
+                },
+              ),
+            ],
           ),
-          CupertinoActionSheetAction(
-            child: Text(
-              'Camera',
-              style: TextStyle().normal14w500.textColor(AppColor.black12Color),
-            ),
-            onPressed: () {
-              Get.back();
-              getImage(source: ImageSource.camera,isFromDocUpload: isFromDocUpload);
-            },
-          ),
-        ],
-      ),
     );
   }
 

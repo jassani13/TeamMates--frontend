@@ -148,7 +148,7 @@ class ChallengeMembersScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: getImageView(
-              finalUrl: '$publicImageUrl${participate.user?.profile}' ?? "",
+              finalUrl: '${participate.user?.profile}' ?? "",
               fit: BoxFit.cover,
               height: 48,
               width: 48,

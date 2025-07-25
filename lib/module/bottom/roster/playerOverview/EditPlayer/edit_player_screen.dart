@@ -88,7 +88,7 @@ class _EditPlayerScreenState extends State<EditPlayerScreen> {
                                 return editPlayerController.image.value.path.isEmpty
                                     ? ((allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile ?? "").isNotEmpty)
                                         ? getImageView(
-                                            finalUrl: ('$publicImageUrl${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? ""),
+                                            finalUrl: ('${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? ""),
                                             fit: BoxFit.cover,
                                             width: 120,
                                             height: 120,

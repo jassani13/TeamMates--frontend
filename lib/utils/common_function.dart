@@ -1,5 +1,17 @@
 import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
+String getProgressPercent(String? count) {
+  try {
+    final parts = (count ?? "0/3").split('/');
+    if (parts.length != 2) return "0";
+    final numerator = double.tryParse(parts[0]) ?? 0;
+    final denominator = double.tryParse(parts[1]) ?? 1;
+    if (denominator == 0) return "0";
+    return ((numerator / denominator) * 100).toStringAsFixed(1);
+  } catch (_) {
+    return "0";
+  }
+}
 
 String cleanDescription(String raw) {
   return raw.replaceAll(r'\r\n', '\n');
@@ -15,6 +27,7 @@ String capitalizeFirst(String? text) {
   if (text == null || text.isEmpty) return "";
   return text[0].toUpperCase() + text.substring(1);
 }
+
 void openPdf(String url) async {
   if (await canLaunch(url)) {
     await launch(url);
@@ -22,6 +35,7 @@ void openPdf(String url) async {
     print("Could not open the PDF file.");
   }
 }
+
 hideKeyboard() {
   Get.context?.let((it) {
     final currentFocus = FocusScope.of(it);

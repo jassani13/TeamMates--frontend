@@ -236,6 +236,10 @@ class ScheduleScreen extends StatelessWidget {
             Get.toNamed(AppRouter.gameProgress, arguments: {
               'user_id': scheduleData.userBy,
               'activity_id': scheduleData.activityId,
+            })?.then((onValue){
+              if(onValue=="delete"){
+                scheduleController.getScheduleListApiCall();
+              }
             });
           },
           child: CommonScheduleCard(
@@ -251,7 +255,7 @@ class ScheduleScreen extends StatelessWidget {
   }
 }
 
-void showAlertDialog({
+Future<void> showAlertDialog({
   required BuildContext context,
   String? title,
   subtitle,
@@ -260,8 +264,8 @@ void showAlertDialog({
   Function()? btn1Tap,
   Function()? btn2Tap,
   bool? isbtn2Show = true,
-}) {
-  showDialog(
+}) async {
+  await showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(

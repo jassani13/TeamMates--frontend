@@ -148,7 +148,7 @@ class AllPlayerScreen extends StatelessWidget {
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(20),
                                             child: getImageView(
-                                              finalUrl: '$publicImageUrl${player?.profile}',
+                                              finalUrl: '${player?.profile}',
                                               fit: BoxFit.cover,
                                             ),
                                           ),

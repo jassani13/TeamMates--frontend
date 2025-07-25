@@ -73,12 +73,14 @@ class ProfileScreen extends StatelessWidget {
                                                           "")
                                                       .isNotEmpty)
                                                   ? getImageView(
+
                                                       finalUrl: publicImageUrl +
                                                           (profileController
                                                                   .userModel
                                                                   .value
                                                                   .profile ??
                                                               ""),
+
                                                       fit: BoxFit.cover,
                                                       width: 120,
                                                       height: 120,

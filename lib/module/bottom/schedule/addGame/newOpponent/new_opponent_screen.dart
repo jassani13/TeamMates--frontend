@@ -43,7 +43,9 @@ class NewOpponentScreen extends StatelessWidget {
                     autofillHints: const [
                       AutofillHints.namePrefix,
                     ],
+
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z0-9\-()'&,\. ]"))],
+
                     controller: newOpponentController.oNameController,
                     keyboardType: TextInputType.text,
                     validator: (val) {

@@ -1,6 +1,7 @@
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/utils/store_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class InAppPurchaseController extends GetxController {
@@ -15,11 +16,15 @@ class InAppPurchaseController extends GetxController {
   RxBool proUser = false.obs;
   List<StoreProduct> products = [];
 
+  // pro_plan_yearly:pro-plan-yearly
+  // pro_plan_monthly:pro-plan-monthly
+  // 12345
+  // pro_plan_monthly
+
   Future<void> _initLoad() async {
     await initPlatformState();
     await getProducts();
     await checkActiveSubscription();
-
   }
 
   getPurchasedPlan() {
@@ -131,7 +136,7 @@ class InAppPurchaseController extends GetxController {
       if (isFromPurchase) {
         AppLoader().showLoader();
       }
-
+      await Purchases.invalidateCustomerInfoCache();
       customerInfo = await Purchases.getCustomerInfo();
 
       await _updateSubscriptionStatus(customerInfo, isFromPurchase: isFromPurchase);
@@ -209,6 +214,17 @@ class InAppPurchaseController extends GetxController {
       if (AppPref().userId == null) {
         return;
       }
+      ///add in firebase
+      Map<String, dynamic> customerJson = customerInfo.toJson();
+      // Save to Firestore
+      await FirebaseFirestore.instance.collection('users').doc(AppPref().userId.toString()).set({
+        'customerInfo': customerJson,
+        'customer': AppPref().userModel?.toJson(),
+        'proUser': customerInfo.entitlements.all["Pro"]?.isActive ?? false,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+
       var val = jsonEncode(customerInfo.toJson());
       FormData formData = FormData.fromMap(
         {

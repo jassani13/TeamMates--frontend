@@ -111,7 +111,7 @@ class SearchChatScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: getImageView(
-              finalUrl: '$publicImageUrl${(roster.iconImage ?? '').isNotEmpty ? roster.iconImage : roster.teamImage}',
+              finalUrl: '${(roster.iconImage ?? '').isNotEmpty ? roster.iconImage : roster.teamImage}',
               fit: BoxFit.cover,
               height: 48,
               width: 48,
@@ -138,25 +138,25 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   void _onTeamChatTap(String teamId, String? teamName, context) {
-    if (AppPref().role == 'coach') {
-      if (AppPref().proUser == true) {
-        Get.toNamed(
-          AppRouter.grpChat,
-          arguments: {
-            'chatData': ChatListData(teamName: teamName, teamId: teamId),
-          },
-        );
-      } else {
-        _showSubscriptionDialog(middleText: "Buy a subscription to\naccess Team Chat.");
-      }
-    } else {
+    // if (AppPref().role == 'coach') {
+    //   if (AppPref().proUser == true) {
+    //     Get.toNamed(
+    //       AppRouter.grpChat,
+    //       arguments: {
+    //         'chatData': ChatListData(teamName: teamName, teamId: teamId),
+    //       },
+    //     );
+    //   } else {
+    //     _showSubscriptionDialog(middleText: "Buy a subscription to\naccess Team Chat.");
+    //   }
+    // } else {
       Get.toNamed(
         AppRouter.grpChat,
         arguments: {
           'chatData': ChatListData(teamName: teamName, teamId: teamId),
         },
       );
-    }
+    // }
   }
 
   Widget _buildPlayerList(BuildContext context) {
@@ -188,7 +188,7 @@ class SearchChatScreen extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: getImageView(
-            finalUrl: '$publicImageUrl${roster.profile ?? ''}',
+            finalUrl: '${roster.profile ?? ''}',
             fit: BoxFit.cover,
             height: 48,
             width: 48,

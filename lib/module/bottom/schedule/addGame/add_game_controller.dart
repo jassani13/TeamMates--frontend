@@ -11,8 +11,10 @@ class AddGameController extends GetxController {
 
   Rx<TextEditingController> teamController = TextEditingController().obs;
   Rx<TextEditingController> dateController = TextEditingController().obs;
-  Rx<TextEditingController> activityNameController =
-      TextEditingController().obs;
+
+  Rx<TextEditingController> freqEndDateController = TextEditingController().obs;
+  Rx<TextEditingController> activityNameController = TextEditingController().obs;
+
   Rx<TextEditingController> endTimeController = TextEditingController().obs;
   Rx<TextEditingController> startTimeController = TextEditingController().obs;
 
@@ -69,8 +71,13 @@ class AddGameController extends GetxController {
 
   Future<void> addActivityApi({String? activityType, bool? isGame}) async {
     try {
+      if (selectedDays.isNotEmpty && freqEndDateController.value.text.isEmpty) {
+        AppToast.showAppToast("An end date is required when a frequency is selected.");
+        return;
+      }
       FormData formData = FormData.fromMap({
-        "week_day": selectedDays,
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
+        "max_create_date": freqEndDateController.value.text.trim(),
         "user_id": AppPref().userId,
         "notify_team": notify.value == true ? 1 : 0,
         "activity_type": activityType,
@@ -128,7 +135,7 @@ class AddGameController extends GetxController {
       {String? activityType, bool? isGame, required int activityId}) async {
     try {
       FormData formData = FormData.fromMap({
-        "week_day": selectedDays,
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
         "user_id": AppPref().userId,
         "activity_id": activityId,
         "notify_team": notify.value == true ? 1 : 0,
@@ -382,7 +389,7 @@ class AddGameController extends GetxController {
     );
   }
 
-  void showDatePicker(
+  void showEndDatePicker(
     BuildContext context,
     int index,
     TextEditingController storeValue, {
@@ -391,6 +398,84 @@ class AddGameController extends GetxController {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now;
+        DateTime maxDate = DateTime(now.year + 1, now.month, now.day);
+        DateTime effectiveInitial =
+        (initial != null && initial.isAfter(minDate)) ? initial : minDate;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            height: 280,
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Select Date",
+                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        if (storeValue.text.isEmpty) {
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                        }
+                        Get.back();
+                      },
+                      child: Text(
+                        "Done",
+                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 210,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      minimumDate: minDate,
+                      maximumDate: maxDate,
+                      initialDateTime: effectiveInitial,
+                      onDateTimeChanged: (DateTime newDate) {
+                        storeValue.text =
+                            "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showDatePicker(
+    BuildContext context,
+    int index,
+    TextEditingController storeValue, {
+    DateTime? initial,
+  }) {
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now.subtract(const Duration(seconds: 2));
+        DateTime maxDate = now.add(const Duration(days: 366));
+        DateTime effectiveInitial = (initial != null && initial.isAfter(minDate)) ? initial : minDate;
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Container(
@@ -412,9 +497,9 @@ class AddGameController extends GetxController {
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
-                          final now = DateTime.now();
-                          storeValue.text =
-                              "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
                         }
                         Get.back();
@@ -440,10 +525,12 @@ class AddGameController extends GetxController {
                     ),
                     child: CupertinoDatePicker(
                       mode: CupertinoDatePickerMode.date,
+
                       initialDateTime: initial ?? DateTime.now(),
                       minimumDate:
                           DateTime.now().subtract(Duration(seconds: 2)),
                       maximumDate: DateTime.now().add(Duration(days: 366)),
+
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
                             "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
@@ -837,6 +924,7 @@ class AddGameController extends GetxController {
       selectedOpponent.refresh();
       if (activityDetail.value?.weekDay != null) {
         selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+        print(selectedDays);
       }
       isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
       if (isMultiDay.value) {
