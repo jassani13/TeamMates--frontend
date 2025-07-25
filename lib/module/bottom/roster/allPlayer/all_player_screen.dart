@@ -187,7 +187,6 @@ class AllPlayerScreen extends StatelessWidget {
                                             ),
                                           ),
                                           Gap(16),
-                                          if (AppPref().role == 'coach')
                                             GestureDetector(
                                               onTap: () {
                                                   hideKeyboard();

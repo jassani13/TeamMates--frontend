@@ -39,6 +39,7 @@ class NewLocationScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Enter a location name (Central Park, New York)",
+                    keyboardType: TextInputType.text,
                     autofillHints: const [
                       AutofillHints.location,
                     ],
@@ -57,6 +58,7 @@ class NewLocationScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Street name, city, and ZIP code",
+                    keyboardType: TextInputType.text,
                     autofillHints: const [
                       AutofillHints.addressCityAndState,
                     ],
@@ -89,6 +91,7 @@ class NewLocationScreen extends StatelessWidget {
                     hintText: "Any additional details (e.g., landmark, parking info)",
                     maxLine: 3,
                     controller: newLocationController.notesController,
+                    keyboardType: TextInputType.text, 
                     textInputAction: TextInputAction.done,
                     textCapitalization: TextCapitalization.sentences,
                     // validator: (val) {

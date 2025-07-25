@@ -6,8 +6,8 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 class InAppPurchaseController extends GetxController {
   static const monthly = "pro_plan_monthly";
-  static const yearlyAndroid = "pro_plan_yearly";
-  static const yearlyIOS = "12345";
+  static const annualAndroid = "pro_plan_annual";
+  static const annualIOS = "12345";
 
   static const googleApiKey = "goog_UFeASeWksGxAfXHfOsjrUcwuBjL";
   static const appleApiKey = "appl_jkmsUVqUHhxFNVrpVZHmDoslGuo";
@@ -32,8 +32,8 @@ class InAppPurchaseController extends GetxController {
       var data = customerInfo?.entitlements.active['Pro']?.productIdentifier;
       if (data == monthly) {
         purchasedPlan.value = "Monthly plan";
-      } else if (data == yearlyAndroid || data == yearlyIOS) {
-        purchasedPlan.value = "Yearly plan";
+      } else if (data == annualAndroid || data == annualIOS) {
+        purchasedPlan.value = "Annual plan";
       }
     }
   }
@@ -115,8 +115,8 @@ class InAppPurchaseController extends GetxController {
       List<StoreProduct> products = await Purchases.getProducts(
         [
           monthly,
-          yearlyAndroid,
-          yearlyIOS,
+          annualAndroid,
+          annualIOS,
         ],
       );
       if (kDebugMode) {

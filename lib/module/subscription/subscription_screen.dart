@@ -63,9 +63,9 @@ class SubscriptionScreen extends StatelessWidget {
                             isFromPurchase: true,
                           );
                         } else {
-                          ///yearly
+                          ///annual
                           Get.find<InAppPurchaseController>().purchase(
-                            productId: Platform.isIOS ? "12345" : 'pro_plan_yearly:pro-plan-yearly',
+                            productId: Platform.isIOS ? "12345" : 'pro_plan_annual:pro-plan-annual',
                             context: context,
                             isFromPurchase: true,
                           );
@@ -157,7 +157,7 @@ class SubscriptionScreen extends StatelessWidget {
                       ? subscriptionController.freeFeatureEList
                       : isMonthly
                           ? subscriptionController.proFeatureMonthlyList
-                          : subscriptionController.proFeatureYearlyList;
+                          : subscriptionController.proFeatureAnnualList;
 
                   final price = isFree
                       ? ""
@@ -194,9 +194,27 @@ class SubscriptionScreen extends StatelessWidget {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      subscriptionController.planList[index],
-                                      style: TextStyle().normal16w500.textColor(AppColor.white),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          subscriptionController.planList[index],
+                                          style: TextStyle().normal16w500.textColor(AppColor.white),
+                                        ),
+                                        if (subscriptionController.selectedPlan.value == 2) ...[
+                                          SizedBox(width: 8),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: AppColor.successColor,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              "Save 20%",
+                                              style: TextStyle().normal12w600.textColor(AppColor.white),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                   if (AppPref().proUser == true && purchaseController.purchasedPlan.value == subscriptionController.planList[index])

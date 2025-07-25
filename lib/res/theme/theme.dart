@@ -6,7 +6,10 @@ abstract class AppTheme {
 
   static final ThemeData lightTheme = ThemeData(
     focusColor: AppColor.grey100,
-    textSelectionTheme: TextSelectionThemeData(selectionColor: AppColor.black.withOpacity(0.4), cursorColor: AppColor.black.withOpacity(0.4), selectionHandleColor: AppColor.black),
+    textSelectionTheme: TextSelectionThemeData(
+        selectionColor: AppColor.black..withValues(alpha: (0.4)),
+        cursorColor: AppColor.black..withValues(alpha: (0.4)),
+        selectionHandleColor: AppColor.black),
     useMaterial3: true,
     scaffoldBackgroundColor: AppColor.white,
     brightness: Brightness.light,
@@ -20,8 +23,8 @@ abstract class AppTheme {
       onSecondary: AppColor.grey66Color,
       error: AppColor.grey500,
       onError: AppColor.grey400,
-      background: AppColor.appBarBlackColor,
-      onBackground: AppColor.black,
+      surfaceContainerLowest : AppColor.appBarBlackColor,
+      onSurfaceVariant: AppColor.black,
       surface: AppColor.white,
       onSurface: AppColor.greyF0Color,
     ),
@@ -30,6 +33,7 @@ abstract class AppTheme {
       selectedItemColor: AppColor.primaryBlackColor,
       unselectedItemColor: AppColor.greyB9Color,
     ),
+
     // tabBarTheme: TabBarTheme(
     //     tabAlignment: TabAlignment.start,
     //     indicatorSize: TabBarIndicatorSize.tab,
@@ -45,12 +49,33 @@ abstract class AppTheme {
     //       ),
     //     ),
     //     dividerColor: Colors.transparent),
+
+    tabBarTheme: TabBarThemeData(
+        tabAlignment: TabAlignment.start,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: AppColor.white,
+        unselectedLabelColor: AppColor.greyColor,
+        labelStyle: const TextStyle().normal14w400,
+        unselectedLabelStyle: const TextStyle().normal14w400,
+        indicator: const UnderlineTabIndicator(
+          // color for indicator (underline)
+          borderSide: BorderSide(
+            color: Colors.white,
+            width: 4,
+          ),
+        ),
+        dividerColor: Colors.transparent),
+
     appBarTheme: AppBarTheme(
       foregroundColor: AppColor.black,
       centerTitle: true,
       titleSpacing: 0,
       elevation: 0,
-      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: StringConst.primaryFontFamily, color: AppColor.black),
+      titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          fontFamily: StringConst.primaryFontFamily,
+          color: AppColor.black),
       backgroundColor: AppColor.white,
       iconTheme: const IconThemeData(color: AppColor.black),
       actionsIconTheme: const IconThemeData(color: AppColor.black),
@@ -85,15 +110,16 @@ abstract class AppTheme {
     ),
     indicatorColor: AppColor.grey100,
     hintColor: AppColor.grey500,
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: AppColor.black, foregroundColor: AppColor.white),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColor.black, foregroundColor: AppColor.white),
   );
 
   static final ThemeData darkTheme = ThemeData(
     focusColor: AppColor.grey600,
     primaryColor: AppColor.white,
     textSelectionTheme: TextSelectionThemeData(
-      selectionColor: AppColor.white.withOpacity(0.4),
-      cursorColor: AppColor.white.withOpacity(0.4),
+      selectionColor: AppColor.white..withValues(alpha: (0.4)),
+      cursorColor: AppColor.white..withValues(alpha: (0.4)),
       selectionHandleColor: AppColor.white,
     ),
     useMaterial3: true,
@@ -108,8 +134,8 @@ abstract class AppTheme {
       onSecondary: AppColor.greyB9Color,
       error: AppColor.grey400,
       onError: AppColor.grey500,
-      background: AppColor.lightBlackColor,
-      onBackground: Colors.transparent,
+      surfaceContainerLowest: AppColor.lightBlackColor,
+      onSurfaceVariant: Colors.transparent,
       surface: AppColor.greyB9Color,
       onSurface: AppColor.appBarBlackColor,
     ),
@@ -118,6 +144,7 @@ abstract class AppTheme {
       selectedItemColor: AppColor.white,
       unselectedItemColor: AppColor.grey66Color,
     ),
+
     // tabBarTheme: TabBarTheme(
     //     tabAlignment: TabAlignment.start,
     //     indicatorSize: TabBarIndicatorSize.tab,
@@ -130,12 +157,30 @@ abstract class AppTheme {
     //       borderSide: BorderSide(color: Colors.white, width: 4),
     //     ),
     //     dividerColor: Colors.transparent),
+
+    tabBarTheme: TabBarThemeData(
+        indicatorColor: AppColor.black,
+        tabAlignment: TabAlignment.start,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: AppColor.white,
+        unselectedLabelColor: AppColor.greyColor,
+        labelStyle: const TextStyle().normal14w400,
+        unselectedLabelStyle: const TextStyle().normal14w400,
+        indicator: const UnderlineTabIndicator(
+          // color for indicator (underline)
+          borderSide: BorderSide(color: Colors.white, width: 4),
+        ),
+        dividerColor: Colors.transparent),
+
     appBarTheme: AppBarTheme(
       foregroundColor: AppColor.white,
       centerTitle: true,
       titleSpacing: 0,
       elevation: 0,
-      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: StringConst.primaryFontFamily),
+      titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          fontFamily: StringConst.primaryFontFamily),
       backgroundColor: AppColor.black,
       iconTheme: const IconThemeData(color: AppColor.white),
       actionsIconTheme: const IconThemeData(color: AppColor.white),
@@ -143,7 +188,8 @@ abstract class AppTheme {
       //systemOverlayStyle: SystemUiOverlayStyle.light,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       elevation: 4,
       clipBehavior: Clip.hardEdge,
       modalElevation: 8,
@@ -166,8 +212,8 @@ abstract class AppTheme {
         }
       }),
     ),
-    indicatorColor: AppColor.black,
     hintColor: AppColor.grey300,
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: AppColor.white, foregroundColor: AppColor.black),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColor.white, foregroundColor: AppColor.black),
   );
 }

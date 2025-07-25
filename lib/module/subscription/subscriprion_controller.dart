@@ -4,7 +4,7 @@ class SubscriptionController extends GetxController {
   List<String> planList = [
     "Free plan",
     "Monthly plan",
-    "Yearly plan",
+    "Annual plan",
   ];
 
   RxInt selectedPlan = 0.obs;
@@ -20,6 +20,7 @@ class SubscriptionController extends GetxController {
   ];
 
   List<String> proFeatureMonthlyList = [
+    "Get your first month FREE cancel anytime",
     "Subscription Duration: 1 Month",
     "Everything in the Free Plan, plus:",
     "Unlimited Roster Size (Add as many players as you need — no limits)",
@@ -29,7 +30,8 @@ class SubscriptionController extends GetxController {
     "Priority support",
   ];
 
-  List<String> proFeatureYearlyList = [
+  List<String> proFeatureAnnualList = [
+    "Get your first 3 months FREE, cancel anytime",
     "Subscription Duration: 1 Year",
     "Everything in the Free Plan, plus:",
     "Unlimited Roster Size (Add as many players as you need — no limits)",

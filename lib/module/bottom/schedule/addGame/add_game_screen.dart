@@ -128,6 +128,7 @@ class AddGameScreen extends StatelessWidget {
                   CommonTextField(
                     hintText: addGameController.isGame.value == true ? "Game Name" : "Event Name",
                     controller: addGameController.activityNameController.value,
+                    keyboardType: TextInputType.text,                 
                     validator: (val) {
                       // if ((val ?? "").isEmpty) {
                       //   return "Please select name";
@@ -137,11 +138,13 @@ class AddGameScreen extends StatelessWidget {
                     },
                   ),
                   Gap(16),
+                  if(addGameController.isGame.value != true)
+                  ... [
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          "Only for practice",
+                          "Practice",
                           style: TextStyle().normal16w500.textColor(
                                 AppColor.black12Color,
                               ),
@@ -158,6 +161,7 @@ class AddGameScreen extends StatelessWidget {
                     ],
                   ),
                   Gap(16),
+                  ],
                   Column(
                     children: [
                       CommonTextField(
@@ -403,6 +407,7 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Location details",
+                    keyboardType: TextInputType.text,
                     controller: addGameController.locationDetailsController.value,
                   ),
                   Gap(24),
@@ -472,6 +477,7 @@ class AddGameScreen extends StatelessWidget {
                           flex: 2,
                           child: CommonTextField(
                             hintText: "Extra label",
+                            keyboardType: TextInputType.text,
                             controller: addGameController.extraLabelController.value,
                           )),
                       Gap(40),
@@ -531,6 +537,7 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Uniform",
+                    keyboardType: TextInputType.text,
                     controller: addGameController.uniformController.value,
                   ),
                   Gap(16),
@@ -549,6 +556,7 @@ class AddGameScreen extends StatelessWidget {
                   Gap(16),
                   CommonTextField(
                     hintText: "Notes",
+                    keyboardType: TextInputType.text,
                     controller: addGameController.noteController.value,
                   ),
                   Visibility(
