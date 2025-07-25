@@ -172,12 +172,9 @@ class GameProgressScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               CommonTitleText(
-                                text: DateUtilities.formatDate(controller
-                                        .activityDetails
-                                        .value
-                                        .data
-                                        ?.eventDate ??
-                                    ""),
+                                text: (controller.activityDetails.value.data!.eventDate!.isNotEmpty)
+                                    ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(controller.activityDetails.value.data!.eventDate!))
+                                    : '',
                               ),
                               if (controller.activityDetails.value.data
                                           ?.startTime !=

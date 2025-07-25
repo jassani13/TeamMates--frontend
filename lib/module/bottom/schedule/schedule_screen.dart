@@ -202,7 +202,9 @@ class ScheduleScreen extends StatelessWidget {
                                             width: double.infinity,
                                             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppColor.black12Color),
                                             child: Text(
-                                              item ?? "",
+                                              item.isNotEmpty
+                                                  ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(item))
+                                                  : '',
                                               style: TextStyle().normal16w500.textColor(AppColor.white),
                                             ),
                                           ),
