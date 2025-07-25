@@ -3,6 +3,9 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter/gestures.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:collection/collection.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -597,10 +600,90 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         if (inputUrl.startsWith('webcal://')) {
                           inputUrl = inputUrl.replaceFirst('webcal://', 'https://');
                         }
+                        if (!mounted) return;
                         Navigator.of(context).pop();
                         await controller.addWebCallUrl(link: inputUrl);
                       }
                     },
+                  ),
+                ),
+                Gap(20),
+                Expanded(
+                  child: CommonAppButton(
+                    text: 'Insert via csv',
+                    width: 80,
+                    height: 40,
+                    style: TextStyle().normal14w600,
+                    onTap: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+                      if (result != null && result.files.single.bytes != null) {
+                        String csvString = utf8.decode(result.files.single.bytes!);
+                        List<List<dynamic>> rows = const CsvToListConverter().convert(csvString);
+
+                        // Correct header
+                        List<String> expectedHeader = ['date', 'start_time', 'end_time', 'event_type', 'title', 'team_name', 'location', 'opponent'];
+                        if (rows.isEmpty || !ListEquality().equals(rows[0], expectedHeader)) {
+                          showAppErrorDialog(context, "CSV Import Error", [
+                            'Invalid CSV header. Expected:  [1m${expectedHeader.join(", ")} [0m.'
+                          ]);
+                          return;
+                        }
+
+                        List<String> errors = [];
+                        List<Map<String, dynamic>> validEvents = [];
+
+                        for (int i = 1; i < rows.length; i++) {
+                          var row = rows[i];
+                          if (row.length != expectedHeader.length) {
+                            errors.add('Row  ${i + 1}: Incorrect number of columns.');
+                            continue;
+                          }
+                          // Map row to event
+                          final event = <String, dynamic>{};
+                          for (int j = 0; j < expectedHeader.length; j++) {
+                            event[expectedHeader[j]] = row[j]?.toString().trim() ?? '';
+                          }
+
+                          final eventType = (event['event_type'] ?? '').toString().toLowerCase();
+
+                          // Validation for required fields
+                          if (eventType == 'game') {
+                            // For game, all fields are required
+                            bool missing = false;
+                            for (final field in expectedHeader) {
+                              if ((event[field] ?? '').toString().isEmpty) {
+                                errors.add('Row ${i + 1}: Field "$field" is required for event_type "game".');
+                                missing = true;
+                              }
+                            }
+                            if (missing) continue;
+                          } else {
+                            // For non-game, team_name and opponent can be blank, others required
+                            for (final field in expectedHeader) {
+                              if ((field == 'team_name' || field == 'opponent')) continue;
+                              if ((event[field] ?? '').toString().isEmpty) {
+                                errors.add('Row ${i + 1}: Field "$field" is required for event_type "$eventType".');
+                              }
+                            }
+                            // If any required field is missing, skip this row
+                            if (errors.isNotEmpty && errors.last.startsWith('Row ${i + 1}:')) continue;
+                          }
+
+                          validEvents.add(event);
+                        }
+
+                        if (errors.isNotEmpty) {
+                          showAppErrorDialog(context, "CSV Import Errors", errors);
+                        } else {
+                          List<String> errorsReturned = await controller.addEventsFromCsv(validEvents);
+                          if (errorsReturned.isNotEmpty) {
+                            showAppErrorDialog(context, "CSV Import Errors", errorsReturned);
+                          } else if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        }
+                      }
+                    }
                   ),
                 ),
               ],
@@ -662,4 +745,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
       },
     );
   }
+
+void showAppErrorDialog(BuildContext context, String title, List<String> errors) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle().normal18w700.textColor(AppColor.redColor),
+            ),
+            const SizedBox(height: 12),
+            ...errors.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.error, color: AppColor.redColor, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          e,
+                          style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Close', style: TextStyle().normal16w600.textColor(AppColor.redColor)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }
