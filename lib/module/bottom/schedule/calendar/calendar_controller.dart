@@ -9,11 +9,153 @@ class CalendarViewController extends GetxController {
   RxList<dynamic> selectedDayEvents = <dynamic>[].obs;
   RxList<Map<String, dynamic>> calendarLinks = <Map<String, dynamic>>[].obs;
 
-  RxMap events = {}.obs;
+  // Separate storage for internal and external events
+  RxMap externalEvents = {}.obs; // ICS events
+  RxMap internalEvents = {}.obs; // Schedule events
+  RxMap events = {}.obs; // Combined events for display
 
   void updateSelectedDayEvents(DateTime date) {
     final key = DateTime(date.year, date.month, date.day);
     selectedDayEvents.value = events[key] ?? [];
+  }
+
+  // Load internal schedule events from the app's schedule API
+  Future<void> loadInternalScheduleEvents() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+        // Get all events without filter to populate calendar
+      };
+      
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getScheduleList,
+          data: data,
+        ),
+        false,
+      );
+      
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        var list = (jsonData['data'] as List).map((e) => ScheduleData.fromJson(e)).toList();
+        
+        // Clear existing internal events
+        internalEvents.clear();
+        
+        // Process each schedule item
+        for (var scheduleItem in list) {
+          if (scheduleItem.eventDate != null) {
+            // Parse the event date
+            DateTime eventDate = DateFormat('yyyy-MM-dd').parse(scheduleItem.eventDate!);
+            final eventDateKey = DateTime(eventDate.year, eventDate.month, eventDate.day);
+            
+            // Build event title from available data
+            String eventTitle = scheduleItem.activityName ?? 'Team Event';
+            if (scheduleItem.opponent?.opponentName != null) {
+              eventTitle += ' vs ${scheduleItem.opponent!.opponentName}';
+            }
+            
+            // Build description from notes and details
+            String eventDescription = '';
+            if (scheduleItem.notes != null && scheduleItem.notes!.isNotEmpty) {
+              eventDescription = scheduleItem.notes!;
+            }
+            if (scheduleItem.assignments != null && scheduleItem.assignments!.isNotEmpty) {
+              if (eventDescription.isNotEmpty) eventDescription += '\n';
+              eventDescription += 'Assignments: ${scheduleItem.assignments}';
+            }
+            
+            // Get location details
+            String eventLocation = '';
+            if (scheduleItem.location?.location != null) {
+              eventLocation = scheduleItem.location!.location!;
+              if (scheduleItem.location!.address != null) {
+                eventLocation += ', ${scheduleItem.location!.address}';
+              }
+            } else if (scheduleItem.locationDetails != null) {
+              eventLocation = scheduleItem.locationDetails!;
+            }
+            
+            // Create start and end time strings
+            String startTimeStr = scheduleItem.startTime ?? '00:00:00';
+            String endTimeStr = scheduleItem.endTime ?? '23:59:59';
+            
+            // Handle time format if needed
+            if (!startTimeStr.contains(':')) {
+              startTimeStr = '00:00:00';
+            }
+            if (!endTimeStr.contains(':')) {
+              endTimeStr = '23:59:59';
+            }
+            
+            // Create internal event object compatible with calendar display
+            final internalEvent = {
+              'type': 'internal_schedule',
+              'summary': eventTitle,
+              'description': eventDescription,
+              'location': eventLocation,
+              'dtstart': {
+                'dt': scheduleItem.eventDate! + 'T' + startTimeStr,
+              },
+              'dtend': {
+                'dt': scheduleItem.eventDate! + 'T' + endTimeStr,
+              },
+              'activity_id': scheduleItem.activityId,
+              'activity_name': scheduleItem.activityName,
+              'activity_type': scheduleItem.activityType,
+              'status': scheduleItem.status,
+              'user_by': scheduleItem.userBy,
+              'is_live': scheduleItem.isLive,
+              'team_id': scheduleItem.teamId,
+              'opponent': scheduleItem.opponent,
+              'uniform': scheduleItem.uniform,
+              'arrive_early': scheduleItem.arriveEarly,
+              'duration': scheduleItem.duration,
+            };
+            
+            // Add to internal events
+            if (internalEvents[eventDateKey] == null) {
+              internalEvents[eventDateKey] = [];
+            }
+            internalEvents[eventDateKey].add(internalEvent);
+          }
+        }
+        
+        // Merge with external events and update display
+        _mergeEventsForDisplay();
+        
+        if (kDebugMode) {
+          print("Internal schedule events loaded: ${internalEvents.length} dates");
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Failed to load internal schedule events: $e");
+      }
+    }
+  }
+
+  // Merge internal and external events for calendar display
+  void _mergeEventsForDisplay() {
+    events.clear();
+    
+    // Add internal events
+    internalEvents.forEach((key, value) {
+      events[key] = List.from(value);
+    });
+    
+    // Add external events
+    externalEvents.forEach((key, value) {
+      if (events[key] == null) {
+        events[key] = [];
+      }
+      events[key].addAll(value);
+    });
+    
+    // Update selected day events if a date is selected
+    if (selectedDate.value != null) {
+      updateSelectedDayEvents(selectedDate.value!);
+    }
   }
 
   Future<void> loadICSFromUrl({required String url, required int urlId}) async {
@@ -48,6 +190,10 @@ class CalendarViewController extends GetxController {
           existing.add(summary);
           events[eventDate] = existing.toList();
         }
+
+        // Merge with internal events and update display
+        _mergeEventsForDisplay();
+
         if (kDebugMode) {
           print("Events added from $url");
         }
@@ -71,9 +217,12 @@ class CalendarViewController extends GetxController {
       ));
       if (response?.statusCode == 200) {
         calendarLinks.removeWhere((e) => e['web_cal_id'] == linkId);
-        events.removeWhere((key, value) {
+        externalEvents.removeWhere((key, value) {
           return value.any((event) => event['web_cal_id'] == linkId);
         });
+
+        // Update display
+        _mergeEventsForDisplay();
 
         AppToast.showAppToast(response?.data['ResponseMsg']);
       }
@@ -146,6 +295,7 @@ class CalendarViewController extends GetxController {
       }
     }
   }
+
 
   Future<List<String>> addEventsFromCsv(List<Map<String, dynamic>> events) async {
   final addGameController = AddGameController();
@@ -292,12 +442,20 @@ class CalendarViewController extends GetxController {
   return errors;
 }
 
+  // Refresh all calendar data
+  Future<void> refreshCalendarData() async {
+    await Future.wait([
+      loadInternalScheduleEvents(),
+      getWebCallUrl(),
+    ]);
+  }
+
   @override
   void onInit() {
     super.onInit();
 
     WidgetsBinding.instance.addPostFrameCallback((val) {
-      getWebCallUrl();
+      refreshCalendarData();
     });
   }
 }

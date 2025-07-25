@@ -12,12 +12,26 @@ class AddPlayerController extends GetxController {
       PlayerDetailModel(
         fNameController: TextEditingController(),
         lNameController: TextEditingController(),
-        emailController: TextEditingController(),
+        emailControllers: [TextEditingController()],
         fNameFocusNode: FocusNode(),
         lNameFocusNode: FocusNode(),
-        emailFocusNode: FocusNode(),
+        emailFocusNodes: [FocusNode()],
       ),
     );
+  }
+
+  void addEmailField(int playerIndex) {
+    playerList[playerIndex].emailControllers.add(TextEditingController());
+    playerList[playerIndex].emailFocusNodes.add(FocusNode());
+    playerList.refresh(); // Trigger UI update
+  }
+
+  void removeEmailField(int playerIndex, int emailIndex) {
+    if (playerList[playerIndex].emailControllers.length > 1) {
+      playerList[playerIndex].emailControllers.removeAt(emailIndex);
+      playerList[playerIndex].emailFocusNodes.removeAt(emailIndex);
+      playerList.refresh();
+    }
   }
 
   final arg = Get.arguments;
@@ -32,10 +46,19 @@ class AddPlayerController extends GetxController {
       // Adding players dynamically
       for (int i = 0; i < playerList.length; i++) {
         formData.fields.addAll([
-          MapEntry("list[$i][first_name]", playerList[i].fNameController.text.trim()),
-          MapEntry("list[$i][last_name]", playerList[i].lNameController.text.trim()),
-          MapEntry("list[$i][email]", playerList[i].emailController.text.trim()),
+          MapEntry("list[$i][first_name]",
+              playerList[i].fNameController.text.trim()),
+          MapEntry(
+              "list[$i][last_name]", playerList[i].lNameController.text.trim()),
+          MapEntry(
+              "list[$i][email]", playerList[i].emailControllers[0].text.trim()),
         ]);
+
+        // Add all emails as array
+        for (int j = 0; j < playerList[i].emailControllers.length; j++) {
+          formData.fields.add(MapEntry("list[$i][user_emails][$j]",
+              playerList[i].emailControllers[j].text.trim()));
+        }
       }
 
       var response = await dio.post(
@@ -50,7 +73,8 @@ class AddPlayerController extends GetxController {
           AppToast.showAppToast("Players add successfully");
         } else {
           Get.find<RoasterController>().getRosterApiCall();
-          await Get.find<AllPlayerController>().getRosterApiCall(teamId: arg[0]);
+          await Get.find<AllPlayerController>()
+              .getRosterApiCall(teamId: arg[0]);
           AppLoader().dismissLoader();
           Get.back();
           AppToast.showAppToast("Players add successfully");
@@ -60,7 +84,8 @@ class AddPlayerController extends GetxController {
       AppLoader().dismissLoader();
 
       if (e is DioException && e.response?.statusCode == 422) {
-        final message = e.response?.data['ResponseMsg'] ?? 'Something went wrong.';
+        final message =
+            e.response?.data['ResponseMsg'] ?? 'Something went wrong.';
         AppToast.showAppToast(message);
       } else {
         AppToast.showAppToast('Failed to add players. Please try again.');
@@ -84,18 +109,18 @@ class PlayerDetailModel {
   int? id;
   TextEditingController fNameController;
   TextEditingController lNameController;
-  TextEditingController emailController;
+  List<TextEditingController> emailControllers;
   FocusNode fNameFocusNode;
   FocusNode lNameFocusNode;
-  FocusNode emailFocusNode;
+  List<FocusNode> emailFocusNodes; // Changed from single to list
 
   PlayerDetailModel({
     this.id,
     required this.fNameController,
     required this.lNameController,
-    required this.emailController,
+    required this.emailControllers,
     required this.fNameFocusNode,
     required this.lNameFocusNode,
-    required this.emailFocusNode,
+    required this.emailFocusNodes,
   });
 }
