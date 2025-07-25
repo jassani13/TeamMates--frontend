@@ -43,9 +43,9 @@ class NewOpponentScreen extends StatelessWidget {
                     autofillHints: const [
                       AutofillHints.namePrefix,
                     ],
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]'))],
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z0-9\-()'&,\. ]"))],
                     controller: newOpponentController.oNameController,
-                    keyboardType: TextInputType.name,
+                    keyboardType: TextInputType.text,
                     validator: (val) {
                       if ((val ?? "").isEmpty) {
                         return "Please enter your opponent name";
@@ -114,6 +114,7 @@ class NewOpponentScreen extends StatelessWidget {
                   CommonTextField(
                     hintText: "Confirmed any details or remarks",
                     maxLine: 3,
+                    keyboardType: TextInputType.text,
                     textCapitalization: TextCapitalization.sentences,
                     controller: newOpponentController.notesController,
                     textInputAction: TextInputAction.done,
