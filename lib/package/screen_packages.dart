@@ -72,6 +72,6 @@ export 'package:base_code/components/common_stat_card.dart';
 
 export '../../../data/network/end_point.dart';
 export 'package:base_code/components/common_icon_button.dart';
-export 'package:base_code/components/common_schdule_card.dart';
+export 'package:base_code/components/common_schedule_card.dart';
 export 'package:base_code/components/horizontal_list.dart';
 export '../../../components/no_data.dart';

@@ -61,6 +61,12 @@ extension TextStyleExtensions on TextStyle {
       weight: FontWeight.w500,
       fontFamily: StringConst.primaryFontFamily);
 
+  TextStyle get normal10w600 => customStyle(
+      fontSize: 10,
+      letterSpacing: 0.0,
+      weight: FontWeight.w600,
+      fontFamily: StringConst.primaryFontFamily);
+
   TextStyle get normal18w600 => customStyle(
       fontSize: 18,
       letterSpacing: 0.0,
