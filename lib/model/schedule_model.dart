@@ -240,6 +240,7 @@ class ScheduleData {
       }
     }
     return 1; // Single day events have duration of 1 day
+  }
 
   /// Get tag names as a comma-separated string
   String get tagNames {
