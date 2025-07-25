@@ -5,7 +5,12 @@ class RosterDetailModel {
   String? result;
   String? serverTime;
 
-  RosterDetailModel({this.data, this.responseCode, this.responseMsg, this.result, this.serverTime});
+  RosterDetailModel(
+      {this.data,
+      this.responseCode,
+      this.responseMsg,
+      this.result,
+      this.serverTime});
 
   RosterDetailModel.fromJson(Map<String, dynamic> json) {
     if (json['data'] != null) {
@@ -46,7 +51,16 @@ class RosterDetails {
   List<PlayerTeams>? playerTeams;
 
   RosterDetails(
-      {this.teamId, this.userBy, this.icon, this.name, this.zipcode, this.country, this.sports, this.teamCode, this.iconImage, this.playerTeams});
+      {this.teamId,
+      this.userBy,
+      this.icon,
+      this.name,
+      this.zipcode,
+      this.country,
+      this.sports,
+      this.teamCode,
+      this.iconImage,
+      this.playerTeams});
 
   RosterDetails.fromJson(Map<String, dynamic> json) {
     teamId = json['team_id'];
@@ -106,31 +120,33 @@ class PlayerTeams {
   String? zipcode;
   String? fcmToken;
   String? activityUserStatus;
+  String? activityUserNote;
   Pivot? pivot;
 
   PlayerTeams(
       {this.userId,
-        this.allergy,
-        this.firstName,
-        this.lastName,
-        this.email,
-        this.role,
-        this.playerCode,
-        this.profile,
-        this.dob,
-        this.gender,
-        this.jerseyNumber,
-        this.position,
-        this.activityUserStatus,
-        this.phoneNumber,
-        this.address,
-        this.latitude,
-        this.longitude,
-        this.city,
-        this.state,
-        this.zipcode,
-        this.fcmToken,
-        this.pivot});
+      this.allergy,
+      this.firstName,
+      this.lastName,
+      this.email,
+      this.role,
+      this.playerCode,
+      this.profile,
+      this.dob,
+      this.gender,
+      this.jerseyNumber,
+      this.position,
+      this.activityUserStatus,
+      this.activityUserNote,
+      this.phoneNumber,
+      this.address,
+      this.latitude,
+      this.longitude,
+      this.city,
+      this.state,
+      this.zipcode,
+      this.fcmToken,
+      this.pivot});
 
   PlayerTeams.fromJson(Map<String, dynamic> json) {
     userId = json['user_id'];
@@ -152,6 +168,7 @@ class PlayerTeams {
     city = json['city'];
     state = json['state'];
     activityUserStatus = json['activity_user_status'];
+    activityUserNote = json['activity_user_note'];
 
     zipcode = json['zipcode'];
     fcmToken = json['fcm_token'];
@@ -177,6 +194,7 @@ class PlayerTeams {
     data['latitude'] = this.latitude;
     data['longitude'] = this.longitude;
     data['activity_user_status'] = this.activityUserStatus;
+    data['activity_user_note'] = this.activityUserNote;
     data['city'] = this.city;
     data['state'] = this.state;
     data['zipcode'] = this.zipcode;

@@ -28,6 +28,7 @@ class ApiEndPoint {
   static const String createScore = "/api/createScore";
   static const String setChallengeStatus = "/api/setChallengeStatus";
   static const String setActivityStatus = "/api/setActivityStatus";
+  static const String sendRsvpNudge = "/api/sendRsvpNudge";
   static const String profileDetails = "/api/profileDetails";
   static const String homeDetails = "/api/homeDetails";
   static const String checkPlayerCode = "/api/checkPlayerCode";
@@ -41,5 +42,9 @@ class ApiEndPoint {
   static const String removeWebCalList = "/api/removeWebCalList";
   static const String setTransaction = "/api/setTransaction";
   static const String getTransactionList = "/api/getTransactionList";
-
+  // tag management endpoints
+  static const String getEventTags = "/api/getEventTags";
+  static const String createEventTag = "/api/createEventTag";
+  static const String updateEventTag = "/api/updateEventTag";
+  static const String deleteEventTag = "/api/deleteEventTag";
 }
