@@ -167,6 +167,8 @@ class AddGameController extends GetxController {
         "standings": isStanding.value == true ? 1 : 0,
         "status": isCanceled.value == true ? "canceled" : "active",
         "reason": reasonController.value.text.toString(),
+        // Frequency fields for editing
+        "max_create_date": freqEndDateController.value.text.trim(),
         // NEW: Add selected tag IDs
         if (selectedTags.isNotEmpty)
           "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
@@ -928,6 +930,10 @@ class AddGameController extends GetxController {
         if (activityDetail.value?.weekDay != null) {
           selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
           print(selectedDays);
+        }
+        // Populate frequency end date for editing
+        if (activityDetail.value?.maxCreateDate != null && activityDetail.value!.maxCreateDate!.isNotEmpty) {
+          freqEndDateController.value.text = activityDetail.value!.maxCreateDate!;
         }
         isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
         if (isMultiDay.value) {

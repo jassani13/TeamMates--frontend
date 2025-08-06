@@ -184,8 +184,8 @@ class GameProgressScreen extends StatelessWidget {
                             children: [
                               CommonTitleText(
 
-                                text: (controller.activityDetails.value.data!.eventDate!.isNotEmpty)
-                                    ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(controller.activityDetails.value.data!.eventDate!))
+                                text: (controller.activityDetails.value.data?.eventDate?.isNotEmpty ?? false)
+                                    ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(controller.activityDetails.value.data?.eventDate ?? ''))
                                     : '',
 
                               ),
