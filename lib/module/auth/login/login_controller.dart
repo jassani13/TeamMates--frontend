@@ -117,6 +117,12 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
+        
+        // Set proUser=true for specific email
+        if (lEmailController.text.toString().toLowerCase() == "demoteammates@gmail.com") {
+          AppPref().proUser = true;
+        }
+        
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else if (userModel.role == 'family') {
@@ -163,6 +169,11 @@ class LoginController extends GetxController {
           UserModel userModel = UserModel.fromJson(res?.data['data']["details"]);
           AppPref().userModel = userModel;
           AppPref().userId = userModel.userId;
+          
+          // Set proUser=true for specific email
+          if (email.toLowerCase() == "demoteammates@gmail.com") {
+            AppPref().proUser = true;
+          }
 
           if (userModel.role == null) {
             Get.toNamed(AppRouter.selectRole);
@@ -220,6 +231,12 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
+        
+        // Set proUser=true for specific email
+        if (email.toLowerCase() == "demoteammates@gmail.com") {
+          AppPref().proUser = true;
+        }
+        
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else {

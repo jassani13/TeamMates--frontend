@@ -882,68 +882,73 @@ class AddGameController extends GetxController {
     if (AppPref().role == 'coach') {
       getEventTagsApiCall();
     }
-    if (activityDetail.value != null) {
-      teamController.value.text = activityDetail.value?.team?.name ?? "";
-      activityNameController.value.text =
-          activityDetail.value?.activityName ?? "";
-      dateController.value.text = activityDetail.value?.eventDate ?? "";
-      startTimeController.value.text = activityDetail.value?.startTime ?? "";
-      endTimeController.value.text = activityDetail.value?.endTime ?? "";
-      // timeZoneController.value.text = activityDetail.value?.timeZone ?? "";
-      opponentController.value.text =
-          activityDetail.value?.opponent?.opponentName ?? "";
-      locationController.value.text =
-          activityDetail.value?.location?.address ?? "";
-      locationDetailsController.value.text =
-          activityDetail.value?.locationDetails ?? "";
-      assignmentController.value.text = activityDetail.value?.assignments ?? "";
-      durationController.value.text = activityDetail.value?.duration ?? "";
-      arriveController.value.text = activityDetail.value?.arriveEarly ?? "";
-      extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
-      extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
-      noteController.value.text = activityDetail.value?.notes ?? "";
-      flagController.value.text = activityDetail.value?.flagColor ?? "";
-      uniformController.value.text = activityDetail.value?.uniform ?? "";
-      reasonController.value.text = activityDetail.value?.reason ?? "";
-      isAway.value =
-          (activityDetail.value?.areaType ?? "").toLowerCase() == "away";
-      notify.value = activityDetail.value?.notifyTeam == 1;
-      isTimeTBD.value = activityDetail.value?.isTimeTbd == 1;
-      isStanding.value = activityDetail.value?.standings == 1;
-      isCanceled.value = activityDetail.value?.status == "canceled";
-      selectedTeam.value ??= Roster();
-      selectedOpponent.value ??= OpponentModel();
-      selectedLocation.value ??= LocationData();
-      selectedTeam.value?.teamId = activityDetail.value?.teamId ?? 0;
-      selectedOpponent.value?.opponentId =
-          activityDetail.value?.opponentId ?? 0;
-      selectedLocation.value?.locationId =
-          activityDetail.value?.locationId ?? 0;
-      selectedTeam.refresh();
-      selectedLocation.refresh();
-      selectedOpponent.refresh();
-      if (activityDetail.value?.weekDay != null) {
-        selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
-        print(selectedDays);
-      }
-      isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
-      if (isMultiDay.value) {
-        startDateController.value.text = activityDetail.value?.startDate ?? "";
-        endDateController.value.text = activityDetail.value?.endDate ?? "";
-      } else {
+    
+    // Delay reactive updates until after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (activityDetail.value != null) {
+        teamController.value.text = activityDetail.value?.team?.name ?? "";
+        activityNameController.value.text =
+            activityDetail.value?.activityName ?? "";
         dateController.value.text = activityDetail.value?.eventDate ?? "";
+        startTimeController.value.text = activityDetail.value?.startTime ?? "";
+        endTimeController.value.text = activityDetail.value?.endTime ?? "";
+        // timeZoneController.value.text = activityDetail.value?.timeZone ?? "";
+        opponentController.value.text =
+            activityDetail.value?.opponent?.opponentName ?? "";
+        locationController.value.text =
+            activityDetail.value?.location?.address ?? "";
+        locationDetailsController.value.text =
+            activityDetail.value?.locationDetails ?? "";
+        assignmentController.value.text = activityDetail.value?.assignments ?? "";
+        durationController.value.text = activityDetail.value?.duration ?? "";
+        arriveController.value.text = activityDetail.value?.arriveEarly ?? "";
+        extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
+        extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
+        noteController.value.text = activityDetail.value?.notes ?? "";
+        flagController.value.text = activityDetail.value?.flagColor ?? "";
+        uniformController.value.text = activityDetail.value?.uniform ?? "";
+        reasonController.value.text = activityDetail.value?.reason ?? "";
+        isAway.value =
+            (activityDetail.value?.areaType ?? "").toLowerCase() == "away";
+        notify.value = activityDetail.value?.notifyTeam == 1;
+        isTimeTBD.value = activityDetail.value?.isTimeTbd == 1;
+        isStanding.value = activityDetail.value?.standings == 1;
+        isCanceled.value = activityDetail.value?.status == "canceled";
+        if (selectedTeam.value == null) selectedTeam.value = Roster();
+        if (selectedOpponent.value == null) selectedOpponent.value = OpponentModel();
+        if (selectedLocation.value == null) selectedLocation.value = LocationData();
+        selectedTeam.value?.teamId = activityDetail.value?.teamId ?? 0;
+        selectedOpponent.value?.opponentId =
+            activityDetail.value?.opponentId ?? 0;
+        selectedLocation.value?.locationId =
+            activityDetail.value?.locationId ?? 0;
+        selectedTeam.refresh();
+        selectedLocation.refresh();
+        selectedOpponent.refresh();
+        if (activityDetail.value?.weekDay != null) {
+          selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+          print(selectedDays);
+        }
+        isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
+        if (isMultiDay.value) {
+          startDateController.value.text = activityDetail.value?.startDate ?? "";
+          endDateController.value.text = activityDetail.value?.endDate ?? "";
+        } else {
+          dateController.value.text = activityDetail.value?.eventDate ?? "";
+        }
       }
-    }
-    if (activityDetail.value?.tags != null &&
-        activityDetail.value!.tags!.isNotEmpty) {
-      selectedTags.assignAll(activityDetail.value!.tags!);
-      _updateTagDisplay();
-    }
-    if (activityType.value == 'game') {
-      getRosterApiCall();
-      getOpponentListApiCall();
-    }
-    getLocationListApiCall();
+      if (activityDetail.value?.tags != null &&
+          activityDetail.value!.tags!.isNotEmpty) {
+        selectedTags.assignAll(activityDetail.value!.tags!);
+        _updateTagDisplay();
+      }
+      if (activityType.value == 'game') {
+        getRosterApiCall();
+        getOpponentListApiCall();
+      }
+      getLocationListApiCall();
+    });
+    
     super.onInit();
   }
 }

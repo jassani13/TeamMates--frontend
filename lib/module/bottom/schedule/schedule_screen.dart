@@ -203,7 +203,7 @@ class ScheduleScreen extends StatelessWidget {
                                             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppColor.black12Color),
                                             child: Text(
                                               item.isNotEmpty
-                                                  ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(item))
+                                                  ? item
                                                   : '',
                                               style: TextStyle().normal16w500.textColor(AppColor.white),
                                             ),
