@@ -41,6 +41,7 @@ class ScheduleData {
   int? isMultiDay; // Boolean flag (0 or 1)
   String? startDate; // Start date for multi-day events
   String? endDate; // End date for multi-day events
+  String? maxCreateDate; // Frequency end date for recurring events
 
   ScheduleData({
     this.activityId,
@@ -79,6 +80,7 @@ class ScheduleData {
     this.isMultiDay,
     this.startDate,
     this.endDate,
+    this.maxCreateDate,
     this.canSendNudge,
     this.lastNudgeSent,
   });
@@ -116,6 +118,10 @@ class ScheduleData {
     teamId = json['team_id'];
     status = json['status'];
     reason = json['reason'];
+    maxCreateDate = json['max_create_date'];
+    isMultiDay = json['is_multi_day'];
+    startDate = json['start_date'];
+    endDate = json['end_date'];
 
     if (json['tags'] != null) {
       tags = <EventTag>[];
@@ -170,6 +176,7 @@ class ScheduleData {
     data['is_multi_day'] = this.isMultiDay;
     data['start_date'] = this.startDate;
     data['end_date'] = this.endDate;
+    data['max_create_date'] = this.maxCreateDate;
 
     if (this.tags != null) {
       data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
