@@ -19,10 +19,10 @@ BaseOptions baseOptions = BaseOptions(
 const bool useLocalServer = true; // Change this to switch servers
 
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-// const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
  // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
- const String productionBaseUrl = 'http://127.0.0.1:8000';
- const String localBaseUrl = 'http://127.0.0.1:8000'; // Test ENV
+ const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
+// const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
 
 const String baseUrl = useLocalServer && kDebugMode 
     ? localBaseUrl 
@@ -34,8 +34,8 @@ const String baseUrl = useLocalServer && kDebugMode
 //    : "http://127.0.0.1:8000/public/";
 
 const String publicImageUrl = useLocalServer && kDebugMode
-    ? "http://127.0.0.1:8000/public/"
-    : "http://127.0.0.1:8000/public/";
+    ? "$localBaseUrl/public/"
+    : "http://34.205.17.49/TeamMates/public/";
 
 // https://team.notegiftcard.com/migrate-fresh DB clear
 
