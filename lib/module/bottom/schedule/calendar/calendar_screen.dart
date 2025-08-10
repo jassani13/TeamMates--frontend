@@ -75,11 +75,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
                     if (events.isEmpty) return const SizedBox();
-                    
+
                     // Group events by type with null safety
-                    final internalEvents = events.where((e) => e != null && e is Map<String, dynamic> && e['type'] == 'internal_schedule').toList();
-                    final externalEvents = events.where((e) => e != null && e is Map<String, dynamic> && e['type'] == 'external_calendar').toList();
-                    
+                    final internalEvents = events
+                        .where((e) =>
+                            e != null &&
+                            e is Map<String, dynamic> &&
+                            e['type'] == 'internal_schedule')
+                        .toList();
+                    final externalEvents = events
+                        .where((e) =>
+                            e != null &&
+                            e is Map<String, dynamic> &&
+                            e['type'] == 'external_calendar')
+                        .toList();
+
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -88,7 +98,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           Container(
                             width: 6,
                             height: 6,
-                            margin: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 1),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 0.5, vertical: 1),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColor.primaryColorLight,
@@ -99,7 +110,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           Container(
                             width: 6,
                             height: 6,
-                            margin: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 1),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 0.5, vertical: 1),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.green,
@@ -118,27 +130,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     color: AppColor.black12Color,
                     shape: BoxShape.circle,
                   ),
-                  weekendTextStyle: TextStyle().normal14w500.textColor(AppColor.black12Color),
-                  defaultTextStyle: TextStyle().normal14w500.textColor(AppColor.black12Color),
-                  outsideTextStyle: TextStyle().normal14w500.textColor(AppColor.grey300),
+                  weekendTextStyle:
+                      TextStyle().normal14w500.textColor(AppColor.black12Color),
+                  defaultTextStyle:
+                      TextStyle().normal14w500.textColor(AppColor.black12Color),
+                  outsideTextStyle:
+                      TextStyle().normal14w500.textColor(AppColor.grey300),
                   markersMaxCount: 3,
                   markersAlignment: Alignment.bottomCenter,
                   markerDecoration: const BoxDecoration(),
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(
-                  weekendStyle: TextStyle().normal14w500.textColor(AppColor.black12Color),
-                  weekdayStyle: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                  weekendStyle:
+                      TextStyle().normal14w500.textColor(AppColor.black12Color),
+                  weekdayStyle:
+                      TextStyle().normal14w500.textColor(AppColor.black12Color),
                 ),
                 headerStyle: const HeaderStyle(
-                  titleTextStyle: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  titleTextStyle: TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold),
                   formatButtonVisible: false,
-                  leftChevronIcon: Icon(Icons.chevron_left, color: Colors.black),
-                  rightChevronIcon: Icon(Icons.chevron_right, color: Colors.black),
+                  leftChevronIcon:
+                      Icon(Icons.chevron_left, color: Colors.black),
+                  rightChevronIcon:
+                      Icon(Icons.chevron_right, color: Colors.black),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Legend for event types
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -158,7 +178,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Team Events',
-                        style: TextStyle().normal12w500.textColor(AppColor.black12Color),
+                        style: TextStyle()
+                            .normal12w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ],
                   ),
@@ -176,14 +198,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'External Calendars',
-                        style: TextStyle().normal12w500.textColor(AppColor.black12Color),
+                        style: TextStyle()
+                            .normal12w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             Expanded(
               child: Obx(() {
                 final events = controller.selectedDayEvents;
@@ -195,12 +219,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.event_busy, size: 80, color: AppColor.primaryColorLight.withOpacity(0.7)),
+                          Icon(Icons.event_busy,
+                              size: 80,
+                              color:
+                                  AppColor.primaryColorLight.withOpacity(0.7)),
                           const SizedBox(height: 16),
                           Text(
                             "No events for selected date",
                             textAlign: TextAlign.center,
-                            style: TextStyle().normal16w600.textColor(AppColor.grey4EColor),
+                            style: TextStyle()
+                                .normal16w600
+                                .textColor(AppColor.grey4EColor),
                           ),
                         ],
                       ),
@@ -209,12 +238,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: events.length,
                   itemBuilder: (context, index) {
                     final event = events[index];
-                    final bool isInternalEvent = event['type'] == 'internal_schedule';
-                    
+                    final bool isInternalEvent =
+                        event['type'] == 'internal_schedule';
+
                     return _buildEventCard(event, isInternalEvent);
                   },
                 );
@@ -242,18 +273,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final String uniform = event['uniform']?.toString() ?? '';
     final String arriveEarly = event['arrive_early']?.toString() ?? '';
     final String duration = event['duration']?.toString() ?? '';
-    
+
     // Parse date/time with null safety
     final dynamic startDtRaw = event['dtstart']?['dt'];
     final dynamic endDtRaw = event['dtend']?['dt'];
-    
+
     if (startDtRaw == null || endDtRaw == null) {
       return const SizedBox.shrink();
     }
-    
+
     final String startDt = startDtRaw.toString();
     final String endDt = endDtRaw.toString();
-    
+
     late DateTime start, end;
     try {
       start = DateTime.parse(startDt);
@@ -261,9 +292,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     } catch (e) {
       return const SizedBox.shrink();
     }
-    
+
     final String formattedDate = DateFormat('EEEE, MMMM d, y').format(start);
-    final String formattedTime = '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
+    final String formattedTime =
+        '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
 
     return GestureDetector(
       onTap: () {
@@ -312,18 +344,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     children: [
                       Text(
                         summary,
-                        style: TextStyle().normal16w700.textColor(AppColor.black12Color),
+                        style: TextStyle()
+                            .normal16w700
+                            .textColor(AppColor.black12Color),
                       ),
                       Text(
                         activityType == 'game' ? 'Game' : 'Team Event',
-                        style: TextStyle().normal12w500.textColor(AppColor.primaryColorLight),
+                        style: TextStyle()
+                            .normal12w500
+                            .textColor(AppColor.primaryColorLight),
                       ),
                     ],
                   ),
                 ),
                 if (event['is_live'] == 1)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(12),
@@ -345,22 +382,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 const SizedBox(width: 6),
                 Text(
                   '$formattedDate | $formattedTime',
-                  style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                  style: TextStyle()
+                      .normal14w500
+                      .textColor(AppColor.black12Color.withOpacity(0.7)),
                 ),
               ],
             ),
 
             if (location.isNotEmpty) ...[
               const SizedBox(height: 8),
+
               /// Location
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                  const Icon(Icons.location_on_outlined,
+                      size: 16, color: Colors.grey),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       location,
-                      style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                      style: TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color.withOpacity(0.7)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -376,7 +419,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'Uniform: $uniform',
-                    style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.black12Color.withOpacity(0.7)),
                   ),
                 ],
               ),
@@ -390,7 +435,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'Arrive Early: $arriveEarly minutes',
-                    style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.black12Color.withOpacity(0.7)),
                   ),
                 ],
               ),
@@ -400,7 +447,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 10),
               Text(
                 description,
-                style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                style:
+                    TextStyle().normal14w500.textColor(AppColor.black12Color),
               ),
             ],
           ],
@@ -412,16 +460,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildExternalEventCard(Map<String, dynamic> event) {
     final String summary = event['summary']?.toString() ?? 'No Title';
     final String location = event['location']?.toString() ?? 'Unknown Location';
-    final String description = cleanDescription(event['description']?.toString() ?? '');
-    final String? mapUrl = extractMapUrl(event['description']?.toString() ?? '');
+    final String description =
+        cleanDescription(event['description']?.toString() ?? '');
+    final String? mapUrl =
+        extractMapUrl(event['description']?.toString() ?? '');
 
     final dynamic rawDt = event['dtstart']?.dt;
     final dynamic rawDtEnd = event['dtend']?.dt;
-    
+
     if (rawDt == null || rawDtEnd == null) {
       return const SizedBox.shrink();
     }
-    
+
     late DateTime start, end;
     try {
       start = DateTime.parse(rawDt.toString());
@@ -429,9 +479,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     } catch (e) {
       return const SizedBox.shrink();
     }
-    
+
     final String formattedDate = DateFormat('EEEE, MMMM d, y').format(start);
-    final String formattedTime = '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
+    final String formattedTime =
+        '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -465,7 +516,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   children: [
                     Text(
                       summary,
-                      style: TextStyle().normal16w700.textColor(AppColor.black12Color),
+                      style: TextStyle()
+                          .normal16w700
+                          .textColor(AppColor.black12Color),
                     ),
                     Text(
                       'External Calendar',
@@ -486,7 +539,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(width: 6),
               Text(
                 '$formattedDate | $formattedTime',
-                style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                style: TextStyle()
+                    .normal14w500
+                    .textColor(AppColor.black12Color.withOpacity(0.7)),
               ),
             ],
           ),
@@ -496,12 +551,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
           /// Location
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+              const Icon(Icons.location_on_outlined,
+                  size: 16, color: Colors.grey),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   location,
-                  style: TextStyle().normal14w500.textColor(AppColor.black12Color.withOpacity(0.7)),
+                  style: TextStyle()
+                      .normal14w500
+                      .textColor(AppColor.black12Color.withOpacity(0.7)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -525,7 +583,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'View on Map',
-                    style: TextStyle().normal14w600.textColor(AppColor.primaryColorLight),
+                    style: TextStyle()
+                        .normal14w600
+                        .textColor(AppColor.primaryColorLight),
                   ),
                 ],
               ),
@@ -576,55 +636,77 @@ class _CalendarScreenState extends State<CalendarScreen> {
               maxLine: 2,
             ),
             Gap(20),
-            Row(
+            // FIXED: Stack buttons vertically to prevent overflow
+            Column(
               children: [
-                Expanded(
-                  child: CommonAppButton(
-                    text: 'Cancel',
-                    width: 80,
-                    height: 40,
-                    style: TextStyle().normal14w600,
-                    onTap: () => Get.back(),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CommonAppButton(
+                        text: 'Cancel',
+                        height: 40,
+                        style: TextStyle().normal14w600,
+                        onTap: () => Get.back(),
+                      ),
+                    ),
+                    Gap(20),
+                    Expanded(
+                      child: CommonAppButton(
+                        text: 'Subscribe',
+                        height: 40,
+                        style: TextStyle().normal14w600,
+                        onTap: () async {
+                          if (urlController.text.trim().isNotEmpty) {
+                            String inputUrl = urlController.text.trim();
+                            if (inputUrl.startsWith('webcal://')) {
+                              inputUrl = inputUrl.replaceFirst(
+                                  'webcal://', 'https://');
+                            }
+                            if (!mounted) return;
+                            Navigator.of(context).pop();
+                            await controller.addWebCallUrl(link: inputUrl);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Gap(20),
-                Expanded(
+                Gap(12),
+                SizedBox(
+                  width: double.infinity,
                   child: CommonAppButton(
-                    text: 'Subscribe',
-                    width: 80,
+                    text: 'Import from CSV',
                     height: 40,
                     style: TextStyle().normal14w600,
                     onTap: () async {
-                      if (urlController.text.trim().isNotEmpty) {
-                        String inputUrl = urlController.text.trim();
-                        if (inputUrl.startsWith('webcal://')) {
-                          inputUrl = inputUrl.replaceFirst('webcal://', 'https://');
-                        }
-                        if (!mounted) return;
-                        Navigator.of(context).pop();
-                        await controller.addWebCallUrl(link: inputUrl);
-                      }
-                    },
-                  ),
-                ),
-                Gap(20),
-                Expanded(
-                  child: CommonAppButton(
-                    text: 'Insert via csv',
-                    width: 80,
-                    height: 40,
-                    style: TextStyle().normal14w600,
-                    onTap: () async {
-                      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['csv'], withData: true);
+                      FilePickerResult? result = await FilePicker.platform
+                          .pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: ['csv'],
+                              withData: true);
+
                       if (result != null && result.files.single.bytes != null) {
-                        String csvString = utf8.decode(result.files.single.bytes!);
-                        List<List<dynamic>> rows = const CsvToListConverter().convert(csvString);
+                        String csvString =
+                            utf8.decode(result.files.single.bytes!);
+                        List<List<dynamic>> rows =
+                            const CsvToListConverter().convert(csvString);
 
                         // Correct header
-                        List<String> expectedHeader = ['date', 'start_time', 'end_time', 'event_type', 'title', 'team_name', 'location', 'opponent'];
-                        if (rows.isEmpty || !ListEquality().equals(rows[0], expectedHeader)) {
+                        List<String> expectedHeader = [
+                          'date',
+                          'start_time',
+                          'end_time',
+                          'event_type',
+                          'title',
+                          'team_name',
+                          'location',
+                          'opponent'
+                        ];
+
+                        if (rows.isEmpty ||
+                            !ListEquality().equals(rows[0], expectedHeader)) {
                           showAppErrorDialog(context, "CSV Import Error", [
-                            'Invalid CSV header. Expected:  [1m${expectedHeader.join(", ")} [0m.'
+                            'Invalid CSV header. Expected: ${expectedHeader.join(", ")}.'
                           ]);
                           return;
                         }
@@ -635,16 +717,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         for (int i = 1; i < rows.length; i++) {
                           var row = rows[i];
                           if (row.length != expectedHeader.length) {
-                            errors.add('Row  ${i + 1}: Incorrect number of columns.');
+                            errors.add(
+                                'Row ${i + 1}: Incorrect number of columns.');
                             continue;
                           }
+
                           // Map row to event
                           final event = <String, dynamic>{};
                           for (int j = 0; j < expectedHeader.length; j++) {
-                            event[expectedHeader[j]] = row[j]?.toString().trim() ?? '';
+                            event[expectedHeader[j]] =
+                                row[j]?.toString().trim() ?? '';
                           }
 
-                          final eventType = (event['event_type'] ?? '').toString().toLowerCase();
+                          final eventType = (event['event_type'] ?? '')
+                              .toString()
+                              .toLowerCase();
 
                           // Validation for required fields
                           if (eventType == 'game') {
@@ -652,7 +739,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             bool missing = false;
                             for (final field in expectedHeader) {
                               if ((event[field] ?? '').toString().isEmpty) {
-                                errors.add('Row ${i + 1}: Field "$field" is required for event_type "game".');
+                                errors.add(
+                                    'Row ${i + 1}: Field "$field" is required for event_type "game".');
                                 missing = true;
                               }
                             }
@@ -660,46 +748,55 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           } else {
                             // For non-game, team_name and opponent can be blank, others required
                             for (final field in expectedHeader) {
-                              if ((field == 'team_name' || field == 'opponent')) continue;
+                              if ((field == 'team_name' || field == 'opponent'))
+                                continue;
                               if ((event[field] ?? '').toString().isEmpty) {
-                                errors.add('Row ${i + 1}: Field "$field" is required for event_type "$eventType".');
+                                errors.add(
+                                    'Row ${i + 1}: Field "$field" is required for event_type "$eventType".');
                               }
                             }
                             // If any required field is missing, skip this row
-                            if (errors.isNotEmpty && errors.last.startsWith('Row ${i + 1}:')) continue;
+                            if (errors.isNotEmpty &&
+                                errors.last.startsWith('Row ${i + 1}:'))
+                              continue;
                           }
 
                           validEvents.add(event);
                         }
 
                         if (errors.isNotEmpty) {
-                          showAppErrorDialog(context, "CSV Import Errors", errors);
+                          showAppErrorDialog(
+                              context, "CSV Import Errors", errors);
                         } else {
-                          List<String> errorsReturned = await controller.addEventsFromCsv(validEvents);
+                          List<String> errorsReturned =
+                              await controller.addEventsFromCsv(validEvents);
                           if (errorsReturned.isNotEmpty) {
-                            showAppErrorDialog(context, "CSV Import Errors", errorsReturned);
+                            showAppErrorDialog(
+                                context, "CSV Import Errors", errorsReturned);
                           } else if (context.mounted) {
                             Navigator.of(context).pop();
                           }
                         }
                       }
-                    }
+                    },
                   ),
                 ),
               ],
-            )
+            ),
           ],
         );
       },
     );
   }
 
-  void _showUnSubscribedDialog(BuildContext context, CalendarViewController controller) {
+  void _showUnSubscribedDialog(
+      BuildContext context, CalendarViewController controller) {
     showDialog(
       context: context,
       builder: (context) {
         return SimpleDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           contentPadding: EdgeInsets.all(20),
           children: [
             Text(
@@ -714,7 +811,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: links.isEmpty
                     ? Text(
                         "No calendar links found.",
-                        style: TextStyle().normal16w500.textColor(AppColor.grey4EColor),
+                        style: TextStyle()
+                            .normal16w500
+                            .textColor(AppColor.grey4EColor),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -726,7 +825,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             contentPadding: EdgeInsets.zero,
                             title: Text(
                               link,
-                              style: TextStyle().normal16w500.textColor(AppColor.black12Color),
+                              style: TextStyle()
+                                  .normal16w500
+                                  .textColor(AppColor.black12Color),
                             ),
                             trailing: IconButton(
                               icon: Icon(Icons.delete, color: Colors.red),
@@ -746,50 +847,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-void showAppErrorDialog(BuildContext context, String title, List<String> errors) {
-  showDialog(
-    context: context,
-    builder: (context) => Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle().normal18w700.textColor(AppColor.redColor),
-            ),
-            const SizedBox(height: 12),
-            ...errors.map((e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.error, color: AppColor.redColor, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          e,
-                          style: TextStyle().normal14w500.textColor(AppColor.black12Color),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Close', style: TextStyle().normal16w600.textColor(AppColor.redColor)),
+  void showAppErrorDialog(
+      BuildContext context, String title, List<String> errors) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle().normal18w700.textColor(AppColor.redColor),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              ...errors.map((e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.error, color: AppColor.redColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            e,
+                            style: TextStyle()
+                                .normal14w500
+                                .textColor(AppColor.black12Color),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Close',
+                      style: TextStyle()
+                          .normal16w600
+                          .textColor(AppColor.redColor)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
