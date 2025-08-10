@@ -162,30 +162,141 @@ class AddGameScreen extends StatelessWidget {
                   ),
                   Gap(16),
                   ],
+                  // MERGED: Multi-day event toggle and conditional date fields (from TA-37)
                   Column(
                     children: [
-                      CommonTextField(
-                        hintText: "Date",
-                        readOnly: true,
-                        suffixIcon: Icon(
-                          Icons.keyboard_arrow_down_sharp,
-                          color: AppColor.black12Color,
-                        ),
-                        controller: addGameController.dateController.value,
-                        onTap: () {
-                          addGameController.showDatePicker(context, 0, addGameController.dateController.value,
-                              initial: addGameController.dateController.value.text.isNotEmpty
-                                  ? DateTime.parse(addGameController.dateController.value.text)
-                                  : null);
-                        },
-                        validator: (val) {
-                          if ((val ?? "").isEmpty) {
-                            return "Please select date";
-                          } else {
-                            return null;
-                          }
-                        },
+                      // Multi-day toggle
+                      Row(
+                        children: [
+                          Text(
+                            "Multi-day event",
+                            style: TextStyle()
+                                .normal16w500
+                                .textColor(AppColor.black12Color),
+                          ),
+                          Spacer(),
+                          Obx(() => Switch(
+                                value: addGameController.isMultiDay.value,
+                                onChanged: (val) =>
+                                    addGameController.toggleMultiDay(),
+                              )),
+                        ],
                       ),
+                      Gap(16),
+
+                      // Conditional date fields
+                      Obx(() => addGameController.isMultiDay.value
+                          ? Column(
+                              children: [
+                                // Start Date field
+                                CommonTextField(
+                                  hintText: "Start Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller: addGameController
+                                      .startDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        0,
+                                        addGameController
+                                            .startDateController.value,
+                                        initial: addGameController
+                                                .startDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .startDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select start date";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                Gap(16),
+                                // End Date field
+                                CommonTextField(
+                                  hintText: "End Date",
+                                  readOnly: true,
+                                  suffixIcon: Icon(
+                                    Icons.keyboard_arrow_down_sharp,
+                                    color: AppColor.black12Color,
+                                  ),
+                                  controller:
+                                      addGameController.endDateController.value,
+                                  onTap: () {
+                                    addGameController.showDatePicker(
+                                        context,
+                                        1,
+                                        addGameController
+                                            .endDateController.value,
+                                        initial: addGameController
+                                                .endDateController
+                                                .value
+                                                .text
+                                                .isNotEmpty
+                                            ? DateTime.parse(addGameController
+                                                .endDateController.value.text)
+                                            : null);
+                                  },
+                                  validator: (val) {
+                                    if ((val ?? "").isEmpty) {
+                                      return "Please select end date";
+                                    }
+
+                                    // Validate end date is not before start date
+                                    final startText = addGameController
+                                        .startDateController.value.text;
+                                    if (startText.isNotEmpty &&
+                                        val!.isNotEmpty) {
+                                      try {
+                                        final startDate =
+                                            DateTime.parse(startText);
+                                        final endDate = DateTime.parse(val);
+                                        if (endDate.isBefore(startDate)) {
+                                          return "End date cannot be before start date";
+                                        }
+                                      } catch (e) {
+                                        return "Invalid date format";
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : CommonTextField(
+                              hintText: "Date",
+                              readOnly: true,
+                              suffixIcon: Icon(
+                                Icons.keyboard_arrow_down_sharp,
+                                color: AppColor.black12Color,
+                              ),
+                              controller:
+                                  addGameController.dateController.value,
+                              onTap: () {
+                                addGameController.showDatePicker(context, 0,
+                                    addGameController.dateController.value,
+                                    initial: addGameController.dateController
+                                            .value.text.isNotEmpty
+                                        ? DateTime.parse(addGameController
+                                            .dateController.value.text)
+                                        : null);
+                              },
+                              validator: (val) {
+                                if ((val ?? "").isEmpty) {
+                                  return "Please select date";
+                                }
+                                return null;
+                              },
+                            )),
                       Gap(16),
                     ],
                   ),
@@ -200,7 +311,11 @@ class AddGameScreen extends StatelessWidget {
 
                             final startText = val!;
                             final endText = addGameController.endTimeController.value.text;
-                            final dateText = addGameController.dateController.value.text;
+                            
+                            // MERGED: Use appropriate date field based on multi-day setting (from TA-37)
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController.startDateController.value.text
+                                : addGameController.dateController.value.text;
 
                             if (endText.isNotEmpty) {
                               try {
@@ -225,7 +340,10 @@ class AddGameScreen extends StatelessWidget {
                           ),
                           controller: addGameController.startTimeController.value,
                           onTap: () {
-                            final dateText = addGameController.dateController.value.text;
+                            // MERGED: Use appropriate date field based on multi-day setting (from TA-37)
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController.startDateController.value.text
+                                : addGameController.dateController.value.text;
                             final timeText = addGameController.startTimeController.value.text;
 
                             DateTime initialTime;
@@ -261,7 +379,10 @@ class AddGameScreen extends StatelessWidget {
                           ),
                           controller: addGameController.endTimeController.value,
                           onTap: () {
-                            final dateText = addGameController.dateController.value.text;
+                            // MERGED: Use appropriate date field based on multi-day setting (from TA-37)
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController.startDateController.value.text
+                                : addGameController.dateController.value.text;
                             final timeText = addGameController.endTimeController.value.text;
 
                             DateTime initialTime;
@@ -291,7 +412,11 @@ class AddGameScreen extends StatelessWidget {
 
                             final endText = val!;
                             final startText = addGameController.startTimeController.value.text;
-                            final dateText = addGameController.dateController.value.text;
+                            
+                            // MERGED: Use appropriate date field based on multi-day setting (from TA-37)
+                            final dateText = addGameController.isMultiDay.value
+                                ? addGameController.startDateController.value.text
+                                : addGameController.dateController.value.text;
 
                             if (startText.isNotEmpty) {
                               try {
@@ -312,7 +437,7 @@ class AddGameScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Frequency fields - show for both new and edit modes
+                  // TA-42: Frequency fields - show for both new and edit modes (allows editing frequency in existing events)
                   Column(
                     children: [
                       Gap(16),
@@ -337,6 +462,7 @@ class AddGameScreen extends StatelessWidget {
                                   ? DateTime.parse(addGameController.freqEndDateController.value.text)
                                   : null);
                         },
+                        // TA-42: Validation ensures end date required when frequency selected
                         // validator: (val) {
                         //   if ((val ?? "").isEmpty) {
                         //     return "Please select date";
@@ -552,6 +678,73 @@ class AddGameScreen extends StatelessWidget {
                     },
                   ),
                   Gap(16),
+                  // MERGED: Event Tags UI (from TA-32)
+                  if (AppPref().role == 'coach') ...[
+                    CommonTextField(
+                      hintText: "Event Tags (Optional)",
+                      readOnly: true,
+                      suffixIcon: Icon(
+                        Icons.keyboard_arrow_down_sharp,
+                        color: AppColor.black12Color,
+                      ),
+                      controller: addGameController.tagController.value,
+                      onTap: () {
+                        addGameController.showTagSelectionSheet(context);
+                      },
+                    ),
+
+                    // Selected Tags Preview
+                    Gap(8),
+                    Obx(() {
+                      if (addGameController.selectedTags.isEmpty) {
+                        return SizedBox.shrink();
+                      }
+                      return Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColor.greyF6Color,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColor.greyEAColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Selected Tags:',
+                              style: TextStyle()
+                                  .normal12w500
+                                  .textColor(AppColor.grey6EColor),
+                            ),
+                            Gap(8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children:
+                                  addGameController.selectedTags.map((tag) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: tag.color,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    tag.displayName,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    Gap(16),
+                  ],
                   CommonTextField(
                     hintText: "Notes",
                     keyboardType: TextInputType.text,
