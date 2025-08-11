@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>203627866523-ores5n5ingld2hqtru6qt5bd7bqar9f7.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.203627866523-ores5n5ingld2hqtru6qt5bd7bqar9f7</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>203627866523-4e9bs2f7o48nb8cvn6aciddlbrepeglv.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBk-knlMA6FJy78DovR5Ii849vf9Fwcb40</string>
+	<key>GCM_SENDER_ID</key>
+	<string>203627866523</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.teammatesapp.app</string>
+	<key>PROJECT_ID</key>
+	<string>teammates-346fc</string>
+	<key>STORAGE_BUCKET</key>
+	<string>teammates-346fc.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:203627866523:ios:5bb71ee5e5bea76e7b593e</string>
+</dict>
+</plist>

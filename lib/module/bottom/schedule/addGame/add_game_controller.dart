@@ -1,0 +1,984 @@
+import 'package:base_code/model/event_tag_model.dart';
+import 'package:base_code/module/bottom/home/home_controller.dart';
+import 'package:base_code/package/config_packages.dart';
+import 'package:base_code/package/screen_packages.dart';
+
+class AddGameController extends GetxController {
+  RxList<int> selectedDays = <int>[].obs;
+  // TA-32: Event tagging functionality
+  RxList<EventTag> availableTags = <EventTag>[].obs;
+  RxList<EventTag> selectedTags = <EventTag>[].obs;
+  Rx<TextEditingController> tagController = TextEditingController().obs;
+
+  Rx<TextEditingController> teamController = TextEditingController().obs;
+  Rx<TextEditingController> dateController = TextEditingController().obs;
+  // TA-42: Frequency end date controller for editing frequency
+  Rx<TextEditingController> freqEndDateController = TextEditingController().obs;
+  Rx<TextEditingController> activityNameController = TextEditingController().obs;
+
+  Rx<TextEditingController> endTimeController = TextEditingController().obs;
+  Rx<TextEditingController> startTimeController = TextEditingController().obs;
+
+  Rx<TextEditingController> opponentController = TextEditingController().obs;
+  Rx<TextEditingController> locationController = TextEditingController().obs;
+  Rx<TextEditingController> locationDetailsController =
+      TextEditingController().obs;
+  Rx<TextEditingController> assignmentController = TextEditingController().obs;
+  Rx<TextEditingController> durationController = TextEditingController().obs;
+  Rx<TextEditingController> arriveController = TextEditingController().obs;
+  Rx<TextEditingController> extraLabelController = TextEditingController().obs;
+  Rx<TextEditingController> uniformController = TextEditingController().obs;
+  Rx<TextEditingController> noteController = TextEditingController().obs;
+  Rx<TextEditingController> flagController = TextEditingController().obs;
+  Rx<TextEditingController> reasonController = TextEditingController().obs;
+  RxList<OpponentModel> opponentList = <OpponentModel>[].obs;
+  RxList<LocationData> locationList = <LocationData>[].obs;
+  RxList<Roster> allRosterModelList = <Roster>[].obs;
+  // TA-37: Multi-day event functionality
+  RxBool isMultiDay = false.obs;
+  Rx<TextEditingController> startDateController = TextEditingController().obs;
+  Rx<TextEditingController> endDateController = TextEditingController().obs;
+
+  var selectedOpponent = Rxn<OpponentModel>();
+  var selectedLocation = Rxn<LocationData>();
+  var selectedTeam = Rxn<Roster>();
+  RxBool isAway = false.obs;
+  RxBool notify = false.obs;
+  RxBool isCanceled = false.obs;
+  RxBool isStanding = false.obs;
+  RxBool isTimeTBD = false.obs;
+  RxBool isGame = true.obs;
+  RxBool isLive = true.obs;
+  RxString activityType = ''.obs;
+
+  List<String> arriveEarly = [
+    "Clear",
+    "30 minutes early",
+    "45 minutes early",
+    "1 hour early",
+    "1 hour 30 minutes early",
+    "2 hours early",
+    "2 hours 30 minutes early",
+  ];
+
+  List<Flag> flagList = <Flag>[
+    Flag(flagColor: AppColor.defaultColor, colorName: "Default"),
+    Flag(flagColor: AppColor.lemonColor, colorName: "Lemon"),
+    Flag(flagColor: AppColor.cherryColor, colorName: "Cherry"),
+    Flag(flagColor: AppColor.limeColor, colorName: "Lime"),
+    Flag(flagColor: AppColor.grapeColor, colorName: "Grape"),
+    Flag(flagColor: AppColor.black12Color, colorName: "Blackberry"),
+  ];
+
+  Future<void> addActivityApi({String? activityType, bool? isGame}) async {
+    try {
+      // TA-42: Frequency validation
+      if (selectedDays.isNotEmpty && freqEndDateController.value.text.isEmpty) {
+        AppToast.showAppToast("An end date is required when a frequency is selected.");
+        return;
+      }
+      FormData formData = FormData.fromMap({
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
+        // TA-42: Frequency end date for new events
+        "max_create_date": freqEndDateController.value.text.trim(),
+        "user_id": AppPref().userId,
+        "notify_team": notify.value == true ? 1 : 0,
+        "activity_type": activityType,
+        "activity_name": activityNameController.value.text.trim(),
+        if (isGame == true) "team_id": selectedTeam.value?.teamId ?? 0,
+        if (isGame == true)
+          "opponent_id": selectedOpponent.value?.opponentId ?? 0,
+        "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
+        // TA-37: Multi-day event support
+        "is_multi_day": isMultiDay.value ? 1 : 0,
+        if (isMultiDay.value) ...{
+          "start_date": startDateController.value.text.trim(),
+          "end_date": endDateController.value.text.trim(),
+        } else
+          "event_date": dateController.value.text.trim(),
+        "start_time": startTimeController.value.text.trim(),
+        "end_time": endTimeController.value.text.trim(),
+        "time_zone": "",
+        "location_id": selectedLocation.value?.locationId ?? 0,
+        "location_details": locationDetailsController.value.text.trim(),
+        "assignments": assignmentController.value.text.trim(),
+        "duration": durationController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
+        "extra_label": extraLabelController.value.text.trim(),
+        "area_type": isAway.value == true ? 'Away' : 'Home',
+        "uniform": uniformController.value.text.trim(),
+        "flag_color": flagController.value.text.trim(),
+        "notes": noteController.value.text.trim(),
+        "standings": isStanding.value == true ? 1 : 0,
+        "status": isCanceled.value == true ? "canceled" : "active",
+        "reason": reasonController.value.text.toString(),
+        // TA-32: Event tags support
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
+      });
+      var response = await callApi(dio.post(
+        ApiEndPoint.createActivity,
+        data: formData,
+      ));
+      if (response?.statusCode == 200) {
+        AppToast.showAppToast(response?.data['ResponseMsg']);
+
+        ScheduleData scheduleData =
+            ScheduleData.fromJson(response?.data['data']);
+        Get.find<HomeController>().refreshKey.currentState?.show();
+        Get.back(result: scheduleData);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  Future<void> editActivityApi(
+      {String? activityType, bool? isGame, required int activityId}) async {
+    try {
+      FormData formData = FormData.fromMap({
+        "week_day": selectedDays.isNotEmpty ? selectedDays.first : [],
+        "user_id": AppPref().userId,
+        "activity_id": activityId,
+        "notify_team": notify.value == true ? 1 : 0,
+        "activity_type": activityType,
+        "activity_name": activityNameController.value.text.trim(),
+        if (isGame == true) "team_id": selectedTeam.value?.teamId ?? 0,
+        if (isGame == true)
+          "opponent_id": selectedOpponent.value?.opponentId ?? 0,
+        "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
+        // TA-37: Multi-day event support in edit mode
+        "is_multi_day": isMultiDay.value ? 1 : 0,
+        if (isMultiDay.value) ...{
+          "start_date": startDateController.value.text.trim(),
+          "end_date": endDateController.value.text.trim(),
+        } else
+          "event_date": dateController.value.text.trim(),
+        "start_time": startTimeController.value.text.trim(),
+        "end_time": endTimeController.value.text.trim(),
+        "time_zone": "",
+        "location_id": selectedLocation.value?.locationId ?? 0,
+        "location_details": locationDetailsController.value.text.trim(),
+        "assignments": assignmentController.value.text.trim(),
+        "duration": durationController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
+        "extra_label": extraLabelController.value.text.trim(),
+        "area_type": isAway.value == true ? 'Away' : 'Home',
+        "uniform": uniformController.value.text.trim(),
+        "flag_color": flagController.value.text.trim(),
+        "notes": noteController.value.text.trim(),
+        "standings": isStanding.value == true ? 1 : 0,
+        "status": isCanceled.value == true ? "canceled" : "active",
+        "reason": reasonController.value.text.toString(),
+        // TA-42: Frequency fields for editing existing events
+        "max_create_date": freqEndDateController.value.text.trim(),
+        // TA-32: Event tags support in edit mode
+        if (selectedTags.isNotEmpty)
+          "tag_ids": selectedTags.map((tag) => tag.tagId).join(','),
+      });
+      var response = await callApi(dio.post(
+        ApiEndPoint.updateActivity,
+        data: formData,
+      ));
+      if (response?.statusCode == 200) {
+        ScheduleData scheduleData =
+            ScheduleData.fromJson(response?.data['data']);
+
+        Get.find<GlobalController>().updateScheduleData(scheduleData);
+        AppToast.showAppToast(response?.data['ResponseMsg']);
+        Get.find<HomeController>().refreshKey.currentState?.show();
+        Get.back(result: scheduleData);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  void showTimeZoneSheet(BuildContext context,
+      {required List<String> list, required TextEditingController storeValue}) {
+    showCustomBottomSheet<String>(
+      context: context,
+      title: "Select Timezone",
+      list: list,
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+      storeValue: storeValue,
+      onItemSelected: (value) {},
+      itemText: (value) => value,
+    );
+  }
+
+  void showArriveEarlySheet(BuildContext context,
+      {required List<String> list, required TextEditingController storeValue}) {
+    showCustomBottomSheet<String>(
+      context: context,
+      title: "Arrive Early",
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      list: list,
+      storeValue: storeValue,
+      onItemSelected: (value) => storeValue.text = value,
+      itemText: (value) => value,
+    );
+  }
+
+  void allTeamList(BuildContext context,
+      {required List<Roster> list, required TextEditingController storeValue}) {
+    showCustomBottomSheet<Roster>(
+      context: context,
+      title: "Please select your\nTeam",
+      list: list,
+      storeValue: storeValue,
+      onItemSelected: (team) => selectedTeam.value = team,
+      itemText: (team) => team.name ?? "",
+      icon: Icons.sports_soccer,
+    );
+  }
+
+  void showOpponentSheet(BuildContext context,
+      {required List<OpponentModel> list,
+      required TextEditingController storeValue}) {
+    showCustomBottomSheet<OpponentModel>(
+      context: context,
+      title: "Opponent",
+      list: list,
+      storeValue: storeValue,
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      onItemSelected: (opponent) => selectedOpponent.value = opponent,
+      itemText: (opponent) => opponent.opponentName ?? "",
+      // icon: Icons.sports_soccer,
+      onNewItem: () async {
+        Get.back();
+        final val = await Get.toNamed(AppRouter.newOpponent);
+        if (val != null && val is OpponentModel) {
+          selectedOpponent.value = val;
+          storeValue.text = selectedOpponent.value?.opponentName ?? "";
+          opponentList.add(val);
+          opponentList.refresh();
+        }
+      },
+    );
+  }
+
+  void showLocationSheet(BuildContext context,
+      {required List<LocationData> list,
+      required TextEditingController storeValue}) {
+    showCustomBottomSheet<LocationData>(
+      context: context,
+      title: "Location",
+      list: list,
+      storeValue: storeValue,
+      constraints:
+          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.50),
+      onItemSelected: (location) => selectedLocation.value = location,
+      itemText: (location) => location.address ?? "",
+      // icon: Icons.location_on_rounded,
+      onNewItem: () async {
+        Get.back();
+        final val = await Get.toNamed(AppRouter.newLocation);
+        if (val != null && val is LocationData) {
+          selectedLocation.value = val;
+          storeValue.text = selectedLocation.value?.address ?? "";
+          locationList.add(val);
+          locationList.refresh();
+        }
+      },
+    );
+  }
+
+  void showFlagSheet(
+    BuildContext context, {
+    required TextEditingController storeValue,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    "Please select your flag color",
+                    style: TextStyle().normal28w500s.textColor(
+                          AppColor.black12Color,
+                        ),
+                  ),
+                  Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Get.back();
+                    },
+                    behavior: HitTestBehavior.translucent,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColor.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            offset: Offset(0, 1),
+                            blurRadius: 8.2,
+                            spreadRadius: -4,
+                            color: AppColor.black.withValues(alpha: 0.25),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Icon(
+                          Icons.close,
+                          color: AppColor.black12Color,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              Gap(16),
+              ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: flagList.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        storeValue.text =
+                            flagList[index].colorName ?? "Default";
+                        Get.back();
+                      },
+                      behavior: HitTestBehavior.translucent,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppColor.greyEAColor,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              height: 24,
+                              width: 24,
+                              decoration: BoxDecoration(
+                                color: flagList[index].flagColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Gap(16),
+                            Text(
+                              flagList[index].colorName ?? "Default",
+                              style: TextStyle()
+                                  .normal14w500
+                                  .textColor(AppColor.black12Color),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // TA-42: showEndDatePicker for frequency end date
+  void showEndDatePicker(
+    BuildContext context,
+    int index,
+    TextEditingController storeValue, {
+    DateTime? initial,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now;
+        DateTime maxDate = DateTime(now.year + 1, now.month, now.day);
+        DateTime effectiveInitial =
+        (initial != null && initial.isAfter(minDate)) ? initial : minDate;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            height: 280,
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Select Date",
+                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        if (storeValue.text.isEmpty) {
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                        }
+                        Get.back();
+                      },
+                      child: Text(
+                        "Done",
+                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 210,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      minimumDate: minDate,
+                      maximumDate: maxDate,
+                      initialDateTime: effectiveInitial,
+                      onDateTimeChanged: (DateTime newDate) {
+                        storeValue.text =
+                            "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showDatePicker(
+    BuildContext context,
+    int index,
+    TextEditingController storeValue, {
+    DateTime? initial,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        DateTime now = DateTime.now();
+        DateTime minDate = now.subtract(const Duration(seconds: 2));
+        DateTime maxDate = now.add(const Duration(days: 366));
+        DateTime effectiveInitial = (initial != null && initial.isAfter(minDate)) ? initial : minDate;
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            height: 280,
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Select Date",
+                      style: const TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        if (storeValue.text.isEmpty) {
+                          DateTime now = DateTime.now();
+                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                        }
+                        Get.back();
+                      },
+                      child: Text(
+                        "Done",
+                        style: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 210,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      initialDateTime: initial ?? DateTime.now(),
+                      minimumDate:
+                          DateTime.now().subtract(Duration(seconds: 2)),
+                      maximumDate: DateTime.now().add(Duration(days: 366)),
+                      onDateTimeChanged: (DateTime newDate) {
+                        storeValue.text =
+                            "${newDate.year.toString()}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showTimePicker(
+    BuildContext context,
+    int index,
+    TextEditingController storeValue, {
+    DateTime? initial,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            height: 280,
+            color: Colors.white,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Select Time",
+                      style: const TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        if (storeValue.text.isEmpty) {
+                          DateTime newTime = DateTime.now();
+                          storeValue.text =
+                              "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
+                        }
+                        Get.back();
+                      },
+                      child: Text(
+                        "Done",
+                        style: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 210,
+                  child: CupertinoTheme(
+                    data: CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        dateTimePickerTextStyle: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
+                      ),
+                    ),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.time,
+                      initialDateTime: initial ?? DateTime.now(),
+                      use24hFormat: true,
+                      onDateTimeChanged: (DateTime newTime) {
+                        storeValue.text =
+                            "${newTime.hour.toString().padLeft(2, '0')}:${newTime.minute.toString().padLeft(2, '0')}:00";
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> getOpponentListApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getOpponentList,
+          data: data,
+        ),
+        false,
+      );
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        var list = (jsonData['data'] as List)
+            .map((e) => OpponentModel.fromJson(e))
+            .toList();
+        opponentList.assignAll(list);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  Future<void> getRosterApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getRosterList,
+          data: data,
+        ),
+        false,
+      );
+
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        var list =
+            (jsonData['data'] as List).map((e) => Roster.fromJson(e)).toList();
+        allRosterModelList.assignAll(list);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  Future<void> getLocationListApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getLocationList,
+          data: data,
+        ),
+        false,
+      );
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        var list = (jsonData['data'] as List)
+            .map((e) => LocationData.fromMap(e))
+            .toList();
+        locationList.assignAll(list);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  // TA-32: Get coach's event tags
+  Future<void> getEventTagsApiCall() async {
+    try {
+      var data = {
+        "user_id": AppPref().userId,
+      };
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getEventTags,
+          data: data,
+        ),
+        false,
+      );
+      if (res?.statusCode == 200) {
+        var jsonData = res?.data;
+        if (jsonData['ResponseCode'] == 1) {
+          availableTags.clear();
+          if (jsonData['tags'] != null) {
+            List<dynamic> tagList = jsonData['tags'];
+            for (var tagJson in tagList) {
+              availableTags.add(EventTag.fromJson(tagJson));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+    }
+  }
+
+  // TA-32: Show tag selection bottom sheet
+  void showTagSelectionSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  "Select Event Tags",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Spacer(),
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: Icon(Icons.close, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            if (availableTags.isEmpty) ...[
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.label_outline,
+                        size: 48, color: Colors.grey[400]),
+                    SizedBox(height: 8),
+                    Text(
+                      'No tags available',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Create tags in your profile first',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Choose tags for your event:',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableTags.map((tag) {
+                  return Obx(() {
+                    bool isSelected = selectedTags
+                        .any((selected) => selected.tagId == tag.tagId);
+                    return GestureDetector(
+                      onTap: () => _toggleTagSelection(tag),
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? tag.color : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? tag.color : Colors.grey[300]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected)
+                              Icon(Icons.check, size: 16, color: Colors.white),
+                            if (isSelected) SizedBox(width: 4),
+                            Text(
+                              tag.displayName,
+                              style: TextStyle(
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+                }).toList(),
+              ),
+              SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _updateTagDisplay();
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text('Done'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // TA-32: Toggle tag selection
+  void _toggleTagSelection(EventTag tag) {
+    int existingIndex =
+        selectedTags.indexWhere((selected) => selected.tagId == tag.tagId);
+    if (existingIndex >= 0) {
+      selectedTags.removeAt(existingIndex);
+    } else {
+      selectedTags.add(tag);
+    }
+  }
+
+  // TA-32: Update tag display text
+  void _updateTagDisplay() {
+    if (selectedTags.isEmpty) {
+      tagController.value.text = '';
+    } else {
+      tagController.value.text =
+          selectedTags.map((tag) => tag.displayName).join(', ');
+    }
+  }
+
+  // TA-37: Toggle multi-day mode
+  void toggleMultiDay() {
+    isMultiDay.value = !isMultiDay.value;
+    if (!isMultiDay.value) {
+      // Clear multi-day fields when switching to single-day
+      startDateController.value.clear();
+      endDateController.value.clear();
+    } else {
+      // Clear single-day field when switching to multi-day
+      dateController.value.clear();
+    }
+  }
+
+  var activityDetail = Rxn<ScheduleData>();
+
+  @override
+  void onInit() {
+    isGame.value = Get.arguments['activity'] == 'game';
+    activityDetail.value = Get.arguments['activityDetail'];
+    activityType.value = Get.arguments['activity'];
+    
+    // TA-32: Load event tags for coaches
+    if (AppPref().role == 'coach') {
+      getEventTagsApiCall();
+    }
+    
+    // Delay reactive updates until after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (activityDetail.value != null) {
+        teamController.value.text = activityDetail.value?.team?.name ?? "";
+        activityNameController.value.text =
+            activityDetail.value?.activityName ?? "";
+        dateController.value.text = activityDetail.value?.eventDate ?? "";
+        startTimeController.value.text = activityDetail.value?.startTime ?? "";
+        endTimeController.value.text = activityDetail.value?.endTime ?? "";
+        opponentController.value.text =
+            activityDetail.value?.opponent?.opponentName ?? "";
+        locationController.value.text =
+            activityDetail.value?.location?.address ?? "";
+        locationDetailsController.value.text =
+            activityDetail.value?.locationDetails ?? "";
+        assignmentController.value.text = activityDetail.value?.assignments ?? "";
+        durationController.value.text = activityDetail.value?.duration ?? "";
+        arriveController.value.text = activityDetail.value?.arriveEarly ?? "";
+        extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
+        noteController.value.text = activityDetail.value?.notes ?? "";
+        flagController.value.text = activityDetail.value?.flagColor ?? "";
+        uniformController.value.text = activityDetail.value?.uniform ?? "";
+        reasonController.value.text = activityDetail.value?.reason ?? "";
+        isAway.value =
+            (activityDetail.value?.areaType ?? "").toLowerCase() == "away";
+        notify.value = activityDetail.value?.notifyTeam == 1;
+        isTimeTBD.value = activityDetail.value?.isTimeTbd == 1;
+        isStanding.value = activityDetail.value?.standings == 1;
+        isCanceled.value = activityDetail.value?.status == "canceled";
+        
+        if (selectedTeam.value == null) selectedTeam.value = Roster();
+        if (selectedOpponent.value == null) selectedOpponent.value = OpponentModel();
+        if (selectedLocation.value == null) selectedLocation.value = LocationData();
+        
+        selectedTeam.value?.teamId = activityDetail.value?.teamId ?? 0;
+        selectedOpponent.value?.opponentId =
+            activityDetail.value?.opponentId ?? 0;
+        selectedLocation.value?.locationId =
+            activityDetail.value?.locationId ?? 0;
+        selectedTeam.refresh();
+        selectedLocation.refresh();
+        selectedOpponent.refresh();
+        
+        if (activityDetail.value?.weekDay != null) {
+          selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
+          print(selectedDays);
+        }
+        
+        // TA-42: Populate frequency end date for editing
+        if (activityDetail.value?.maxCreateDate != null && activityDetail.value!.maxCreateDate!.isNotEmpty) {
+          freqEndDateController.value.text = activityDetail.value!.maxCreateDate!;
+        }
+        
+        // TA-37: Populate multi-day event data
+        isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
+        if (isMultiDay.value) {
+          startDateController.value.text = activityDetail.value?.startDate ?? "";
+          endDateController.value.text = activityDetail.value?.endDate ?? "";
+        } else {
+          dateController.value.text = activityDetail.value?.eventDate ?? "";
+        }
+      }
+      
+      // TA-32: Populate selected tags for editing
+      if (activityDetail.value?.tags != null &&
+          activityDetail.value!.tags!.isNotEmpty) {
+        selectedTags.assignAll(activityDetail.value!.tags!);
+        _updateTagDisplay();
+      }
+      
+      if (activityType.value == 'game') {
+        getRosterApiCall();
+        getOpponentListApiCall();
+      }
+      getLocationListApiCall();
+    });
+    
+    super.onInit();
+  }
+}

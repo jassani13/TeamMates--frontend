@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "203627866523",
+    "project_id": "teammates-346fc",
+    "storage_bucket": "teammates-346fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:203627866523:android:f277e7c4b62fb5ef7b593e",
+        "android_client_info": {
+          "package_name": "com.teammates.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "203627866523-4e9bs2f7o48nb8cvn6aciddlbrepeglv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.teammates.app",
+            "certificate_hash": "8c4f86ed1b03d6f78e23563d7b9eeba0149a509b"
+          }
+        },
+        {
+          "client_id": "203627866523-8o20v2sn6k1ejgl009gkmls3e56ddb1k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClSv8-UpqmYvGJ0tI-1s0Svjz24EYTzZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "203627866523-8o20v2sn6k1ejgl009gkmls3e56ddb1k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "203627866523-pk5rk8jbgqklli0egj55jfmk0sfgkf29.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.teammates.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
