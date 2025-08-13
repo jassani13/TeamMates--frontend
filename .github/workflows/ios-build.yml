@@ -112,7 +112,7 @@ jobs:
           DEVELOPMENT_TEAM="L2J8AW86LW" \
           CODE_SIGN_STYLE=Manual \
           CODE_SIGN_IDENTITY="Apple Distribution: Arman J" \
-          PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]="com.teammatesapp.app"
+          PROVISIONING_PROFILE_SPECIFIER="com.teammatesapp.app"
         
         echo "✅ Archive completed successfully!"
         
