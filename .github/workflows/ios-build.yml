@@ -1,9 +1,7 @@
 name: iOS Build IPA
-
 on:
   push:
     branches: [ main ]
-
 jobs:
   build-ipa:
     runs-on: macos-15
@@ -36,17 +34,13 @@ jobs:
         CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
         PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
         echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
         echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
-
         security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
         security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
         security list-keychain -d user -s $KEYCHAIN_PATH
-
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
         
@@ -55,38 +49,59 @@ jobs:
         cd ios
         pod install --repo-update
         
-    - name: Build iOS
-      run: flutter build ios --release --no-simulator
-        
-    - name: Create IPA with Embedded Provisioning Profile
+    - name: Create ExportOptions.plist
       run: |
-        cd build/ios/iphoneos
+        cd ios
+        cat > ExportOptions.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
+        </dict>
+        </plist>
+        EOF
         
-        # Find the provisioning profile file
-        PROFILE_FILE=$(find ~/Library/MobileDevice/Provisioning\ Profiles -name "*.mobileprovision" | head -1)
+    - name: Build iOS without signing (Flutter step)
+      run: flutter build ios --release --no-codesign
         
-        echo "Using provisioning profile: $PROFILE_FILE"
+    - name: Archive and Sign with Xcode
+      run: |
+        cd ios
         
-        # Copy the provisioning profile INSIDE the app bundle as embedded.mobileprovision
-        cp "$PROFILE_FILE" Runner.app/embedded.mobileprovision
+        # Archive the app
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -destination generic/platform=iOS \
+          -archivePath Runner.xcarchive \
+          archive \
+          CODE_SIGN_STYLE=Manual \
+          PROVISIONING_PROFILE_SPECIFIER="com.teammatesapp.app" \
+          CODE_SIGN_IDENTITY="Apple Distribution: Arman J"
         
-        # Verify the file was copied correctly
-        if [ -f Runner.app/embedded.mobileprovision ]; then
-          echo "✅ Embedded provisioning profile successfully added"
-          ls -la Runner.app/embedded.mobileprovision
-        else
-          echo "❌ Failed to embed provisioning profile"
-          exit 1
-        fi
+        # Export to IPA
+        xcodebuild -exportArchive \
+          -archivePath Runner.xcarchive \
+          -exportPath ../build/ios/iphoneos \
+          -exportOptionsPlist ExportOptions.plist
         
-        # Create the IPA structure
-        mkdir Payload
-        cp -r Runner.app Payload/
-        zip -r TeamMates.ipa Payload/
+        # Rename the IPA to match your expected name
+        cd ../build/ios/iphoneos
+        mv *.ipa TeamMates.ipa
         
-        # Verify IPA was created
+        # Verify the IPA was created and signed
         echo "IPA created successfully:"
         ls -la TeamMates.ipa
+        echo "Checking code signature:"
+        codesign -dv --verbose=4 TeamMates.ipa
         
     - name: Upload IPA as Downloadable Artifact
       uses: actions/upload-artifact@v4
@@ -99,7 +114,7 @@ jobs:
       if: ${{ always() }}
       run: |
         security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
-
+        
     - name: Build Summary
       run: |
         echo "🎉 Build completed successfully!"
