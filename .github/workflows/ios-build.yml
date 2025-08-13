@@ -54,6 +54,30 @@ jobs:
         cd ios
         pod install --repo-update
         
+    - name: Configure Xcode project signing
+      run: |
+        cd ios
+        
+        # Get the UUID of our provisioning profile
+        PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+        echo "Provisioning Profile UUID: $PROFILE_UUID"
+        
+        # Configure only the Runner target for manual signing
+        # Leave all Pods targets with automatic signing
+        xcrun agvtool mvers -terse1 > /dev/null 2>&1 || true
+        
+        # Set manual signing only for Runner target
+        /usr/libexec/PlistBuddy -c "Set :objects:97C146E61CF9000F007C117D:buildSettings:CODE_SIGN_STYLE Manual" Runner.xcodeproj/project.pbxproj
+        /usr/libexec/PlistBuddy -c "Set :objects:97C146E61CF9000F007C117D:buildSettings:DEVELOPMENT_TEAM L2J8AW86LW" Runner.xcodeproj/project.pbxproj
+        /usr/libexec/PlistBuddy -c "Set :objects:97C146E61CF9000F007C117D:buildSettings:CODE_SIGN_IDENTITY[sdk=iphoneos*] Apple Distribution: Arman J" Runner.xcodeproj/project.pbxproj
+        /usr/libexec/PlistBuddy -c "Set :objects:97C146E61CF9000F007C117D:buildSettings:PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] com.teammatesapp.app" Runner.xcodeproj/project.pbxproj
+        
+        # Also set for Release configuration specifically
+        /usr/libexec/PlistBuddy -c "Set :objects:249021D3217E4FDB00AE95B9:buildSettings:CODE_SIGN_STYLE Manual" Runner.xcodeproj/project.pbxproj || true
+        /usr/libexec/PlistBuddy -c "Set :objects:249021D3217E4FDB00AE95B9:buildSettings:DEVELOPMENT_TEAM L2J8AW86LW" Runner.xcodeproj/project.pbxproj || true
+        /usr/libexec/PlistBuddy -c "Set :objects:249021D3217E4FDB00AE95B9:buildSettings:CODE_SIGN_IDENTITY[sdk=iphoneos*] Apple Distribution: Arman J" Runner.xcodeproj/project.pbxproj || true
+        /usr/libexec/PlistBuddy -c "Set :objects:249021D3217E4FDB00AE95B9:buildSettings:PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] com.teammatesapp.app" Runner.xcodeproj/project.pbxproj || true
+        
     - name: Create ExportOptions.plist
       run: |
         cd ios
@@ -100,7 +124,7 @@ jobs:
         AVAILABLE_SDK=$(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)
         echo "Using SDK: $AVAILABLE_SDK"
         
-        # Archive the app with available SDK - ONLY apply signing to Runner target
+        # Archive the app - NO command line build settings to avoid affecting Pods
         echo "🔨 Starting archive process..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
@@ -108,11 +132,7 @@ jobs:
           -sdk $AVAILABLE_SDK \
           -archivePath Runner.xcarchive \
           archive \
-          -verbose \
-          DEVELOPMENT_TEAM="L2J8AW86LW" \
-          CODE_SIGN_STYLE=Manual \
-          CODE_SIGN_IDENTITY="Apple Distribution: Arman J" \
-          PROVISIONING_PROFILE_SPECIFIER="com.teammatesapp.app"
+          -verbose
         
         echo "✅ Archive completed successfully!"
         
