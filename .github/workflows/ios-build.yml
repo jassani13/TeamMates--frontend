@@ -100,9 +100,9 @@ jobs:
         AVAILABLE_SDK=$(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)
         echo "Using SDK: $AVAILABLE_SDK"
         
-        # Archive the app with available SDK and timeout - ONLY apply signing to Runner target
+        # Archive the app with available SDK - ONLY apply signing to Runner target
         echo "🔨 Starting archive process..."
-        timeout 1800 xcodebuild -workspace Runner.xcworkspace \
+        xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -sdk $AVAILABLE_SDK \
