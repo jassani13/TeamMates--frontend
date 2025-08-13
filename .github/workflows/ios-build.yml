@@ -10,13 +10,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Xcode 16.2 and iOS SDK
-      run: |
-        sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
-        # Install iOS 18.2 platform if not available
-        xcodebuild -downloadPlatform iOS || true
-        # List available platforms
-        xcodebuild -showsdks
+    - name: Setup Xcode 16.2
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
       
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -54,163 +49,95 @@ jobs:
         cd ios
         pod install --repo-update
         
-    - name: Configure Xcode project signing
+    - name: Install Fastlane
       run: |
         cd ios
+        sudo gem install fastlane
         
-        # Get the UUID of our provisioning profile
-        PROFILE_UUID=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
-        echo "Provisioning Profile UUID: $PROFILE_UUID"
-        
-        # Find the correct object IDs dynamically
-        echo "Finding Runner target and configuration object IDs..."
-        
-        # Get the main project object ID
-        PROJECT_OBJECT=$(grep -E "isa = PBXProject" Runner.xcodeproj/project.pbxproj | head -1 | sed 's/[[:space:]]*\([A-Z0-9]*\).*/\1/')
-        echo "Project object ID: $PROJECT_OBJECT"
-        
-        # Get the Runner target object ID
-        RUNNER_TARGET=$(grep -A 5 -B 5 "name = Runner" Runner.xcodeproj/project.pbxproj | grep -E "^[[:space:]]*[A-Z0-9]+ /\*" | sed 's/[[:space:]]*\([A-Z0-9]*\).*/\1/' | head -1)
-        echo "Runner target ID: $RUNNER_TARGET"
-        
-        # Get Release configuration object ID for Runner
-        RELEASE_CONFIG=$(grep -A 10 -B 10 "name = Release" Runner.xcodeproj/project.pbxproj | grep -E "^[[:space:]]*[A-Z0-9]+ /\*" | sed 's/[[:space:]]*\([A-Z0-9]*\).*/\1/' | head -1)
-        echo "Release config ID: $RELEASE_CONFIG"
-        
-        # Configure signing for Runner target using correct object IDs
-        if [ ! -z "$RUNNER_TARGET" ]; then
-          echo "Configuring Runner target signing..."
-          
-          # Add build settings if they don't exist, or modify if they do
-          /usr/libexec/PlistBuddy -c "Add :objects:$RUNNER_TARGET:buildSettings:CODE_SIGN_STYLE string Manual" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RUNNER_TARGET:buildSettings:CODE_SIGN_STYLE Manual" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RUNNER_TARGET:buildSettings:DEVELOPMENT_TEAM string L2J8AW86LW" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RUNNER_TARGET:buildSettings:DEVELOPMENT_TEAM L2J8AW86LW" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RUNNER_TARGET:buildSettings:CODE_SIGN_IDENTITY string 'Apple Distribution: Arman J'" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RUNNER_TARGET:buildSettings:CODE_SIGN_IDENTITY 'Apple Distribution: Arman J'" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RUNNER_TARGET:buildSettings:PROVISIONING_PROFILE_SPECIFIER string com.teammatesapp.app" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RUNNER_TARGET:buildSettings:PROVISIONING_PROFILE_SPECIFIER com.teammatesapp.app" Runner.xcodeproj/project.pbxproj
-          
-          echo "✅ Runner target signing configured"
-        else
-          echo "❌ Could not find Runner target ID"
-        fi
-        
-        # Also configure Release configuration if found
-        if [ ! -z "$RELEASE_CONFIG" ]; then
-          echo "Configuring Release configuration signing..."
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RELEASE_CONFIG:buildSettings:CODE_SIGN_STYLE string Manual" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RELEASE_CONFIG:buildSettings:CODE_SIGN_STYLE Manual" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RELEASE_CONFIG:buildSettings:DEVELOPMENT_TEAM string L2J8AW86LW" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RELEASE_CONFIG:buildSettings:DEVELOPMENT_TEAM L2J8AW86LW" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RELEASE_CONFIG:buildSettings:CODE_SIGN_IDENTITY string 'Apple Distribution: Arman J'" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RELEASE_CONFIG:buildSettings:CODE_SIGN_IDENTITY 'Apple Distribution: Arman J'" Runner.xcodeproj/project.pbxproj
-          
-          /usr/libexec/PlistBuddy -c "Add :objects:$RELEASE_CONFIG:buildSettings:PROVISIONING_PROFILE_SPECIFIER string com.teammatesapp.app" Runner.xcodeproj/project.pbxproj 2>/dev/null || \
-          /usr/libexec/PlistBuddy -c "Set :objects:$RELEASE_CONFIG:buildSettings:PROVISIONING_PROFILE_SPECIFIER com.teammatesapp.app" Runner.xcodeproj/project.pbxproj
-          
-          echo "✅ Release configuration signing configured"
-        else
-          echo "❌ Could not find Release configuration ID"
-        fi
-        
-    - name: Create ExportOptions.plist
+    - name: Create Fastlane configuration
       run: |
         cd ios
-        cat > ExportOptions.plist << EOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>method</key>
-            <string>app-store</string>
-            <key>teamID</key>
-            <string>L2J8AW86LW</string>
-            <key>provisioningProfiles</key>
-            <dict>
-                <key>com.teammatesapp.app</key>
-                <string>com.teammatesapp.app</string>
-            </dict>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>uploadSymbols</key>
-            <true/>
-            <key>compileBitcode</key>
-            <false/>
-        </dict>
-        </plist>
+        mkdir -p fastlane
+        
+        # Create Fastfile
+        cat > fastlane/Fastfile << 'EOF'
+        default_platform(:ios)
+        
+        platform :ios do
+          desc "Build IPA for App Store"
+          lane :build_ipa do
+            # Build Flutter without signing
+            sh("cd .. && flutter build ios --release --no-codesign")
+            
+            # Update project settings for signing
+            update_project_provisioning(
+              xcodeproj: "Runner.xcodeproj",
+              target_filter: "Runner",
+              profile: ENV["PROVISIONING_PROFILE_SPECIFIER"],
+              build_configuration: "Release"
+            )
+            
+            update_project_team(
+              path: "Runner.xcodeproj",
+              teamid: "L2J8AW86LW",
+              targets: ["Runner"]
+            )
+            
+            # Build and sign the archive
+            build_app(
+              workspace: "Runner.xcworkspace",
+              scheme: "Runner",
+              configuration: "Release",
+              export_method: "app-store",
+              export_options: {
+                method: "app-store",
+                teamID: "L2J8AW86LW",
+                provisioningProfiles: {
+                  "com.teammatesapp.app" => "com.teammatesapp.app"
+                },
+                signingStyle: "manual",
+                uploadBitcode: false,
+                uploadSymbols: true,
+                compileBitcode: false
+              },
+              output_directory: "../build/ios/iphoneos",
+              output_name: "TeamMates.ipa",
+              clean: false,
+              skip_profile_detection: true,
+              codesigning_identity: "Apple Distribution: Arman J"
+            )
+          end
+        end
         EOF
         
-    - name: Build iOS without signing (Flutter step)
-      run: |
-        # First, check available iOS SDKs
-        xcodebuild -showsdks | grep iOS
+        # Create Appfile
+        cat > fastlane/Appfile << 'EOF'
+        app_identifier("com.teammatesapp.app")
+        apple_id("your_apple_id@example.com")
+        team_id("L2J8AW86LW")
+        EOF
         
-        # Build with explicit SDK version
-        flutter build ios --release --no-codesign
-        
-    - name: Archive and Sign with Xcode
+    - name: Build IPA with Fastlane
       timeout-minutes: 30
+      env:
+        PROVISIONING_PROFILE_SPECIFIER: "com.teammatesapp.app"
       run: |
         cd ios
+        fastlane build_ipa
         
-        # Use available iOS SDK version
-        AVAILABLE_SDK=$(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)
-        echo "Using SDK: $AVAILABLE_SDK"
-        
-        # Archive the app - NO command line build settings to avoid affecting Pods
-        echo "🔨 Starting archive process..."
-        xcodebuild -workspace Runner.xcworkspace \
-          -scheme Runner \
-          -configuration Release \
-          -sdk $AVAILABLE_SDK \
-          -archivePath Runner.xcarchive \
-          archive \
-          -verbose
-        
-        echo "✅ Archive completed successfully!"
-        
-        # Verify archive was created
-        if [ ! -d "Runner.xcarchive" ]; then
-          echo "❌ Archive not found!"
-          exit 1
-        fi
-        
-        echo "📦 Starting IPA export..."
-        # Export to IPA
-        xcodebuild -exportArchive \
-          -archivePath Runner.xcarchive \
-          -exportPath ../build/ios/iphoneos \
-          -exportOptionsPlist ExportOptions.plist \
-          -verbose
-        
-        echo "✅ Export completed!"
-        
-        # Find and rename the IPA
-        cd ../build/ios/iphoneos
-        IPA_FILE=$(find . -name "*.ipa" | head -1)
-        
-        if [ -z "$IPA_FILE" ]; then
-          echo "❌ No IPA file found!"
+    - name: Verify IPA was created and signed
+      run: |
+        cd build/ios/iphoneos
+        if [ -f "TeamMates.ipa" ]; then
+          echo "🎉 IPA created successfully:"
+          ls -la TeamMates.ipa
+          echo "🔍 Checking code signature:"
+          codesign -dv --verbose=4 TeamMates.ipa
+        else
+          echo "❌ IPA file not found!"
           ls -la
           exit 1
         fi
-        
-        mv "$IPA_FILE" TeamMates.ipa
-        
-        # Verify the IPA was created and signed
-        echo "🎉 IPA created successfully:"
-        ls -la TeamMates.ipa
-        echo "🔍 Checking code signature:"
-        codesign -dv --verbose=4 TeamMates.ipa
         
     - name: Upload IPA as Downloadable Artifact
       uses: actions/upload-artifact@v4
