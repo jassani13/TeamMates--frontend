@@ -64,6 +64,15 @@ jobs:
         <dict>
             <key>method</key>
             <string>app-store</string>
+            <key>teamID</key>
+            <string>L2J8AW86LW</string>
+            <key>provisioningProfiles</key>
+            <dict>
+                <key>com.teammatesapp.app</key>
+                <string>com.teammatesapp.app</string>
+            </dict>
+            <key>signingStyle</key>
+            <string>manual</string>
             <key>uploadBitcode</key>
             <false/>
             <key>uploadSymbols</key>
@@ -83,41 +92,62 @@ jobs:
         flutter build ios --release --no-codesign
         
     - name: Archive and Sign with Xcode
+      timeout-minutes: 30
       run: |
         cd ios
-        
-        # Check available destinations
-        xcodebuild -scheme Runner -showdestinations
         
         # Use available iOS SDK version
         AVAILABLE_SDK=$(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)
         echo "Using SDK: $AVAILABLE_SDK"
         
-        # Archive the app with available SDK
-        xcodebuild -workspace Runner.xcworkspace \
+        # Archive the app with available SDK and timeout - ONLY apply signing to Runner target
+        echo "🔨 Starting archive process..."
+        timeout 1800 xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -sdk $AVAILABLE_SDK \
           -archivePath Runner.xcarchive \
           archive \
+          -verbose \
+          DEVELOPMENT_TEAM="L2J8AW86LW" \
           CODE_SIGN_STYLE=Manual \
-          PROVISIONING_PROFILE_SPECIFIER="com.teammatesapp.app" \
-          CODE_SIGN_IDENTITY="Apple Distribution: Arman J"
+          CODE_SIGN_IDENTITY="Apple Distribution: Arman J" \
+          PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]="com.teammatesapp.app"
         
+        echo "✅ Archive completed successfully!"
+        
+        # Verify archive was created
+        if [ ! -d "Runner.xcarchive" ]; then
+          echo "❌ Archive not found!"
+          exit 1
+        fi
+        
+        echo "📦 Starting IPA export..."
         # Export to IPA
         xcodebuild -exportArchive \
           -archivePath Runner.xcarchive \
           -exportPath ../build/ios/iphoneos \
-          -exportOptionsPlist ExportOptions.plist
+          -exportOptionsPlist ExportOptions.plist \
+          -verbose
         
-        # Rename the IPA to match your expected name
+        echo "✅ Export completed!"
+        
+        # Find and rename the IPA
         cd ../build/ios/iphoneos
-        mv *.ipa TeamMates.ipa
+        IPA_FILE=$(find . -name "*.ipa" | head -1)
+        
+        if [ -z "$IPA_FILE" ]; then
+          echo "❌ No IPA file found!"
+          ls -la
+          exit 1
+        fi
+        
+        mv "$IPA_FILE" TeamMates.ipa
         
         # Verify the IPA was created and signed
-        echo "IPA created successfully:"
+        echo "🎉 IPA created successfully:"
         ls -la TeamMates.ipa
-        echo "Checking code signature:"
+        echo "🔍 Checking code signature:"
         codesign -dv --verbose=4 TeamMates.ipa
         
     - name: Upload IPA as Downloadable Artifact
