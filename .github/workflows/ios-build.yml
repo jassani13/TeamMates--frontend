@@ -1,0 +1,164 @@
+name: iOS Build IPA
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode 16.2
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        
+    - name: Get Flutter dependencies
+      run: flutter pub get
+      
+    - name: Generate Flutter iOS files
+      run: flutter precache --ios
+        
+    - name: Setup iOS certificates and provisioning profiles
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      run: |
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+        echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
+        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+        
+    - name: Install CocoaPods dependencies
+      run: |
+        cd ios
+        pod install --repo-update
+        
+    - name: Install Fastlane
+      run: |
+        cd ios
+        sudo gem install fastlane
+        
+    - name: Create Fastlane configuration
+      run: |
+        cd ios
+        mkdir -p fastlane
+        
+        # Create Fastfile
+        cat > fastlane/Fastfile << 'EOF'
+        default_platform(:ios)
+        
+        platform :ios do
+          desc "Build IPA for App Store"
+          lane :build_ipa do
+            # Build Flutter without signing
+            sh("cd .. && flutter build ios --release --no-codesign")
+            
+            # Find the provisioning profile file
+            profile_path = Dir.glob("#{ENV['HOME']}/Library/MobileDevice/Provisioning Profiles/*.mobileprovision").first
+            UI.message("Found provisioning profile: #{profile_path}")
+            
+            if profile_path
+              # Update project settings for signing using the file path
+              update_project_provisioning(
+                xcodeproj: "Runner.xcodeproj",
+                target_filter: "Runner",
+                profile: profile_path,
+                build_configuration: "Release"
+              )
+            end
+            
+            update_project_team(
+              path: "Runner.xcodeproj",
+              teamid: "L2J8AW86LW",
+              targets: ["Runner"]
+            )
+            
+            # Build and sign the archive
+            build_app(
+              workspace: "Runner.xcworkspace",
+              scheme: "Runner",
+              configuration: "Release",
+              export_method: "app-store",
+              export_options: {
+                method: "app-store",
+                teamID: "L2J8AW86LW",
+                provisioningProfiles: {
+                  "com.teammatesapp.app" => "com.teammatesapp.app"
+                },
+                signingStyle: "manual",
+                uploadBitcode: false,
+                uploadSymbols: true,
+                compileBitcode: false
+              },
+              output_directory: "../build/ios/iphoneos",
+              output_name: "TeamMates.ipa",
+              clean: false,
+              skip_profile_detection: true,
+              codesigning_identity: "Apple Distribution: Arman J"
+            )
+          end
+        end
+        EOF
+        
+        # Create Appfile
+        cat > fastlane/Appfile << 'EOF'
+        app_identifier("com.teammatesapp.app")
+        apple_id("your_apple_id@example.com")
+        team_id("L2J8AW86LW")
+        EOF
+        
+    - name: Build IPA with Fastlane
+      timeout-minutes: 30
+      env:
+        PROVISIONING_PROFILE_SPECIFIER: "com.teammatesapp.app"
+      run: |
+        cd ios
+        fastlane build_ipa
+        
+    - name: Verify IPA was created and signed
+      run: |
+        cd build/ios/iphoneos
+        if [ -f "TeamMates.ipa" ]; then
+          echo "🎉 IPA created successfully:"
+          ls -la TeamMates.ipa
+          echo "🔍 Checking code signature:"
+          codesign -dv --verbose=4 TeamMates.ipa
+        else
+          echo "❌ IPA file not found!"
+          ls -la
+          exit 1
+        fi
+        
+    - name: Upload IPA as Downloadable Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TeamMates-iOS-App
+        path: build/ios/iphoneos/TeamMates.ipa
+        retention-days: 30
+        
+    - name: Clean up keychain
+      if: ${{ always() }}
+      run: |
+        security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+        
+    - name: Build Summary
+      run: |
+        echo "🎉 Build completed successfully!"
+        echo "📱 Download your IPA from the Artifacts section below"
+        echo "📅 Available for 30 days"
