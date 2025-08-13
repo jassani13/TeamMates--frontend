@@ -1,11 +1,11 @@
-name: iOS Build and Deploy
+name: iOS Build IPA
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build-ios:
+  build-ipa:
     runs-on: macos-15
     
     steps:
@@ -48,7 +48,7 @@ jobs:
         security list-keychain -d user -s $KEYCHAIN_PATH
 
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
         
     - name: Install CocoaPods dependencies
       run: |
@@ -58,37 +58,50 @@ jobs:
     - name: Build iOS
       run: flutter build ios --release --no-simulator
         
-    - name: Create IPA
+    - name: Create IPA with Embedded Provisioning Profile
       run: |
         cd build/ios/iphoneos
+        
+        # Find the provisioning profile file
+        PROFILE_FILE=$(find ~/Library/MobileDevice/Provisioning\ Profiles -name "*.mobileprovision" | head -1)
+        
+        echo "Using provisioning profile: $PROFILE_FILE"
+        
+        # Copy the provisioning profile INSIDE the app bundle as embedded.mobileprovision
+        cp "$PROFILE_FILE" Runner.app/embedded.mobileprovision
+        
+        # Verify the file was copied correctly
+        if [ -f Runner.app/embedded.mobileprovision ]; then
+          echo "✅ Embedded provisioning profile successfully added"
+          ls -la Runner.app/embedded.mobileprovision
+        else
+          echo "❌ Failed to embed provisioning profile"
+          exit 1
+        fi
+        
+        # Create the IPA structure
         mkdir Payload
         cp -r Runner.app Payload/
-        zip -r Runner.ipa Payload/
+        zip -r TeamMates.ipa Payload/
         
-    - name: Upload IPA as Artifact
+        # Verify IPA was created
+        echo "IPA created successfully:"
+        ls -la TeamMates.ipa
+        
+    - name: Upload IPA as Downloadable Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: teammates-app-ipa
-        path: build/ios/iphoneos/Runner.ipa
-        retention-days: 7
-        
-    - name: Upload to TestFlight
-      env:
-        API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
-        API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
-        API_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-      run: |
-        mkdir -p ~/private_keys
-        echo "$API_PRIVATE_KEY" > ~/private_keys/AuthKey_$API_KEY_ID.p8
-        xcrun altool --upload-app \
-          --type ios \
-          --file build/ios/iphoneos/Runner.ipa \
-          --apiKey $API_KEY_ID \
-          --apiIssuer $API_ISSUER_ID
-        rm ~/private_keys/AuthKey_$API_KEY_ID.p8
+        name: TeamMates-iOS-App
+        path: build/ios/iphoneos/TeamMates.ipa
+        retention-days: 30
         
     - name: Clean up keychain
       if: ${{ always() }}
       run: |
         security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
-        
+
+    - name: Build Summary
+      run: |
+        echo "🎉 Build completed successfully!"
+        echo "📱 Download your IPA from the Artifacts section below"
+        echo "📅 Available for 30 days"
