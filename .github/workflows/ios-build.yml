@@ -10,8 +10,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Xcode 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+    - name: Setup Xcode 16.2 and iOS SDK
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+        # Install iOS 18.2 platform if not available
+        xcodebuild -downloadPlatform iOS || true
+        # List available platforms
+        xcodebuild -showsdks
       
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -70,17 +75,29 @@ jobs:
         EOF
         
     - name: Build iOS without signing (Flutter step)
-      run: flutter build ios --release --no-codesign
+      run: |
+        # First, check available iOS SDKs
+        xcodebuild -showsdks | grep iOS
+        
+        # Build with explicit SDK version
+        flutter build ios --release --no-codesign
         
     - name: Archive and Sign with Xcode
       run: |
         cd ios
         
-        # Archive the app
+        # Check available destinations
+        xcodebuild -scheme Runner -showdestinations
+        
+        # Use available iOS SDK version
+        AVAILABLE_SDK=$(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)
+        echo "Using SDK: $AVAILABLE_SDK"
+        
+        # Archive the app with available SDK
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
-          -destination generic/platform=iOS \
+          -sdk $AVAILABLE_SDK \
           -archivePath Runner.xcarchive \
           archive \
           CODE_SIGN_STYLE=Manual \
