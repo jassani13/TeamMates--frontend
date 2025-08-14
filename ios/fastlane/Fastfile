@@ -3,16 +3,11 @@ default_platform(:ios)
 platform :ios do
   desc "Build IPA for TestFlight"
   lane :build_ipa do
-    # Disable automatic signing first
-    update_code_signing_settings(
-      use_automatic_signing: false,
-      team_id: "L2J8AW86LW",
-      code_sign_identity: "Apple Distribution: Arman J",
-      profile_name: "com.***app.app"
-    )
-    
-    # Build Flutter
+    # Build Flutter first
     sh("cd .. && flutter build ios --release --no-codesign")
+    
+    # Force manual signing by directly modifying project settings
+    sh("sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj")
     
     # Update provisioning
     update_project_provisioning(
