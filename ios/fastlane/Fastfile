@@ -6,8 +6,9 @@ platform :ios do
     # Build Flutter first
     sh("cd .. && flutter build ios --release --no-codesign")
     
-    # Force manual signing by directly modifying project settings
-    sh("sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj")
+    # Force manual signing by modifying ALL occurrences in project file
+    sh("sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj")
+    sh("sed -i '' 's/ProvisioningStyle = Automatic/ProvisioningStyle = Manual/g' Runner.xcodeproj/project.pbxproj")
     
     # Update provisioning
     update_project_provisioning(
@@ -23,7 +24,7 @@ platform :ios do
       teamid: "L2J8AW86LW"
     )
     
-    # Build and sign the archive
+    # Build with explicit signing settings
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
