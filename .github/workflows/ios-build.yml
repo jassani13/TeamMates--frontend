@@ -1,6 +1,6 @@
 name: iOS Build IPA
 on:
-  push:
+ push:
     branches: [ main ]
 jobs:
   build-ipa:
