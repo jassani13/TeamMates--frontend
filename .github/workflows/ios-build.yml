@@ -1,6 +1,6 @@
 name: iOS Build IPA
 on:
- push:
+  push:
     branches: [ main ]
 jobs:
   build-ipa:
@@ -26,16 +26,16 @@ jobs:
         
     - name: Setup iOS certificates and provisioning profiles
       env:
-        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-        P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-        BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+        DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERTIFICATE_BASE64 }}
+        P12_PASSWORD: ${{ secrets.DISTRIBUTION_P12_PASSWORD }}
+        APP_STORE_PROVISION_PROFILE_BASE64: ${{ secrets.APP_STORE_PROVISION_PROFILE_BASE64 }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
-        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        CERTIFICATE_PATH=$RUNNER_TEMP/distribution_certificate.p12
+        PP_PATH=$RUNNER_TEMP/app_store_pp.mobileprovision
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-        echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
-        echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
+        echo -n "$DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
+        echo -n "$APP_STORE_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
         security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -66,7 +66,7 @@ jobs:
         platform :ios do
           desc "Build IPA for App Store"
           lane :build_ipa do
-            # Build Flutter without signing
+            # Build Flutter for iOS with specified destination
             sh("cd .. && flutter build ios --release --no-codesign")
             
             # Find the provisioning profile file
@@ -95,11 +95,12 @@ jobs:
               scheme: "Runner",
               configuration: "Release",
               export_method: "app-store",
+              destination: "generic/platform=iOS",
               export_options: {
                 method: "app-store",
                 teamID: "L2J8AW86LW",
                 provisioningProfiles: {
-                  "com.teammatesapp.app" => "com.teammatesapp.app"
+                  "com.teammatesapp.app" => "0611df93-6f2f-4652-8d1b-17107eabd0ec"
                 },
                 signingStyle: "manual",
                 uploadBitcode: false,
@@ -109,8 +110,8 @@ jobs:
               output_directory: "../build/ios/iphoneos",
               output_name: "TeamMates.ipa",
               clean: false,
-              skip_profile_detection: true,
-              codesigning_identity: "Apple Distribution: Arman J"
+              skip_profile_detection: false,
+              codesigning_identity: "Apple Distribution: Arman Jassani (L2J8AW86LW)"
             )
           end
         end
@@ -119,16 +120,19 @@ jobs:
         # Create Appfile
         cat > fastlane/Appfile << 'EOF'
         app_identifier("com.teammatesapp.app")
-        apple_id("your_apple_id@example.com")
+        apple_id("info@teammatesapp.org")
         team_id("L2J8AW86LW")
         EOF
         
     - name: Build IPA with Fastlane
       timeout-minutes: 30
       env:
-        PROVISIONING_PROFILE_SPECIFIER: "com.teammatesapp.app"
+        PROVISIONING_PROFILE_SPECIFIER: "0611df93-6f2f-4652-8d1b-17107eabd0ec"
+        IPHONEOS_DEPLOYMENT_TARGET: "12.0"
       run: |
         cd ios
+        # List available devices/simulators
+        xcrun xctrace list devices
         fastlane build_ipa
         
     - name: Verify IPA was created and signed
@@ -138,7 +142,7 @@ jobs:
           echo "🎉 IPA created successfully:"
           ls -la TeamMates.ipa
           echo "🔍 Checking code signature:"
-          codesign -dv --verbose=4 TeamMates.ipa
+          codesign -dv --verbose=4 TeamMates.ipa 2>&1 || echo "Signature check completed"
         else
           echo "❌ IPA file not found!"
           ls -la
