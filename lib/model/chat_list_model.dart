@@ -26,6 +26,8 @@ class ChatListData {
   String? groupName;
   String? groupIcon;
   String? groupChatId;
+  String? groupDescription;
+  String? createdBy;
   String? chatType; // 'team', 'custom_group', 'personal'
   List<GroupParticipant>? participants;
 
@@ -52,6 +54,8 @@ class ChatListData {
     this.groupName,
     this.groupIcon,
     this.groupChatId,
+    this.groupDescription,
+    this.createdBy,
     this.chatType,
     this.participants,
   });
@@ -82,6 +86,8 @@ class ChatListData {
     groupName = json['group_name'];
     groupIcon = json['group_icon'];
     groupChatId = json['group_chat_id']?.toString();
+    groupDescription = json['group_description'];
+    createdBy = json['created_by']?.toString();
     chatType = json['chat_type'] ?? (teamId != null ? 'team' : (groupId != null ? 'custom_group' : 'personal'));
     
     if (json['participants'] != null) {
@@ -119,6 +125,8 @@ class ChatListData {
     data['group_name'] = this.groupName;
     data['group_icon'] = this.groupIcon;
     data['group_chat_id'] = this.groupChatId;
+    data['group_description'] = this.groupDescription;
+    data['created_by'] = this.createdBy;
     data['chat_type'] = this.chatType;
     
     if (this.participants != null) {

@@ -38,6 +38,7 @@ class ApiEndPoint {
   static const String createCustomGroup = "/api/createCustomGroup";
   static const String getCustomGroups = "/api/getCustomGroups";
   static const String updateCustomGroup = "/api/updateCustomGroup";
+  static const String getGroupParticipants = "/api/getGroupParticipants";
   static const String addGroupParticipant = "/api/addGroupParticipant";
   static const String removeGroupParticipant = "/api/removeGroupParticipant";
   static const String getMyCoachDetails = "/api/getMyCoachDetails";

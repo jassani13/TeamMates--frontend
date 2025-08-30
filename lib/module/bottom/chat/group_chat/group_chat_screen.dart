@@ -405,13 +405,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
   
   void _showGroupInfo() {
-    // TODO: Implement group info screen
-    Get.snackbar('Info', 'Group info feature coming soon');
+    Get.toNamed(AppRouter.groupManagement, arguments: {'chatData': chatData});
   }
   
   void _showGroupSettings() {
-    // TODO: Implement group settings screen
-    Get.snackbar('Settings', 'Group settings feature coming soon');
+    Get.toNamed(AppRouter.groupManagement, arguments: {'chatData': chatData});
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:base_code/module/auth/otp/otp_screen.dart';
 import 'package:base_code/module/bottom/chat/group_chat/group_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/personalChat/personal_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/create_group/create_group_screen.dart';
+import 'package:base_code/module/bottom/chat/group_management/group_management_screen.dart';
 import 'package:base_code/module/bottom/chat/search_chat/search_chat_screen.dart';
 import 'package:base_code/module/bottom/schedule/calendar/calendar_screen.dart';
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
@@ -45,6 +46,7 @@ class AppRouter {
   static const calendar = '/calendar';
   static const searchChatScreen = '/searchChatScreen';
   static const createGroup = '/createGroup';
+  static const groupManagement = '/groupManagement';
 
   static List<GetPage> getPages = [
     GetPage(name: splash, page: () => SplashScreen()),
@@ -82,5 +84,6 @@ class AppRouter {
     GetPage(name: calendar, page: () => CalendarScreen()),
     GetPage(name: searchChatScreen, page: () => SearchChatScreen()),
     GetPage(name: createGroup, page: () => CreateGroupScreen()),
+    GetPage(name: groupManagement, page: () => GroupManagementScreen()),
   ];
 }
