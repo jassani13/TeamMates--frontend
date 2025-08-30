@@ -19,8 +19,8 @@ BaseOptions baseOptions = BaseOptions(
 const bool useLocalServer = true; // Change this to switch servers
 
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
- // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
+//const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+  const String localBaseUrl = 'http://10.0.2.2:8000'; // Test ENV
  const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
 // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
 
@@ -34,7 +34,7 @@ const String baseUrl = useLocalServer && kDebugMode
 //    : "http://127.0.0.1:8000/public/";
 
 const String publicImageUrl = useLocalServer && kDebugMode
-    ? "$localBaseUrl/public/"
+    ? "$localBaseUrl/"
     : "http://34.205.17.49/TeamMates/public/";
 
 // https://team.notegiftcard.com/migrate-fresh DB clear
@@ -47,7 +47,7 @@ Future<void> dioSetUp({int? language}) async {
     var customHeaders = {
       'Accept': 'application/json',
       'X-Requested-With': "XMLHttpRequest",
-      "key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
+      //"key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
     };
     option.headers.addAll(customHeaders);
     handler.next(option);
