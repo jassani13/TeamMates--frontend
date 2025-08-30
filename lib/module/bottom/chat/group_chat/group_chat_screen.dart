@@ -42,17 +42,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     if (kDebugMode) {
       print('<------------ EMIT - _emitReaction ------------>');
-      print([messageId, userId, chatData.teamId, reactionData]);
+      print([messageId, userId, chatData.isCustomGroup ? chatData.groupId : chatData.teamId, reactionData]);
     }
 
-    socket.emit('addTeamReaction', [messageId, userId, chatData.teamId, reactionData]);
+    if (chatData.isCustomGroup) {
+      socket.emit('addCustomGroupReaction', [messageId, userId, chatData.groupId, reactionData]);
+    } else {
+      socket.emit('addTeamReaction', [messageId, userId, chatData.teamId, reactionData]);
+    }
   }
 
   void _initializeChat() {
-    socket.emit('getTeamMessageList', [AppPref().userId, chatData.teamId ?? 0]);
-    socket.on('setTeamMessageList', _handleMessageList);
-    socket.on('setNewTeamMessage', _handleNewMessage);
-    socket.on('teamReactionUpdated', _handleReactionUpdate);
+    if (chatData.isCustomGroup) {
+      // Custom group chat initialization
+      socket.emit('getCustomGroupMessageList', [AppPref().userId, chatData.groupId ?? 0]);
+      socket.on('setCustomGroupMessageList', _handleMessageList);
+      socket.on('setNewCustomGroupMessage', _handleNewMessage);
+      socket.on('customGroupReactionUpdated', _handleReactionUpdate);
+    } else {
+      // Team chat initialization (existing logic)
+      socket.emit('getTeamMessageList', [AppPref().userId, chatData.teamId ?? 0]);
+      socket.on('setTeamMessageList', _handleMessageList);
+      socket.on('setNewTeamMessage', _handleNewMessage);
+      socket.on('teamReactionUpdated', _handleReactionUpdate);
+    }
   }
 
   void _handleReactionUpdate(dynamic data) {
@@ -213,13 +226,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _sendMessage(types.PartialText message) {
-    socket.emit('sendTeamMessage', [
-      message.text,
-      AppPref().userId.toString(),
-      chatData.teamId,
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
-      'text',
-    ]);
+    if (chatData.isCustomGroup) {
+      socket.emit('sendCustomGroupMessage', [
+        message.text,
+        AppPref().userId.toString(),
+        chatData.groupId,
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+        'text',
+      ]);
+    } else {
+      socket.emit('sendTeamMessage', [
+        message.text,
+        AppPref().userId.toString(),
+        chatData.teamId,
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+        'text',
+      ]);
+    }
   }
 
   void _handleAttachmentPressed() {
@@ -278,13 +301,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (result != null && result.files.single.path != null) {
         final url = await groupChatController.setMediaChatApiCall(result: result.files[0]);
         if (url.isNotEmpty) {
-          socket.emit('sendTeamMessage', [
-            url,
-            AppPref().userId.toString(),
-            chatData.teamId,
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
-            'pdf',
-          ]);
+          if (chatData.isCustomGroup) {
+            socket.emit('sendCustomGroupMessage', [
+              url,
+              AppPref().userId.toString(),
+              chatData.groupId,
+              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+              'pdf',
+            ]);
+          } else {
+            socket.emit('sendTeamMessage', [
+              url,
+              AppPref().userId.toString(),
+              chatData.teamId,
+              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+              'pdf',
+            ]);
+          }
         }
       }
       setState(() => isLoading = false);
@@ -308,16 +341,29 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (result != null) {
         final url = await groupChatController.setMediaChatApiCall(result: result);
         if (url.isNotEmpty) {
-          socket.emit(
-            'sendTeamMessage',
-            [
-              url,
-              AppPref().userId.toString(),
-              chatData.teamId,
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
-              'media',
-            ],
-          );
+          if (chatData.isCustomGroup) {
+            socket.emit(
+              'sendCustomGroupMessage',
+              [
+                url,
+                AppPref().userId.toString(),
+                chatData.groupId,
+                DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+                'media',
+              ],
+            );
+          } else {
+            socket.emit(
+              'sendTeamMessage',
+              [
+                url,
+                AppPref().userId.toString(),
+                chatData.teamId,
+                DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+                'media',
+              ],
+            );
+          }
         }
       }
       setState(() => isLoading = false);
@@ -337,12 +383,35 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   @override
   void dispose() {
-    socket.off('setTeamMessageList', _handleMessageList);
-    socket.off('setNewTeamMessage', _handleNewMessage);
-    socket.off('teamReactionUpdated', _handleReactionUpdate);
-
-    emitTeamChatList();
+    if (chatData.isCustomGroup) {
+      socket.off('setCustomGroupMessageList', _handleMessageList);
+      socket.off('setNewCustomGroupMessage', _handleNewMessage);
+      socket.off('customGroupReactionUpdated', _handleReactionUpdate);
+      emitCustomGroupChatList();
+    } else {
+      socket.off('setTeamMessageList', _handleMessageList);
+      socket.off('setNewTeamMessage', _handleNewMessage);
+      socket.off('teamReactionUpdated', _handleReactionUpdate);
+      emitTeamChatList();
+    }
     super.dispose();
+  }
+  
+  void emitCustomGroupChatList() {
+    if (kDebugMode) {
+      print('<------------ EMIT - getCustomGroupChatList ------------>');
+    }
+    socket.emit('getCustomGroupChatList', AppPref().userId);
+  }
+  
+  void _showGroupInfo() {
+    // TODO: Implement group info screen
+    Get.snackbar('Info', 'Group info feature coming soon');
+  }
+  
+  void _showGroupSettings() {
+    // TODO: Implement group settings screen
+    Get.snackbar('Settings', 'Group settings feature coming soon');
   }
 
   @override
@@ -351,7 +420,40 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       onTap: () => hideKeyboard(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('${chatData.teamName}'),
+          title: Text(chatData.displayName),
+          actions: chatData.isCustomGroup ? [
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'info') {
+                  _showGroupInfo();
+                } else if (value == 'settings') {
+                  _showGroupSettings();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'info',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 20),
+                      Gap(8),
+                      Text('Group Info'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, size: 20),
+                      Gap(8),
+                      Text('Group Settings'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ] : null,
         ),
         body: Stack(
           children: [

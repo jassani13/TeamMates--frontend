@@ -31,6 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.onConnect((_) {
       emitPersonalChatList();
       emitTeamChatList();
+      emitCustomGroupChatList();
       if (kDebugMode) {
         print('<------------ CONNECTED TO SERVER ------------>');
       }
@@ -55,6 +56,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     socket.emit('getTeamChatList', AppPref().userId);
   }
+  
+  void emitCustomGroupChatList() {
+    if (kDebugMode) {
+      print('<------------ EMIT - getCustomGroupChatList ------------>');
+    }
+    socket.emit('getCustomGroupChatList', AppPref().userId);
+  }
 
   void onPersonalChatList() {
     socket.on('setChatUserList', (data) {
@@ -77,6 +85,20 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - setTeamChatList ------------>');
       }
       chatController.grpChatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+  
+  void onCustomGroupChatList() {
+    socket.on('setCustomGroupChatList', (data) {
+      final list = data['resData'];
+
+      if (kDebugMode) {
+        print('<------------ ON - setCustomGroupChatList ------------>');
+      }
+      chatController.customGroupChatData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -146,14 +168,40 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void updateCustomGroupChatList() {
+    if (kDebugMode) {
+      print('<------------ ON - updateCustomGroupChatList ------------>');
+    }
+    socket.on('updateCustomGroupChatList', (val) {
+      final data = ChatListData.fromJson(val['resData']);
+      if (kDebugMode) {
+        print('<------------ ON - updateCustomGroupChatList $data ------------>');
+      }
+      int index = chatController.customGroupChatData.indexWhere((test) => data.groupId == test.groupId);
+      if (index != -1) {
+        chatController.customGroupChatData[index] = data;
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        chatController.customGroupChatData.add(data);
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    });
+  }
+
   @override
   void initState() {
     connectSocket();
 
     onPersonalChatList();
     onTeamChatList();
+    onCustomGroupChatList();
     updateChatList();
     updateTeamChatList();
+    updateCustomGroupChatList();
     userOnline();
     updateUserStatus();
     super.initState();
@@ -180,11 +228,37 @@ class _ChatScreenState extends State<ChatScreen> {
                   Spacer(),
                   Visibility(
                     visible: AppPref().role == 'coach',
-                    child: CommonIconButton(
-                      image: AppImage.plus,
-                      onTap: () {
-                        Get.toNamed(AppRouter.searchChatScreen);
+                    child: PopupMenuButton<String>(
+                      icon: Image.asset(AppImage.plus, width: 24, height: 24),
+                      onSelected: (value) {
+                        if (value == 'search') {
+                          Get.toNamed(AppRouter.searchChatScreen);
+                        } else if (value == 'create_group') {
+                          Get.toNamed(AppRouter.createGroup);
+                        }
                       },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'search',
+                          child: Row(
+                            children: [
+                              Icon(Icons.search, size: 20, color: AppColor.grey4EColor),
+                              Gap(8),
+                              Text('Search Chats'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'create_group',
+                          child: Row(
+                            children: [
+                              Icon(Icons.group_add, size: 20, color: AppColor.grey4EColor),
+                              Gap(8),
+                              Text('Create Group'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Gap(16),
@@ -368,7 +442,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _tamChatList() {
-    return chatController.grpChatListData.isEmpty
+    // Combine team chats and custom group chats
+    List<ChatListData> allGroupChats = [
+      ...chatController.grpChatListData,
+      ...chatController.customGroupChatData,
+    ];
+    
+    return allGroupChats.isEmpty
         ? SingleChildScrollView(
             physics: AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -388,45 +468,18 @@ class _ChatScreenState extends State<ChatScreen> {
         : ListView.builder(
             physics: NeverScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(horizontal: 16),
-            itemCount: chatController.grpChatListData.length,
+            itemCount: allGroupChats.length,
             shrinkWrap: true,
             itemBuilder: (context, index) {
-              final chatData = chatController.grpChatListData[index];
+              final chatData = allGroupChats[index];
               return GestureDetector(
                 onTap: () {
-                  // if (AppPref().role == 'coach') {
-                  //   if (AppPref().proUser == true) {
-                  //     Get.toNamed(
-                  //       AppRouter.grpChat,
-                  //       arguments: {
-                  //         'chatData': chatData,
-                  //       },
-                  //     );
-                  //   } else {
-                  //     Get.defaultDialog(
-                  //       title: "Subscription Required",
-                  //       titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                  //       middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                  //       middleText: "Buy a subscription to\naccess Team Chat.",
-                  //       textConfirm: "Buy Now",
-                  //       confirmTextColor: AppColor.white,
-                  //       buttonColor: AppColor.black12Color,
-                  //       cancelTextColor: AppColor.black12Color,
-                  //       textCancel: "Cancel",
-                  //       onConfirm: () {
-                  //         Get.back();
-                  //         Get.toNamed(AppRouter.subscription);
-                  //       },
-                  //     );
-                  //   }
-                  // } else {
-                    Get.toNamed(
-                      AppRouter.grpChat,
-                      arguments: {
-                        'chatData': chatData,
-                      },
-                    );
-                  // }
+                  Get.toNamed(
+                    AppRouter.grpChat,
+                    arguments: {
+                      'chatData': chatData,
+                    },
+                  );
                 },
                 behavior: HitTestBehavior.translucent,
                 child: Container(
@@ -452,10 +505,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: getImageView(
                               fit: BoxFit.cover,
                               errorWidget: Icon(
-                                Icons.account_circle,
+                                chatData.isCustomGroup ? Icons.group : Icons.account_circle,
                                 size: 40,
                               ),
-                              finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
+                              finalUrl: chatData.displayImage,
                             ),
                           ),
                           if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
@@ -472,11 +525,25 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${chatData.teamName}',
-                              style: TextStyle().normal16w500.textColor(
-                                    AppColor.black12Color,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    chatData.displayName,
+                                    style: TextStyle().normal16w500.textColor(
+                                          AppColor.black12Color,
+                                        ),
                                   ),
+                                ),
+                                if (chatData.isCustomGroup) ...[
+                                  Gap(4),
+                                  Icon(
+                                    Icons.group,
+                                    size: 14,
+                                    color: AppColor.grey4EColor,
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
                               chatData.msg ?? "",

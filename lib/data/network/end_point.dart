@@ -35,6 +35,11 @@ class ApiEndPoint {
   static const String checkPlayerCode = "/api/checkPlayerCode";
   static const String getNotificationList = "/api/getNotificationList";
   static const String setChatMedia = "/api/setChatMedia";
+  static const String createCustomGroup = "/api/createCustomGroup";
+  static const String getCustomGroups = "/api/getCustomGroups";
+  static const String updateCustomGroup = "/api/updateCustomGroup";
+  static const String addGroupParticipant = "/api/addGroupParticipant";
+  static const String removeGroupParticipant = "/api/removeGroupParticipant";
   static const String getMyCoachDetails = "/api/getMyCoachDetails";
   static const String forgotPassword = "/api/forgotPassword";
   static const String updatePassword = "/api/updatePassword";
