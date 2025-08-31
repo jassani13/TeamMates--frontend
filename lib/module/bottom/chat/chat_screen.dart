@@ -16,9 +16,10 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
+  // for android => http://10.0.2.2:3000 => for ios => http://127.0.0.1:3000
   void connectSocket() {
     debugPrint("inside=>connectSocket");
-    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
