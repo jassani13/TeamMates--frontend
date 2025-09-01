@@ -21,9 +21,9 @@ const bool useLocalServer = true; // Change this to switch servers
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
 //const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
 //const String localBaseUrl = 'http://10.0.2.2:8000'; // For Android Emulator
-const String localBaseUrl = 'http://127.0.0.1:8000'; // Test ENV for iOS Simulator
+//const String localBaseUrl = 'http://127.0.0.1:8000'; // Test ENV for iOS Simulator
 const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-// const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
+ const String localBaseUrl = 'http://16.171.65.192'; // Test ENV
 
 const String baseUrl = useLocalServer && kDebugMode 
     ? localBaseUrl 
