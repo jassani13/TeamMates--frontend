@@ -19,23 +19,29 @@ BaseOptions baseOptions = BaseOptions(
 const bool useLocalServer = true; // Change this to switch servers
 
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
- // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
- const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
+//const String localBaseUrl = 'http://16.171.65.192'; // Your local server
+const String localBaseUrl = 'http://api.teammatesapp.org'; // Test ENV
+
+
+
+ //const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
 // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
 
-const String baseUrl = useLocalServer && kDebugMode 
-    ? localBaseUrl 
-    : productionBaseUrl;
+// const String baseUrl = useLocalServer && kDebugMode
+//     ? localBaseUrl
+//     : productionBaseUrl;
+
+const String baseUrl = localBaseUrl;
 
 // Keep existing publicImageUrl logic
 // const String publicImageUrl = useLocalServer && kDebugMode
 //    ? "https://nice-halibut-optimum.ngrok-free.app/public/"
 //    : "http://127.0.0.1:8000/public/";
 
-const String publicImageUrl = useLocalServer && kDebugMode
-    ? "$localBaseUrl/public/"
-    : "http://34.205.17.49/TeamMates/public/";
+const String publicImageUrl = "$localBaseUrl/";
+// const String publicImageUrl = useLocalServer && kDebugMode
+//     ? "$localBaseUrl/public/"
+//     : "http://34.205.17.49/TeamMates/public/";
 
 // https://team.notegiftcard.com/migrate-fresh DB clear
 
@@ -47,7 +53,7 @@ Future<void> dioSetUp({int? language}) async {
     var customHeaders = {
       'Accept': 'application/json',
       'X-Requested-With': "XMLHttpRequest",
-      "key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
+      //"key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
     };
     option.headers.addAll(customHeaders);
     handler.next(option);

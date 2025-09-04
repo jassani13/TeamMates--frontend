@@ -17,7 +17,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
   void connectSocket() {
-    socket = IO.io('http://34.205.17.49:8080', <String, dynamic>{
+    socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
@@ -39,6 +39,22 @@ class _ChatScreenState extends State<ChatScreen> {
       if (kDebugMode) {
         print('<------------ DISCONNECTED TO SERVER ------------>');
       }
+    });
+
+    socket.onDisconnect((_) {
+      if (kDebugMode) {
+        print('<------------ DISCONNECTED TO SERVER ------------>');
+      }
+    });
+
+    socket.onConnectError((data) {
+      debugPrint('<------------ ⚠️ CONNECT ERROR ------------>');
+      debugPrint('socket_error Error details: $data');
+    });
+
+    socket.onError((data) {
+      debugPrint('<------------ ⚠️ SOCKET ERROR ------------>');
+      debugPrint('socket_error Error details: $data');
     });
   }
 
