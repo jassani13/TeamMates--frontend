@@ -18,14 +18,19 @@ BaseOptions baseOptions = BaseOptions(
 
 const bool useLocalServer = true; // Change this to switch servers
 
+const String yourLocalIP = 'your_local_ip_here'; // Replace with your actual local IP address
+
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+// const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
+
+const String localBaseUrl = 'http://$yourLocalIP:8000';
+
  // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
  const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
 // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
 
-const String baseUrl = useLocalServer && kDebugMode 
-    ? localBaseUrl 
+const String baseUrl = useLocalServer && kDebugMode
+    ? localBaseUrl
     : productionBaseUrl;
 
 // Keep existing publicImageUrl logic
@@ -47,7 +52,8 @@ Future<void> dioSetUp({int? language}) async {
     var customHeaders = {
       'Accept': 'application/json',
       'X-Requested-With': "XMLHttpRequest",
-      "key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
+      "Authorization": "Bearer TEST123",
+      "key": "TEST123",
     };
     option.headers.addAll(customHeaders);
     handler.next(option);

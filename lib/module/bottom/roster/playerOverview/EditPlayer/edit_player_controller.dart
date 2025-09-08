@@ -18,6 +18,11 @@ class EditPlayerController extends GetxController {
   Rx<TextEditingController> cityController = TextEditingController().obs;
   Rx<TextEditingController> stateController = TextEditingController().obs;
   Rx<TextEditingController> zipController = TextEditingController().obs;
+
+  // Additional contact information controllers - use RxList instead of regular List
+  RxList<Rx<TextEditingController>> additionalEmailControllers = <Rx<TextEditingController>>[].obs;
+  RxList<Rx<TextEditingController>> additionalRelationshipControllers = <Rx<TextEditingController>>[].obs;
+
   List selectedMethod2List = [
     "Male",
     "Female",
@@ -31,11 +36,66 @@ class EditPlayerController extends GetxController {
   Rx<File> image = File("").obs;
   final allPlayerController = Get.find<AllPlayerController>();
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Initialize with empty controllers for additional contacts
+    addAdditionalContact();
+  }
+
+  @override
+  void onClose() {
+    // Dispose all controllers
+    fNameController.value.dispose();
+    lNameController.value.dispose();
+    birthdayController.value.dispose();
+    jNumberController.value.dispose();
+    positionController.value.dispose();
+    cfNameController.value.dispose();
+    clNameController.value.dispose();
+    emailController.value.dispose();
+    numberController.value.dispose();
+    addressController.value.dispose();
+    allergyController.value.dispose();
+    cityController.value.dispose();
+    stateController.value.dispose();
+    zipController.value.dispose();
+
+    // Dispose additional contact controllers
+    for (var controller in additionalEmailControllers) {
+      controller.value.dispose();
+    }
+    for (var controller in additionalRelationshipControllers) {
+      controller.value.dispose();
+    }
+
+    super.onClose();
+  }
+
+  void addAdditionalContact() {
+    additionalEmailControllers.add(TextEditingController().obs);
+    additionalRelationshipControllers.add(TextEditingController().obs);
+  }
+
   Future<void> playerUpdateApi({
     required int id,
     required int index,
   }) async {
     try {
+      // Prepare additional contact data
+      List<String> additionalEmails = [];
+      List<String> additionalRelationships = [];
+
+      for (int i = 0; i < additionalEmailControllers.length; i++) {
+        final email = additionalEmailControllers[i].value.text.trim();
+        final relationship = additionalRelationshipControllers[i].value.text.trim();
+
+        if (email.isNotEmpty) {
+          additionalEmails.add(email);
+          additionalRelationships.add(relationship.isNotEmpty ? relationship : "Other");
+        }
+      }
+
       var data = FormData.fromMap({
         if (image.value.path.isNotEmpty)
           'profile':
@@ -57,7 +117,14 @@ class EditPlayerController extends GetxController {
         "state": stateController.value.text.toString(),
         "zipcode": zipController.value.text.toString(),
         "allergy": allergyController.value.text.toString(),
+        "contact_first_name": cfNameController.value.text.toString(),
+        "contact_last_name": clNameController.value.text.toString(),
+        "email": emailController.value.text.toString(),
+        // Add additional contact information
+        "additional_emails": additionalEmails,
+        "additional_relationships": additionalRelationships,
       });
+
       var res = await callApi(
         dio.post(
           ApiEndPoint.updateProfile,
@@ -68,6 +135,8 @@ class EditPlayerController extends GetxController {
 
       if (res?.statusCode == 200) {
         Get.back();
+
+        // Update main player info
         allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index]
             .allergy = allergyController.value.text.toString();
         allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index]
@@ -93,6 +162,29 @@ class EditPlayerController extends GetxController {
         allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].gender = selectedSearchMethod2.value == 0 ? "Male" : "Female";
         allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index]
             .state = stateController.value.text.toString();
+
+        // Update additional contact information
+        final playerTeam = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index];
+        if (playerTeam != null) {
+          // Keep the first two emails (primary and contact)
+          final existingEmails = playerTeam.userEmails?.take(2).toList() ?? [];
+          final existingRelationships = playerTeam.userRelationships?.take(2).toList() ?? [];
+
+          // Add the new additional emails and relationships
+          for (int i = 0; i < additionalEmailControllers.length; i++) {
+            final email = additionalEmailControllers[i].value.text.trim();
+            final relationship = additionalRelationshipControllers[i].value.text.trim();
+
+            if (email.isNotEmpty) {
+              existingEmails.add(email);
+              existingRelationships.add(relationship.isNotEmpty ? relationship : "Other");
+            }
+          }
+
+          playerTeam.userEmails = existingEmails;
+          playerTeam.userRelationships = existingRelationships;
+        }
+
         allPlayerController.rosterDetailModel.refresh();
 
         AppToast.showAppToast("Update player info successfully",
@@ -170,7 +262,7 @@ class EditPlayerController extends GetxController {
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
                           storeValue.text =
-                              "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
+                          "${DateTime.now().year.toString()}-${DateTime.now().month.toString()}-${DateTime.now().day.toString()}";
                         }
                         Get.back();
                       },
@@ -200,7 +292,7 @@ class EditPlayerController extends GetxController {
                       maximumDate: DateTime.now(),
                       onDateTimeChanged: (DateTime newDate) {
                         storeValue.text =
-                            "${newDate.year.toString()}-${newDate.month.toString()}-${newDate.day.toString()}";
+                        "${newDate.year.toString()}-${newDate.month.toString()}-${newDate.day.toString()}";
                       },
                     ),
                   ),

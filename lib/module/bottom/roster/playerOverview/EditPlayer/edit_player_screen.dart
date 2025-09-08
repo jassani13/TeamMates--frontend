@@ -6,6 +6,7 @@ import 'package:base_code/module/bottom/roster/playerOverview/EditPlayer/edit_pl
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/utils/common_function.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class EditPlayerScreen extends StatefulWidget {
   const EditPlayerScreen({super.key});
@@ -39,6 +40,32 @@ class _EditPlayerScreenState extends State<EditPlayerScreen> {
     editPlayerController.stateController.value.text = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].state ?? "";
     editPlayerController.zipController.value.text = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].zipcode ?? "";
     editPlayerController.emailController.value.text = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].email ?? "";
+
+    // Initialize additional contact information
+    final playerTeam = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index];
+    final userEmails = playerTeam?.userEmails ?? [];
+    final userRelationships = playerTeam?.userRelationships ?? [];
+
+    // Initialize additional email controllers
+    for (int i = 2; i < userEmails.length; i++) {
+      if (i - 2 < editPlayerController.additionalEmailControllers.length) {
+        editPlayerController.additionalEmailControllers[i - 2].value.text = userEmails[i].toString();
+      } else {
+        // Add new controllers if needed - wrap in .obs
+        editPlayerController.additionalEmailControllers.add(TextEditingController(text: userEmails[i].toString()).obs);
+      }
+    }
+
+// Initialize relationship controllers
+    for (int i = 2; i < userRelationships.length; i++) {
+      if (i - 2 < editPlayerController.additionalRelationshipControllers.length) {
+        editPlayerController.additionalRelationshipControllers[i - 2].value.text = userRelationships[i].toString();
+      } else {
+        // Add new controllers if needed - wrap in .obs
+        editPlayerController.additionalRelationshipControllers.add(TextEditingController(text: userRelationships[i].toString()).obs);
+      }
+    }
+
     if (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].gender.toString().toLowerCase() == "female") {
       editPlayerController.selectedSearchMethod2.value = 1;
     } else {
@@ -87,23 +114,23 @@ class _EditPlayerScreenState extends State<EditPlayerScreen> {
                               child: Obx(() {
                                 return editPlayerController.image.value.path.isEmpty
                                     ? ((allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile ?? "").isNotEmpty)
-                                        ? getImageView(
-                                            finalUrl: ('${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? ""),
-                                            fit: BoxFit.cover,
-                                            width: 120,
-                                            height: 120,
-                                          )
-                                        : Icon(
-                                            Icons.account_circle,
-                                            color: AppColor.grey6EColor,
-                                            size: 125,
-                                          )
+                                    ? getImageView(
+                                  finalUrl: ('${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile }'?? ""),
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                )
+                                    : Icon(
+                                  Icons.account_circle,
+                                  color: AppColor.grey6EColor,
+                                  size: 125,
+                                )
                                     : Image.file(
-                                        File(editPlayerController.image.value.path),
-                                        fit: BoxFit.cover,
-                                        width: 120,
-                                        height: 120,
-                                      );
+                                  File(editPlayerController.image.value.path),
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                );
                               }),
                             ),
                           ),
@@ -257,66 +284,6 @@ class _EditPlayerScreenState extends State<EditPlayerScreen> {
                       },
                     );
                   }),
-                  // Gap(16),
-                  // Row(
-                  //   children: [
-                  //     Column(
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         Text(
-                  //           "Manager access",
-                  //           style: TextStyle().normal16w500.textColor(
-                  //                 AppColor.black12Color,
-                  //               ),
-                  //         ),
-                  //         Text(
-                  //           "grant member manager rights",
-                  //           style: TextStyle().normal14w500.textColor(
-                  //                 AppColor.grey6EColor,
-                  //               ),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //     Spacer(),
-                  //     Obx(
-                  //       () => CupertinoSwitch(
-                  //         value: editPlayerController.isAccess.value,
-                  //         onChanged: (val) {
-                  //           editPlayerController.isAccess.value = val ?? false;
-                  //         },
-                  //         activeTrackColor: AppColor.grey4EColor.withValues(
-                  //           alpha: 0.5,
-                  //         ),
-                  //         thumbColor: AppColor.black12Color,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  // Gap(20),
-                  // Row(
-                  //   children: [
-                  //     Text(
-                  //       "Non - player",
-                  //       style: TextStyle().normal16w500.textColor(
-                  //             AppColor.black12Color,
-                  //           ),
-                  //     ),
-                  //     Spacer(),
-                  //     Obx(
-                  //       () => CupertinoSwitch(
-                  //         value: editPlayerController.isNonPlayer.value,
-                  //         onChanged: (val) {
-                  //           editPlayerController.isNonPlayer.value =
-                  //               val ?? false;
-                  //         },
-                  //         activeTrackColor: AppColor.grey4EColor.withValues(
-                  //           alpha: 0.5,
-                  //         ),
-                  //         thumbColor: AppColor.black12Color,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
                   Gap(20),
                   CommonTitleText(
                     text: "Contact information",
@@ -468,6 +435,81 @@ class _EditPlayerScreenState extends State<EditPlayerScreen> {
                       ),
                     ],
                   ),
+
+                  // Additional Contact Information Section
+                  Obx(() {
+                    final playerTeam = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index];
+                    final userEmails = playerTeam?.userEmails ?? [];
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Gap(24),
+                        Row(
+                          children: [
+                            SvgPicture.asset(
+                              AppImage.info,
+                              colorFilter: const ColorFilter.mode(AppColor.black12Color, BlendMode.srcIn),
+                            ),
+                            Gap(16),
+                            Text(
+                              "Additional Contact Information",
+                              style: TextStyle().normal16w500.textColor(AppColor.black12Color),
+                            ),
+                          ],
+                        ),
+                        Gap(16),
+
+                        // Use another Obx here to listen for changes to the controller lists
+                        Obx(() {
+                          return Column(
+                            children: List.generate(
+                              editPlayerController.additionalEmailControllers.length,
+                                  (actualIndex) {
+                                return Column(
+                                  children: [
+                                    CommonTextField(
+                                      hintText: "Relationship (e.g., Mother, Father)",
+                                      controller: editPlayerController.additionalRelationshipControllers[actualIndex].value,
+                                      keyboardType: TextInputType.text,
+                                    ),
+                                    Gap(8),
+                                    CommonTextField(
+                                      hintText: "Email Address / Contact number",
+                                      controller: editPlayerController.additionalEmailControllers[actualIndex].value,
+                                      keyboardType: TextInputType.emailAddress,
+                                      // validator: (val) {
+                                      //   if ((val ?? "").isNotEmpty && !(val ?? "").isEmail) {
+                                      //     return "Please enter a valid email address";
+                                      //   }
+                                      //   return null;
+                                      // },
+                                    ),
+                                    Gap(16),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        }),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              editPlayerController.addAdditionalContact();
+                            },
+                            child: Text(
+                              "+ Add Another Contact",
+                              style: TextStyle().normal14w500.textColor(AppColor.primaryColor),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+
+
                   Gap(24),
                 ],
               ),

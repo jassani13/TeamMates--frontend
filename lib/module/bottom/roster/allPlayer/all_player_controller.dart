@@ -12,7 +12,7 @@ class AllPlayerController extends GetxController {
   TextEditingController searchController = TextEditingController();
   RxBool isShimmer = false.obs;
   var searchQuery = ''.obs;
-
+  String? userIdentity;
   Future<void> getRosterApiCall({required int teamId}) async {
     isShimmer.value = true;
     try {

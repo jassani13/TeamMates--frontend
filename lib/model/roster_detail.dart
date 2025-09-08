@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class RosterDetailModel {
   List<RosterDetails>? data;
   int? responseCode;
@@ -105,6 +107,8 @@ class PlayerTeams {
   String? lastName;
   String? email;
   String? role;
+  String? userIdentity;
+  String? staff_role;
   int? playerCode;
   String? profile;
   String? dob;
@@ -122,31 +126,38 @@ class PlayerTeams {
   String? activityUserStatus;
   String? activityUserNote;
   Pivot? pivot;
+  dynamic userEmails;
+  dynamic userRelationships;
 
-  PlayerTeams(
-      {this.userId,
-      this.allergy,
-      this.firstName,
-      this.lastName,
-      this.email,
-      this.role,
-      this.playerCode,
-      this.profile,
-      this.dob,
-      this.gender,
-      this.jerseyNumber,
-      this.position,
-      this.activityUserStatus,
-      this.activityUserNote,
-      this.phoneNumber,
-      this.address,
-      this.latitude,
-      this.longitude,
-      this.city,
-      this.state,
-      this.zipcode,
-      this.fcmToken,
-      this.pivot});
+  PlayerTeams({
+    this.userId,
+    this.allergy,
+    this.firstName,
+    this.lastName,
+    this.email,
+    this.role,
+    this.userIdentity,
+    this.staff_role,
+    this.playerCode,
+    this.profile,
+    this.dob,
+    this.gender,
+    this.jerseyNumber,
+    this.position,
+    this.activityUserStatus,
+    this.activityUserNote,
+    this.phoneNumber,
+    this.address,
+    this.latitude,
+    this.longitude,
+    this.city,
+    this.state,
+    this.zipcode,
+    this.fcmToken,
+    this.pivot,
+    this.userEmails,
+    this.userRelationships,
+  });
 
   PlayerTeams.fromJson(Map<String, dynamic> json) {
     userId = json['user_id'];
@@ -155,6 +166,8 @@ class PlayerTeams {
     lastName = json['last_name'];
     email = json['email'];
     role = json['role'];
+    userIdentity = json['user_identity'];
+    staff_role = json['staff_role'];
     playerCode = json['player_code'];
     profile = json['profile'];
     dob = json['dob'];
@@ -169,39 +182,67 @@ class PlayerTeams {
     state = json['state'];
     activityUserStatus = json['activity_user_status'];
     activityUserNote = json['activity_user_note'];
-
     zipcode = json['zipcode'];
     fcmToken = json['fcm_token'];
-    pivot = json['pivot'] != null ? new Pivot.fromJson(json['pivot']) : null;
+    pivot = json['pivot'] != null ? Pivot.fromJson(json['pivot']) : null;
+    print(json['user_emails']);
+    print(json['user_relationships']);
+    if (json['user_emails'] is String) {
+      try {
+        userEmails = jsonDecode(json['user_emails']);
+      } catch (e) {
+        userEmails = json['user_emails'];
+        print('Error parsing user_emails: $e');
+      }
+    } else {
+      userEmails = json['user_emails'];
+    }
+
+    // Handle user_relationships parsing
+    if (json['user_relationships'] is String) {
+      try {
+        userRelationships = jsonDecode(json['user_relationships']);
+      } catch (e) {
+        userRelationships = json['user_relationships'];
+        print('Error parsing user_relationships: $e');
+      }
+    } else {
+      userRelationships = json['user_relationships'];
+    }
   }
 
+
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['user_id'] = this.userId;
-    data['allergy'] = this.allergy;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
-    data['email'] = this.email;
-    data['role'] = this.role;
-    data['player_code'] = this.playerCode;
-    data['profile'] = this.profile;
-    data['dob'] = this.dob;
-    data['gender'] = this.gender;
-    data['jersey_number'] = this.jerseyNumber;
-    data['position'] = this.position;
-    data['phone_number'] = this.phoneNumber;
-    data['address'] = this.address;
-    data['latitude'] = this.latitude;
-    data['longitude'] = this.longitude;
-    data['activity_user_status'] = this.activityUserStatus;
-    data['activity_user_note'] = this.activityUserNote;
-    data['city'] = this.city;
-    data['state'] = this.state;
-    data['zipcode'] = this.zipcode;
-    data['fcm_token'] = this.fcmToken;
-    if (this.pivot != null) {
-      data['pivot'] = this.pivot!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['user_id'] = userId;
+    data['allergy'] = allergy;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
+    data['email'] = email;
+    data['role'] = role;
+    data['staff_role'] = staff_role;
+    data['user_identity'] = userIdentity;
+    data['player_code'] = playerCode;
+    data['profile'] = profile;
+    data['dob'] = dob;
+    data['gender'] = gender;
+    data['jersey_number'] = jerseyNumber;
+    data['position'] = position;
+    data['phone_number'] = phoneNumber;
+    data['address'] = address;
+    data['latitude'] = latitude;
+    data['longitude'] = longitude;
+    data['activity_user_status'] = activityUserStatus;
+    data['activity_user_note'] = activityUserNote;
+    data['city'] = city;
+    data['state'] = state;
+    data['zipcode'] = zipcode;
+    data['fcm_token'] = fcmToken;
+    if (pivot != null) {
+      data['pivot'] = pivot!.toJson();
     }
+    data['user_emails'] = userEmails;
+    data['user_relationships'] = userRelationships;
     return data;
   }
 }

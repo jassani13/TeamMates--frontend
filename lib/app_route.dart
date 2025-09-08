@@ -8,7 +8,11 @@ import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
+import 'module/roster/add_staff_form.dart';
+import 'module/bottom/roster/addNonPlayer/add_non_player_screen.dart';
+
 class AppRouter {
+  static const addNonPlayer = '/add-staff';
   static const splash = '/splash';
   static const login = '/login';
   static const selectRole = '/selectRole';
@@ -45,6 +49,7 @@ class AppRouter {
   static const searchChatScreen = '/searchChatScreen';
 
   static List<GetPage> getPages = [
+    GetPage(name: addNonPlayer, page: () => AddNonPlayerScreen()),
     GetPage(name: splash, page: () => SplashScreen()),
     GetPage(name: login, page: () => LoginScreen()),
     GetPage(name: selectRole, page: () => SelectRoleScreen()),
