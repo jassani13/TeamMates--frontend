@@ -39,6 +39,7 @@ dependencies:
   permission_handler: ^12.0.1
   path_provider: ^2.1.5
   http: ^1.4.0
+  provider: ^6.1.5+1
   url_launcher: ^6.3.2
   timeago: ^3.7.1
   simple_loading_dialog: ^1.0.0

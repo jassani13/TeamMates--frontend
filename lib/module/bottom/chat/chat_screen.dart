@@ -3,6 +3,7 @@ import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:base_code/services/fcm_service.dart'; // Add FCM service import
 
 late IO.Socket socket;
 
@@ -106,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - updateChatList $data ------------>');
       }
       int index = chatController.chatListData.indexWhere((test) =>
-          (test.senderId == data.senderId && test.receiverId == data.receiverId) ||
+      (test.senderId == data.senderId && test.receiverId == data.receiverId) ||
           (test.senderId == data.receiverId && test.receiverId == data.senderId));
       if (index != -1) {
         chatController.chatListData[index] = data;
@@ -119,6 +120,9 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {});
         }
       }
+
+      // Send notification for new message
+      _sendNotificationForNewMessage(data);
     });
   }
 
@@ -143,11 +147,57 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {});
         }
       }
+
+      // Send notification for new group message
+      _sendNotificationForNewGroupMessage(data);
     });
+  }
+
+  void _sendNotificationForNewMessage(ChatListData data) {
+    // Check if this is a new message (not from current user)
+    if (data.senderId != AppPref().userId) {
+      // Send notification using FCM
+      // This is just for local notification display
+      // The actual push notification is sent from Laravel backend
+      FcmService.showLocalNotification(
+        title: 'New Message from ${data.firstName} ${data.lastName}',
+        body: data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+        data: {
+          'type': 'new_message',
+          'conversation_id': data.senderId.toString(),
+          'sender_id': data.senderId.toString(),
+          'sender_name': '${data.firstName} ${data.lastName}',
+        },
+      );
+    }
+  }
+
+  void _sendNotificationForNewGroupMessage(ChatListData data) {
+    // Check if this is a new message (not from current user)
+    if (data.senderId != AppPref().userId) {
+      // Send notification using FCM
+      // This is just for local notification display
+      // The actual push notification is sent from Laravel backend
+      FcmService.showLocalNotification(
+        title: 'New Message in ${data.teamName}',
+        body: data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+        data: {
+          'type': 'new_message',
+          'conversation_id': data.teamId.toString(),
+          'sender_id': data.senderId.toString(),
+          'sender_name': '${data.firstName} ${data.lastName}',
+          'conversation_type': 'group',
+          'team_name': data.teamName ?? '',
+        },
+      );
+    }
   }
 
   @override
   void initState() {
+    // Initialize FCM service
+    FcmService.initialize();
+
     connectSocket();
 
     onPersonalChatList();
@@ -157,6 +207,11 @@ class _ChatScreenState extends State<ChatScreen> {
     userOnline();
     updateUserStatus();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -177,7 +232,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   Gap(16),
                   CommonTitleText(text: "Chat"),
-                  Spacer(),
+                  const Spacer(),
                   Visibility(
                     visible: AppPref().role == 'coach',
                     child: CommonIconButton(
@@ -217,7 +272,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Gap(24),
               Obx(
-                () => Expanded(
+                    () => Expanded(
                   child: Column(
                     children: [
                       if (chatController.selectedChatMethod.value == 0) ...[
@@ -239,290 +294,263 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _personalChatList() {
     return chatController.chatListData.isEmpty
         ? SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-                  child: Center(
-                      child: buildNoData(
-                    text: "No Conversations Yet",
-                  )),
-                ),
-              ],
-            ),
-          )
+      physics: AlwaysScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+            child: Center(
+                child: buildNoData(
+                  text: "No Conversations Yet",
+                )),
+          ),
+        ],
+      ),
+    )
         : ListView.builder(
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            itemCount: chatController.chatListData.length,
-            shrinkWrap: true,
-            itemBuilder: (context, index) {
-              final chatData = chatController.chatListData[index];
-              return GestureDetector(
-                onTap: () {
-                  Get.toNamed(
-                    AppRouter.personalChat,
-                    arguments: {
-                      'chatData': chatData,
-                    },
-                  );
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemCount: chatController.chatListData.length,
+        shrinkWrap: true,
+        itemBuilder: (context, index) {
+          final chatData = chatController.chatListData[index];
+          return GestureDetector(
+            onTap: () {
+              Get.toNamed(
+                AppRouter.personalChat,
+                arguments: {
+                  'chatData': chatData,
                 },
-                behavior: HitTestBehavior.translucent,
-                child: Container(
-                  padding: EdgeInsets.only(
-                    bottom: 14,
-                    top: 14,
+              );
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Container(
+              padding: EdgeInsets.only(
+                bottom: 14,
+                top: 14,
+              ),
+              decoration: BoxDecoration(
+                border: index == 0
+                    ? null
+                    : Border(
+                  top: BorderSide(
+                    color: AppColor.greyF6Color,
                   ),
-                  decoration: BoxDecoration(
-                    border: index == 0
-                        ? null
-                        : Border(
-                            top: BorderSide(
-                              color: AppColor.greyF6Color,
-                            ),
-                          ),
-                  ),
-                  child: Row(
+                ),
+              ),
+              child: Row(
+                children: [
+                  Stack(
+                    alignment: Alignment.topRight,
                     children: [
-                      Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          ClipOval(
-                            child: getImageView(
-                                errorWidget: Icon(
-                                  Icons.account_circle,
-                                  size: 40,
-                                ),
-                                finalUrl: chatData.profile ?? "",
-                                fit: BoxFit.cover),
-                          ),
-                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
-                            Container(
-                              height: 12,
-                              width: 12,
-                              decoration:
-                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
+                      ClipOval(
+                        child: getImageView(
+                            errorWidget: Icon(
+                              Icons.account_circle,
+                              size: 40,
                             ),
-                        ],
+                            finalUrl: chatData.profile ?? "",
+                            fit: BoxFit.cover),
                       ),
-                      Gap(16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${chatData.firstName} ${chatData.lastName}',
-                              style: TextStyle().normal16w500.textColor(
-                                    AppColor.black12Color,
-                                  ),
-                            ),
-                            Text(
-                              chatData.msgType == 'text' ? chatData.msg ?? "" : "Sent a file",
-                              style: TextStyle().normal14w500.textColor(
-                                    AppColor.grey4EColor,
-                                  ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ],
+                      if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
+                        Container(
+                          height: 12,
+                          width: 12,
+                          decoration:
+                          BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
+                        ),
+                    ],
+                  ),
+                  Gap(16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${chatData.firstName} ${chatData.lastName}',
+                          style: TextStyle().normal16w500.textColor(
+                            AppColor.black12Color,
+                          ),
+                        ),
+                        Text(
+                          chatData.msgType == 'text' ? chatData.msg ?? "" : "Sent a file",
+                          style: TextStyle().normal14w500.textColor(
+                            AppColor.grey4EColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
+                        style: TextStyle().normal14w500.textColor(
+                          AppColor.grey4EColor,
                         ),
                       ),
-                      Gap(16),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
-                            style: TextStyle().normal14w500.textColor(
-                                  AppColor.grey4EColor,
-                                ),
-                          ),
-                          Column(
-                            children: [
-                              Gap(4),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColor.greyF6Color,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  chatData.unreadCount ?? "0",
-                                  style: TextStyle().normal14w500.textColor(
-                                        AppColor.black,
-                                      ),
-                                ),
+                          Gap(4),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColor.greyF6Color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              chatData.unreadCount ?? "0",
+                              style: TextStyle().normal14w500.textColor(
+                                AppColor.black,
                               ),
-                            ],
-                          )
+                            ),
+                          ),
                         ],
                       )
                     ],
-                  ),
-                ),
-              );
-            });
+                  )
+                ],
+              ),
+            ),
+          );
+        });
   }
 
   Widget _tamChatList() {
     return chatController.grpChatListData.isEmpty
         ? SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-                  child: Center(
-                      child: buildNoData(
-                    text: "No Conversations Yet",
-                  )),
-                ),
-              ],
-            ),
-          )
+      physics: AlwaysScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+            child: Center(
+                child: buildNoData(
+                  text: "No Conversations Yet",
+                )),
+          ),
+        ],
+      ),
+    )
         : ListView.builder(
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            itemCount: chatController.grpChatListData.length,
-            shrinkWrap: true,
-            itemBuilder: (context, index) {
-              final chatData = chatController.grpChatListData[index];
-              return GestureDetector(
-                onTap: () {
-                  // if (AppPref().role == 'coach') {
-                  //   if (AppPref().proUser == true) {
-                  //     Get.toNamed(
-                  //       AppRouter.grpChat,
-                  //       arguments: {
-                  //         'chatData': chatData,
-                  //       },
-                  //     );
-                  //   } else {
-                  //     Get.defaultDialog(
-                  //       title: "Subscription Required",
-                  //       titleStyle: TextStyle().normal20w500.textColor(AppColor.black12Color),
-                  //       middleTextStyle: TextStyle().normal16w400.textColor(AppColor.grey4EColor),
-                  //       middleText: "Buy a subscription to\naccess Team Chat.",
-                  //       textConfirm: "Buy Now",
-                  //       confirmTextColor: AppColor.white,
-                  //       buttonColor: AppColor.black12Color,
-                  //       cancelTextColor: AppColor.black12Color,
-                  //       textCancel: "Cancel",
-                  //       onConfirm: () {
-                  //         Get.back();
-                  //         Get.toNamed(AppRouter.subscription);
-                  //       },
-                  //     );
-                  //   }
-                  // } else {
-                    Get.toNamed(
-                      AppRouter.grpChat,
-                      arguments: {
-                        'chatData': chatData,
-                      },
-                    );
-                  // }
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemCount: chatController.grpChatListData.length,
+        shrinkWrap: true,
+        itemBuilder: (context, index) {
+          final chatData = chatController.grpChatListData[index];
+          return GestureDetector(
+            onTap: () {
+              Get.toNamed(
+                AppRouter.grpChat,
+                arguments: {
+                  'chatData': chatData,
                 },
-                behavior: HitTestBehavior.translucent,
-                child: Container(
-                  padding: EdgeInsets.only(
-                    bottom: 14,
-                    top: 14,
+              );
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Container(
+              padding: EdgeInsets.only(
+                bottom: 14,
+                top: 14,
+              ),
+              decoration: BoxDecoration(
+                border: index == 0
+                    ? null
+                    : Border(
+                  top: BorderSide(
+                    color: AppColor.greyF6Color,
                   ),
-                  decoration: BoxDecoration(
-                    border: index == 0
-                        ? null
-                        : Border(
-                            top: BorderSide(
-                              color: AppColor.greyF6Color,
-                            ),
-                          ),
-                  ),
-                  child: Row(
+                ),
+              ),
+              child: Row(
+                children: [
+                  Stack(
+                    alignment: Alignment.topRight,
                     children: [
-                      Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          ClipOval(
-                            child: getImageView(
-                              fit: BoxFit.cover,
-                              errorWidget: Icon(
-                                Icons.account_circle,
-                                size: 40,
-                              ),
-                              finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
-                            ),
+                      ClipOval(
+                        child: getImageView(
+                          fit: BoxFit.cover,
+                          errorWidget: Icon(
+                            Icons.account_circle,
+                            size: 40,
                           ),
-                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
-                            Container(
-                              height: 12,
-                              width: 12,
-                              decoration:
-                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
-                            ),
-                        ],
-                      ),
-                      Gap(16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${chatData.teamName}',
-                              style: TextStyle().normal16w500.textColor(
-                                    AppColor.black12Color,
-                                  ),
-                            ),
-                            Text(
-                              chatData.msg ?? "",
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: TextStyle().normal14w500.textColor(
-                                    AppColor.grey4EColor,
-                                  ),
-                            ),
-                          ],
+                          finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
                         ),
                       ),
-                      Gap(16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
-                            style: TextStyle().normal14w500.textColor(
-                                  AppColor.grey4EColor,
-                                ),
+                      if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
+                        Container(
+                          height: 12,
+                          width: 12,
+                          decoration:
+                          BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
+                        ),
+                    ],
+                  ),
+                  Gap(16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${chatData.teamName}',
+                          style: TextStyle().normal16w500.textColor(
+                            AppColor.black12Color,
                           ),
-                          Column(
-                            children: [
-                              Gap(4),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColor.greyF6Color,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  chatData.unreadCount ?? "0",
-                                  style: TextStyle().normal14w500.textColor(
-                                        AppColor.black,
-                                      ),
-                                ),
+                        ),
+                        Text(
+                          chatData.msg ?? "",
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle().normal14w500.textColor(
+                            AppColor.grey4EColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Gap(16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
+                        style: TextStyle().normal14w500.textColor(
+                          AppColor.grey4EColor,
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Gap(4),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColor.greyF6Color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              chatData.unreadCount ?? "0",
+                              style: TextStyle().normal14w500.textColor(
+                                AppColor.black,
                               ),
-                            ],
-                          )
+                            ),
+                          ),
                         ],
                       )
                     ],
-                  ),
-                ),
-              );
-            });
+                  )
+                ],
+              ),
+            ),
+          );
+        });
   }
 }

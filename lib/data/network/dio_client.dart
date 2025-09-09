@@ -18,7 +18,7 @@ BaseOptions baseOptions = BaseOptions(
 
 const bool useLocalServer = true; // Change this to switch servers
 
-const String yourLocalIP = 'your_local_ip_here'; // Replace with your actual local IP address
+const String yourLocalIP = '192.168.1.109'; // Replace with your actual local IP address
 
 // const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
 // const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
