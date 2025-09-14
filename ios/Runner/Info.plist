@@ -2,20 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-<key>NSCameraUsageDescription</key>
-<string>This app requires access to your device's camera to allow you to upload your profile photo.</string>
-<key>NSPhotoLibraryUsageDescription</key>
-<string>This app requires access to your photo library to allow image selection and upload.</string>
-
-<key>NSMicrophoneUsageDescription</key>
-<string>This app requires access to your microphone for recording or voice-related features.</string>
-
-<key>NSCalendarsUsageDescription</key>
-<string>Access most functions for calendar viewing and editing.</string>
-<key>NSContactsUsageDescription</key>
-<string>Access contacts for event attendee editing.</string>
-<key>NSCalendarsFullAccessUsageDescription</key>
-<string>Access most functions for calendar viewing and editing.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -53,8 +39,20 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Access most functions for calendar viewing and editing.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Access most functions for calendar viewing and editing.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your device's camera to allow you to upload your profile photo.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Access contacts for event attendee editing.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>To secure app</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to your microphone for recording or voice-related features.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to your photo library to allow image selection and upload.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

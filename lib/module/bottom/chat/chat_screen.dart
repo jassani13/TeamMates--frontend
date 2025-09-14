@@ -18,7 +18,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
   void connectSocket() {
-    socket = IO.io('http://34.205.17.49:8080', <String, dynamic>{
+    // socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
+    // socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
+    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
@@ -63,7 +65,10 @@ class _ChatScreenState extends State<ChatScreen> {
       if (kDebugMode) {
         print('<------------ ON - setChatUserList ------------>');
       }
-      chatController.chatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
+      chatController.chatListData = list
+          .map((e) => ChatListData.fromJson(e))
+          .toList()
+          .cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -77,7 +82,10 @@ class _ChatScreenState extends State<ChatScreen> {
       if (kDebugMode) {
         print('<------------ ON - setTeamChatList ------------>');
       }
-      chatController.grpChatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
+      chatController.grpChatListData = list
+          .map((e) => ChatListData.fromJson(e))
+          .toList()
+          .cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -102,13 +110,16 @@ class _ChatScreenState extends State<ChatScreen> {
       print('<------------ ON - updateChatList ------------>');
     }
     socket.on('updateChatList', (val) {
+      debugPrint("updateChatList==>$val");
       final data = ChatListData.fromJson(val['resData']);
       if (kDebugMode) {
         print('<------------ ON - updateChatList $data ------------>');
       }
       int index = chatController.chatListData.indexWhere((test) =>
-      (test.senderId == data.senderId && test.receiverId == data.receiverId) ||
-          (test.senderId == data.receiverId && test.receiverId == data.senderId));
+          (test.senderId == data.senderId &&
+              test.receiverId == data.receiverId) ||
+          (test.senderId == data.receiverId &&
+              test.receiverId == data.senderId));
       if (index != -1) {
         chatController.chatListData[index] = data;
         if (mounted) {
@@ -131,11 +142,13 @@ class _ChatScreenState extends State<ChatScreen> {
       print('<------------ ON - updateTeamChatList ------------>');
     }
     socket.on('updateTeamChatList', (val) {
+      debugPrint("updateTeamChatList==>$val");
       final data = ChatListData.fromJson(val['resData']);
       if (kDebugMode) {
         print('<------------ ON - updateTeamChatList $data ------------>');
       }
-      int index = chatController.grpChatListData.indexWhere((test) => data.teamId == test.teamId);
+      int index = chatController.grpChatListData
+          .indexWhere((test) => data.teamId == test.teamId);
       if (index != -1) {
         chatController.grpChatListData[index] = data;
         if (mounted) {
@@ -161,12 +174,14 @@ class _ChatScreenState extends State<ChatScreen> {
       // The actual push notification is sent from Laravel backend
       FcmService.showLocalNotification(
         title: 'New Message from ${data.firstName} ${data.lastName}',
-        body: data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+        body:
+            data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
         data: {
           'type': 'new_message',
           'conversation_id': data.senderId.toString(),
           'sender_id': data.senderId.toString(),
           'sender_name': '${data.firstName} ${data.lastName}',
+          'conversation_type': 'personal',
         },
       );
     }
@@ -180,7 +195,8 @@ class _ChatScreenState extends State<ChatScreen> {
       // The actual push notification is sent from Laravel backend
       FcmService.showLocalNotification(
         title: 'New Message in ${data.teamName}',
-        body: data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+        body:
+            data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
         data: {
           'type': 'new_message',
           'conversation_id': data.teamId.toString(),
@@ -188,6 +204,7 @@ class _ChatScreenState extends State<ChatScreen> {
           'sender_name': '${data.firstName} ${data.lastName}',
           'conversation_type': 'group',
           'team_name': data.teamName ?? '',
+          'team_id': data.teamId ?? ''
         },
       );
     }
@@ -227,7 +244,9 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Column(
             children: [
-              Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+              Gap(Platform.isAndroid
+                  ? ScreenUtil().statusBarHeight + 20
+                  : ScreenUtil().statusBarHeight + 10),
               Row(
                 children: [
                   Gap(16),
@@ -272,7 +291,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Gap(24),
               Obx(
-                    () => Expanded(
+                () => Expanded(
                   child: Column(
                     children: [
                       if (chatController.selectedChatMethod.value == 0) ...[
@@ -294,263 +313,279 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _personalChatList() {
     return chatController.chatListData.isEmpty
         ? SingleChildScrollView(
-      physics: AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-            child: Center(
-                child: buildNoData(
-                  text: "No Conversations Yet",
-                )),
-          ),
-        ],
-      ),
-    )
-        : ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        itemCount: chatController.chatListData.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          final chatData = chatController.chatListData[index];
-          return GestureDetector(
-            onTap: () {
-              Get.toNamed(
-                AppRouter.personalChat,
-                arguments: {
-                  'chatData': chatData,
-                },
-              );
-            },
-            behavior: HitTestBehavior.translucent,
-            child: Container(
-              padding: EdgeInsets.only(
-                bottom: 14,
-                top: 14,
-              ),
-              decoration: BoxDecoration(
-                border: index == 0
-                    ? null
-                    : Border(
-                  top: BorderSide(
-                    color: AppColor.greyF6Color,
-                  ),
+            physics: AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height / 3.3),
+                  child: Center(
+                      child: buildNoData(
+                    text: "No Conversations Yet",
+                  )),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      ClipOval(
-                        child: getImageView(
-                            errorWidget: Icon(
-                              Icons.account_circle,
-                              size: 40,
-                            ),
-                            finalUrl: chatData.profile ?? "",
-                            fit: BoxFit.cover),
-                      ),
-                      if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
-                        Container(
-                          height: 12,
-                          width: 12,
-                          decoration:
-                          BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
-                        ),
-                    ],
+              ],
+            ),
+          )
+        : ListView.builder(
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            itemCount: chatController.chatListData.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final chatData = chatController.chatListData[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(
+                    AppRouter.personalChat,
+                    arguments: {
+                      'chatData': chatData,
+                    },
+                  );
+                },
+                behavior: HitTestBehavior.translucent,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    bottom: 14,
+                    top: 14,
                   ),
-                  Gap(16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${chatData.firstName} ${chatData.lastName}',
-                          style: TextStyle().normal16w500.textColor(
-                            AppColor.black12Color,
-                          ),
-                        ),
-                        Text(
-                          chatData.msgType == 'text' ? chatData.msg ?? "" : "Sent a file",
-                          style: TextStyle().normal14w500.textColor(
-                            AppColor.grey4EColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Gap(16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
-                        style: TextStyle().normal14w500.textColor(
-                          AppColor.grey4EColor,
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Gap(4),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
+                  decoration: BoxDecoration(
+                    border: index == 0
+                        ? null
+                        : Border(
+                            top: BorderSide(
                               color: AppColor.greyF6Color,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              chatData.unreadCount ?? "0",
-                              style: TextStyle().normal14w500.textColor(
-                                AppColor.black,
-                              ),
                             ),
                           ),
+                  ),
+                  child: Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          ClipOval(
+                            child: getImageView(
+                                errorWidget: Icon(
+                                  Icons.account_circle,
+                                  size: 40,
+                                ),
+                                finalUrl: chatData.profile ?? "",
+                                fit: BoxFit.cover),
+                          ),
+                          if (chatController.onlineUsers
+                                  .containsKey(chatData.receiverId) ==
+                              true)
+                            Container(
+                              height: 12,
+                              width: 12,
+                              decoration: BoxDecoration(
+                                  color: AppColor.greenColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColor.white)),
+                            ),
+                        ],
+                      ),
+                      Gap(16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${chatData.firstName} ${chatData.lastName}',
+                              style: TextStyle().normal16w500.textColor(
+                                    AppColor.black12Color,
+                                  ),
+                            ),
+                            Text(
+                              chatData.msgType == 'text'
+                                  ? chatData.msg ?? ""
+                                  : "Sent a file",
+                              style: TextStyle().normal14w500.textColor(
+                                    AppColor.grey4EColor,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Gap(16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
+                            style: TextStyle().normal14w500.textColor(
+                                  AppColor.grey4EColor,
+                                ),
+                          ),
+                          Column(
+                            children: [
+                              Gap(4),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColor.greyF6Color,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  chatData.unreadCount ?? "0",
+                                  style: TextStyle().normal14w500.textColor(
+                                        AppColor.black,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          )
                         ],
                       )
                     ],
-                  )
-                ],
-              ),
-            ),
-          );
-        });
+                  ),
+                ),
+              );
+            });
   }
 
   Widget _tamChatList() {
     return chatController.grpChatListData.isEmpty
         ? SingleChildScrollView(
-      physics: AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-            child: Center(
-                child: buildNoData(
-                  text: "No Conversations Yet",
-                )),
-          ),
-        ],
-      ),
-    )
-        : ListView.builder(
-        physics: NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        itemCount: chatController.grpChatListData.length,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          final chatData = chatController.grpChatListData[index];
-          return GestureDetector(
-            onTap: () {
-              Get.toNamed(
-                AppRouter.grpChat,
-                arguments: {
-                  'chatData': chatData,
-                },
-              );
-            },
-            behavior: HitTestBehavior.translucent,
-            child: Container(
-              padding: EdgeInsets.only(
-                bottom: 14,
-                top: 14,
-              ),
-              decoration: BoxDecoration(
-                border: index == 0
-                    ? null
-                    : Border(
-                  top: BorderSide(
-                    color: AppColor.greyF6Color,
-                  ),
+            physics: AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height / 3.3),
+                  child: Center(
+                      child: buildNoData(
+                    text: "No Conversations Yet",
+                  )),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      ClipOval(
-                        child: getImageView(
-                          fit: BoxFit.cover,
-                          errorWidget: Icon(
-                            Icons.account_circle,
-                            size: 40,
-                          ),
-                          finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
-                        ),
-                      ),
-                      if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
-                        Container(
-                          height: 12,
-                          width: 12,
-                          decoration:
-                          BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
-                        ),
-                    ],
+              ],
+            ),
+          )
+        : ListView.builder(
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            itemCount: chatController.grpChatListData.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final chatData = chatController.grpChatListData[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(
+                    AppRouter.grpChat,
+                    arguments: {
+                      'chatData': chatData,
+                    },
+                  );
+                },
+                behavior: HitTestBehavior.translucent,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    bottom: 14,
+                    top: 14,
                   ),
-                  Gap(16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${chatData.teamName}',
-                          style: TextStyle().normal16w500.textColor(
-                            AppColor.black12Color,
-                          ),
-                        ),
-                        Text(
-                          chatData.msg ?? "",
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: TextStyle().normal14w500.textColor(
-                            AppColor.grey4EColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Gap(16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
-                        style: TextStyle().normal14w500.textColor(
-                          AppColor.grey4EColor,
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Gap(4),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
+                  decoration: BoxDecoration(
+                    border: index == 0
+                        ? null
+                        : Border(
+                            top: BorderSide(
                               color: AppColor.greyF6Color,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              chatData.unreadCount ?? "0",
-                              style: TextStyle().normal14w500.textColor(
-                                AppColor.black,
-                              ),
                             ),
                           ),
+                  ),
+                  child: Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          ClipOval(
+                            child: getImageView(
+                              fit: BoxFit.cover,
+                              errorWidget: Icon(
+                                Icons.account_circle,
+                                size: 40,
+                              ),
+                              finalUrl: (chatData.teamIcon ?? "").isEmpty
+                                  ? chatData.teamImage ?? ""
+                                  : chatData.teamIcon ?? "",
+                            ),
+                          ),
+                          if (chatController.onlineUsers
+                                  .containsKey(chatData.receiverId) ==
+                              true)
+                            Container(
+                              height: 12,
+                              width: 12,
+                              decoration: BoxDecoration(
+                                  color: AppColor.greenColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColor.white)),
+                            ),
+                        ],
+                      ),
+                      Gap(16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${chatData.teamName}',
+                              style: TextStyle().normal16w500.textColor(
+                                    AppColor.black12Color,
+                                  ),
+                            ),
+                            Text(
+                              chatData.msg ?? "",
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle().normal14w500.textColor(
+                                    AppColor.grey4EColor,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Gap(16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            DateUtilities.getTimeAgo(chatData.createdAt ?? ""),
+                            style: TextStyle().normal14w500.textColor(
+                                  AppColor.grey4EColor,
+                                ),
+                          ),
+                          Column(
+                            children: [
+                              Gap(4),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColor.greyF6Color,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  chatData.unreadCount ?? "0",
+                                  style: TextStyle().normal14w500.textColor(
+                                        AppColor.black,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          )
                         ],
                       )
                     ],
-                  )
-                ],
-              ),
-            ),
-          );
-        });
+                  ),
+                ),
+              );
+            });
   }
 }

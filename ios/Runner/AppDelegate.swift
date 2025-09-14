@@ -1,6 +1,7 @@
 import UIKit
 import Flutter
 // import Firebase
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -8,30 +9,35 @@ import Flutter
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-//     FirebaseApp.configure()
+    // FirebaseApp.configure()
     GeneratedPluginRegistrant.register(with: self)
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-}
-import UserNotifications
 
-// In didFinishLaunchingWithOptions
-UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-    if granted {
-        DispatchQueue.main.async {
-            UIApplication.shared.registerForRemoteNotifications()
+    // Request push notification permissions
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+        if granted {
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
         }
     }
-}
 
-// Add these delegate methods
-func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
     let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
     let token = tokenParts.joined()
-    // Send this token to your server
     print("Device Token: \(token)")
-}
+    // Send this token to your server
+  }
 
-func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+  override func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
     print("Failed to register: \(error)")
+  }
 }

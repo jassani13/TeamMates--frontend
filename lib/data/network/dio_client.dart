@@ -2,48 +2,25 @@ import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:flutter/foundation.dart' as Foundation;
 
-
 late Dio dio;
 
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
 
+const bool useLocalServer = true;
 
+const String productionBaseUrl = 'http://13.220.132.157';
+//const String localBaseUrl = 'http://127.0.0.1:8000';
+const String localBaseUrl = 'http://10.0.2.2:8000';
 
-//const String publicImageUrl = "http://34.205.17.49/TeamMates/public/";
-//const String baseUrl = kDebugMode
-//    ? 'https://nice-halibut-optimum.ngrok-free.app'
-//    : 'http://34.205.17.49/TeamMates';
+const String baseUrl = useLocalServer ? localBaseUrl : productionBaseUrl;
 
-const bool useLocalServer = true; // Change this to switch servers
-
-const String yourLocalIP = '192.168.1.109'; // Replace with your actual local IP address
-
-// const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-// const String localBaseUrl = 'https://nice-halibut-optimum.ngrok-free.app'; // Your local server
-
-const String localBaseUrl = 'http://$yourLocalIP:8000';
-
- // const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
- const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
-// const String localBaseUrl = 'http://34.205.17.49/TeamMates'; // Test ENV
-
-const String baseUrl = useLocalServer && kDebugMode
-    ? localBaseUrl
-    : productionBaseUrl;
-
-// Keep existing publicImageUrl logic
-// const String publicImageUrl = useLocalServer && kDebugMode
-//    ? "https://nice-halibut-optimum.ngrok-free.app/public/"
-//    : "http://127.0.0.1:8000/public/";
-
-const String publicImageUrl = useLocalServer && kDebugMode
-    ? "$localBaseUrl/public/"
-    : "http://34.205.17.49/TeamMates/public/";
+const String publicImageUrl =
+    useLocalServer ? "$localBaseUrl/" : "$productionBaseUrl/";
 
 // https://team.notegiftcard.com/migrate-fresh DB clear
-
+//03007182536 --- wifi
 Future<void> dioSetUp({int? language}) async {
   dio = Dio(baseOptions);
 
@@ -52,8 +29,7 @@ Future<void> dioSetUp({int? language}) async {
     var customHeaders = {
       'Accept': 'application/json',
       'X-Requested-With': "XMLHttpRequest",
-      "Authorization": "Bearer TEST123",
-      "key": "TEST123",
+      //"key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
     };
     option.headers.addAll(customHeaders);
     handler.next(option);
