@@ -131,8 +131,6 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
 
-      // Send notification for new message
-     // _sendNotificationForNewMessage(data);
     });
   }
 
@@ -160,59 +158,11 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
 
-      // Send notification for new group message
-      //_sendNotificationForNewGroupMessage(data);
     });
   }
 
-  // void _sendNotificationForNewMessage(ChatListData data) {
-  //   // Check if this is a new message (not from current user)
-  //   if (data.senderId != AppPref().userId) {
-  //     // Send notification using FCM
-  //     // This is just for local notification display
-  //     // The actual push notification is sent from Laravel backend
-  //     FcmService.showLocalNotification(
-  //       title: 'New Message from ${data.firstName} ${data.lastName}',
-  //       body:
-  //           data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
-  //       data: {
-  //         'type': 'new_message',
-  //         'conversation_id': data.senderId.toString(),
-  //         'sender_id': data.senderId.toString(),
-  //         'sender_name': '${data.firstName} ${data.lastName}',
-  //         'conversation_type': 'personal',
-  //       },
-  //     );
-  //   }
-  // }
-
-  // void _sendNotificationForNewGroupMessage(ChatListData data) {
-  //   // Check if this is a new message (not from current user)
-  //   if (data.senderId != AppPref().userId) {
-  //     // Send notification using FCM
-  //     // This is just for local notification display
-  //     // The actual push notification is sent from Laravel backend
-  //     FcmService.showLocalNotification(
-  //       title: 'New Message in ${data.teamName}',
-  //       body:
-  //           data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
-  //       data: {
-  //         'type': 'new_message',
-  //         'conversation_id': data.teamId.toString(),
-  //         'sender_id': data.senderId.toString(),
-  //         'sender_name': '${data.firstName} ${data.lastName}',
-  //         'conversation_type': 'group',
-  //         'team_name': data.teamName ?? '',
-  //         'team_id': data.teamId ?? ''
-  //       },
-  //     );
-  //   }
-  // }
-
   @override
   void initState() {
-    // Initialize FCM service
-    //FcmService.initialize();
 
     connectSocket();
 
