@@ -3,7 +3,6 @@ import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:base_code/services/fcm_service.dart'; // Add FCM service import
 
 late IO.Socket socket;
 
@@ -18,9 +17,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
   void connectSocket() {
-    // socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
+     socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
     // socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
-    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+    //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'forceNew': true,
@@ -133,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       // Send notification for new message
-      _sendNotificationForNewMessage(data);
+     // _sendNotificationForNewMessage(data);
     });
   }
 
@@ -162,58 +161,58 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       // Send notification for new group message
-      _sendNotificationForNewGroupMessage(data);
+      //_sendNotificationForNewGroupMessage(data);
     });
   }
 
-  void _sendNotificationForNewMessage(ChatListData data) {
-    // Check if this is a new message (not from current user)
-    if (data.senderId != AppPref().userId) {
-      // Send notification using FCM
-      // This is just for local notification display
-      // The actual push notification is sent from Laravel backend
-      FcmService.showLocalNotification(
-        title: 'New Message from ${data.firstName} ${data.lastName}',
-        body:
-            data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
-        data: {
-          'type': 'new_message',
-          'conversation_id': data.senderId.toString(),
-          'sender_id': data.senderId.toString(),
-          'sender_name': '${data.firstName} ${data.lastName}',
-          'conversation_type': 'personal',
-        },
-      );
-    }
-  }
+  // void _sendNotificationForNewMessage(ChatListData data) {
+  //   // Check if this is a new message (not from current user)
+  //   if (data.senderId != AppPref().userId) {
+  //     // Send notification using FCM
+  //     // This is just for local notification display
+  //     // The actual push notification is sent from Laravel backend
+  //     FcmService.showLocalNotification(
+  //       title: 'New Message from ${data.firstName} ${data.lastName}',
+  //       body:
+  //           data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+  //       data: {
+  //         'type': 'new_message',
+  //         'conversation_id': data.senderId.toString(),
+  //         'sender_id': data.senderId.toString(),
+  //         'sender_name': '${data.firstName} ${data.lastName}',
+  //         'conversation_type': 'personal',
+  //       },
+  //     );
+  //   }
+  // }
 
-  void _sendNotificationForNewGroupMessage(ChatListData data) {
-    // Check if this is a new message (not from current user)
-    if (data.senderId != AppPref().userId) {
-      // Send notification using FCM
-      // This is just for local notification display
-      // The actual push notification is sent from Laravel backend
-      FcmService.showLocalNotification(
-        title: 'New Message in ${data.teamName}',
-        body:
-            data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
-        data: {
-          'type': 'new_message',
-          'conversation_id': data.teamId.toString(),
-          'sender_id': data.senderId.toString(),
-          'sender_name': '${data.firstName} ${data.lastName}',
-          'conversation_type': 'group',
-          'team_name': data.teamName ?? '',
-          'team_id': data.teamId ?? ''
-        },
-      );
-    }
-  }
+  // void _sendNotificationForNewGroupMessage(ChatListData data) {
+  //   // Check if this is a new message (not from current user)
+  //   if (data.senderId != AppPref().userId) {
+  //     // Send notification using FCM
+  //     // This is just for local notification display
+  //     // The actual push notification is sent from Laravel backend
+  //     FcmService.showLocalNotification(
+  //       title: 'New Message in ${data.teamName}',
+  //       body:
+  //           data.msgType == 'text' ? data.msg ?? "New message" : "Sent a file",
+  //       data: {
+  //         'type': 'new_message',
+  //         'conversation_id': data.teamId.toString(),
+  //         'sender_id': data.senderId.toString(),
+  //         'sender_name': '${data.firstName} ${data.lastName}',
+  //         'conversation_type': 'group',
+  //         'team_name': data.teamName ?? '',
+  //         'team_id': data.teamId ?? ''
+  //       },
+  //     );
+  //   }
+  // }
 
   @override
   void initState() {
     // Initialize FCM service
-    FcmService.initialize();
+    //FcmService.initialize();
 
     connectSocket();
 
