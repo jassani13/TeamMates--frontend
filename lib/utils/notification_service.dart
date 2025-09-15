@@ -16,66 +16,59 @@ class PushNotificationService {
 
   static String? _deviceToken;
 
-  // =========================
-  // Initialization
-  // =========================
   Future<void> initialize() async {
-    await Firebase.initializeApp();
+    try {
+      await Firebase.initializeApp();
 
-    // Request permissions
-    NotificationSettings settings = await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    debugPrint("Notification permission: ${settings.authorizationStatus}");
+      debugPrint("Notification_Permission: ${settings.authorizationStatus}");
 
-    // Save token
-    _deviceToken = await getAndSaveDeviceToken();
-    debugPrint("FCM_Token: $_deviceToken");
+      _deviceToken = await getAndSaveDeviceToken();
+      debugPrint("_deviceToken: $_deviceToken");
 
-    // Setup local notifications
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings();
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings();
 
-    final initSettings =
-        InitializationSettings(android: androidSettings, iOS: iosSettings);
+      final initSettings =
+          InitializationSettings(android: androidSettings, iOS: iosSettings);
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload != null) {
-          final data = json.decode(response.payload!);
-          _handleNotificationTap(data);
-        }
-      },
-    );
+      await _localNotifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          if (response.payload != null) {
+            final data = json.decode(response.payload!);
+            _handleNotificationTap(data);
+          }
+        },
+      );
 
-    // =========================
-    // Handle lifecycle events
-    // =========================
 
-    // Terminated state (app closed, opened from push)
-    RemoteMessage? initialMessage = await _fcm.getInitialMessage();
-    if (initialMessage != null) {
-      _handleMessage(initialMessage);
+      // Terminated state (app closed, opened from push)
+      RemoteMessage? initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessage(initialMessage);
+      }
+
+      // Background (opened from push)
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+
+      // Foreground (show local notification)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint("Foreground push: ${message.notification?.title}");
+        _showLocalNotification(message);
+      });
+    } catch (e) {
+      debugPrint("Notification initialize: $e");
     }
-
-    // Background (opened from push)
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-
-    // Foreground (show local notification)
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint("Foreground push: ${message.notification?.title}");
-      _showLocalNotification(message);
-    });
   }
 
-  // =========================
-  // Local Notification
-  // =========================
+
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     RemoteNotification? notification = message.notification;
     Map<String, dynamic> data = message.data;
@@ -106,9 +99,6 @@ class PushNotificationService {
     }
   }
 
-  // =========================
-  // Message Handlers
-  // =========================
   static void _handleMessage(RemoteMessage message) {
     debugPrint("Handling push message: ${message.data}");
     _handleNotificationData(message.data);
@@ -157,14 +147,32 @@ class PushNotificationService {
     }
   }
 
-  // =========================
-  // Token
-  // =========================
+
   static Future<String?> getAndSaveDeviceToken() async {
     String? token;
 
     if (Platform.isIOS) {
-      token = await _fcm.getAPNSToken();
+      String? apnsToken = await _fcm.getAPNSToken();
+      if (apnsToken != null) {
+        token = await _fcm.getToken();
+        debugPrint("getToken:$token");
+      } else {
+        Future.delayed(const Duration(seconds: 3), () async {
+          String? apnsToken = await _fcm.getAPNSToken();
+          debugPrint("inside_delayed_apnsToken:$apnsToken");
+          if (apnsToken != null) {
+            token = await _fcm.getToken();
+          } else {
+            try {
+              token = await _fcm.getToken();
+            } catch (e) {
+              debugPrint("APNs token error: $e");
+            }
+          }
+        });
+      }
+
+      print("Token_178:$token");
     } else {
       token = await _fcm.getToken();
     }
@@ -176,9 +184,7 @@ class PushNotificationService {
     return token;
   }
 
-  // =========================
-  // Topic Management
-  // =========================
+
   static Future<void> subscribeToTopic(String topic) async {
     await _fcm.subscribeToTopic(topic);
     debugPrint("Subscribed to $topic");
