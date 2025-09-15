@@ -1,3 +1,4 @@
+import 'package:base_code/module/bottom/schedule/calendar/calendar_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -91,7 +92,7 @@ class ScheduleScreen extends StatelessWidget {
                               "Add New Event",
                             ],
                             onTapActions: [
-                              () async {
+                                  () async {
                                 Get.back();
                                 final val = await Get.toNamed(AppRouter.addGame, arguments: {
                                   "activity": "game",
@@ -101,7 +102,7 @@ class ScheduleScreen extends StatelessWidget {
                                   await scheduleController.getScheduleListApiCall(filter: 'today');
                                 }
                               },
-                              () async {
+                                  () async {
                                 Get.back();
                                 final val = await Get.toNamed(AppRouter.addGame, arguments: {
                                   "activity": "event",
@@ -164,55 +165,55 @@ class ScheduleScreen extends StatelessWidget {
                 Gap(24),
                 Expanded(
                   child: Obx(
-                    () => scheduleController.isLoading.value
+                        () => scheduleController.isLoading.value || scheduleController.isLoadingExternal.value
                         ? Center(
-                            child: CircularProgressIndicator(
-                              color: AppColor.black12Color,
-                            ),
-                          )
+                      child: CircularProgressIndicator(
+                        color: AppColor.black12Color,
+                      ),
+                    )
                         : scheduleController.sortedScheduleList.isEmpty
-                            ? SingleChildScrollView(
-                                physics: AlwaysScrollableScrollPhysics(),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-                                      child: Center(child: buildNoData(text: "No Data Found")),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Obx(() {
-                                return ListView.builder(
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.zero,
-                                    itemCount: scheduleController.sortedScheduleList.length,
-                                    physics: AlwaysScrollableScrollPhysics(),
-                                    itemBuilder: (context, i) {
-                                      var item = scheduleController.sortedScheduleList[i].date;
+                        ? SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+                            child: Center(child: buildNoData(text: "No Data Found")),
+                          ),
+                        ],
+                      ),
+                    )
+                        : ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: scheduleController.sortedScheduleList.length,
+                        physics: AlwaysScrollableScrollPhysics(),
+                        itemBuilder: (context, i) {
+                          var dayData = scheduleController.sortedScheduleList[i];
+                          var date = dayData.date;
 
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                            width: double.infinity,
-                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppColor.black12Color),
-                                            child: Text(
-                                              item.isNotEmpty
-                                                  ? item
-                                                  : '',
-                                              style: TextStyle().normal16w500.textColor(AppColor.white),
-                                            ),
-                                          ),
-                                          buildListView(i)
-                                        ],
-                                      );
-                                    });
-                              }),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: AppColor.black12Color
+                                ),
+                                child: Text(
+                                  date.isNotEmpty ? date : '',
+                                  style: TextStyle().normal16w500.textColor(AppColor.white),
+                                ),
+                              ),
+                              buildEventList(dayData.data)
+                            ],
+                          );
+                        }),
                   ),
                 ),
               ],
@@ -223,30 +224,39 @@ class ScheduleScreen extends StatelessWidget {
     );
   }
 
-  ListView buildListView(int i) {
+  Widget buildEventList(List<dynamic> events) {
     return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 20),
-      physics: ScrollPhysics(),
-      itemCount: scheduleController.sortedScheduleList[i].data.length,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: events.length,
       shrinkWrap: true,
       itemBuilder: (context, index) {
-        ScheduleData scheduleData = scheduleController.sortedScheduleList[i].data[index];
-        return GestureDetector(
-          onTap: () {
-            Get.toNamed(AppRouter.gameProgress, arguments: {
-              'user_id': scheduleData.userBy,
-              'activity_id': scheduleData.activityId,
-            })?.then((onValue){
-              if(onValue=="delete"){
-                scheduleController.getScheduleListApiCall();
-              }
-            });
-          },
-          child: CommonScheduleCard(
-            scheduleData: scheduleData,
-            isBtn: AppPref().role == 'team',
-          ),
-        );
+        final eventItem = events[index];
+
+        if (eventItem['is_external']) {
+          // Render external calendar event
+          final externalEvent = eventItem['data'];
+          return CalendarScreen.buildExternalEventCard(externalEvent);
+        } else {
+          // Render internal schedule event
+          final scheduleData = eventItem['data'] as ScheduleData;
+          return GestureDetector(
+            onTap: () {
+              Get.toNamed(AppRouter.gameProgress, arguments: {
+                'user_id': scheduleData.userBy,
+                'activity_id': scheduleData.activityId,
+              })?.then((onValue) {
+                if (onValue == "delete") {
+                  scheduleController.getScheduleListApiCall();
+                }
+              });
+            },
+            child: CommonScheduleCard(
+              scheduleData: scheduleData,
+              isBtn: AppPref().role == 'team',
+            ),
+          );
+        }
       },
       separatorBuilder: (BuildContext context, int index) {
         return SizedBox(height: 16);
@@ -254,6 +264,7 @@ class ScheduleScreen extends StatelessWidget {
     );
   }
 }
+
 
 Future<void> showAlertDialog({
   required BuildContext context,
@@ -277,8 +288,8 @@ Future<void> showAlertDialog({
             Text(
               title ?? "Are you sure want to logout?",
               style: const TextStyle().normal16w600.textColor(
-                    AppColor.black12Color,
-                  ),
+                AppColor.black12Color,
+              ),
               textAlign: TextAlign.center,
             ),
             Visibility(
@@ -286,8 +297,8 @@ Future<void> showAlertDialog({
               child: Text(
                 subtitle ?? "",
                 style: const TextStyle().normal16w400.textColor(
-                      AppColor.black12Color,
-                    ),
+                  AppColor.black12Color,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),

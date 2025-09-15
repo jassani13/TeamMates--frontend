@@ -35,10 +35,8 @@ Future<void> dioSetUp({int? language}) async {
   }));
 
   if (!Foundation.kReleaseMode) {
-    var logger = PrettyDioLogger(
-      maxWidth: 232,
-      requestHeader: true,
-      requestBody: true,
+    var logger = CleanDioLogger(
+
     );
     dio.interceptors.add(logger);
   }
