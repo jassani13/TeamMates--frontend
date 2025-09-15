@@ -2,6 +2,8 @@ import UIKit
 import Flutter
 import flutter_local_notifications
 import FirebaseCore
+import UserNotifications
+
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -17,6 +19,13 @@ import FirebaseCore
 
         if #available(iOS 10.0, *) {
             UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
+        }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if granted {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
         }
 
         GeneratedPluginRegistrant.register(with: self)
