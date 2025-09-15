@@ -1,6 +1,5 @@
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:base_code/model/event_tag_model.dart';
 
 class CommonScheduleCard extends StatelessWidget {
   final ScheduleData? scheduleData;

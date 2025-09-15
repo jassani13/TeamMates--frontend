@@ -1,4 +1,3 @@
-import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/package/config_packages.dart';
 
 class ChatScreenController extends GetxController{

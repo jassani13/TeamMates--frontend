@@ -4,7 +4,7 @@ import 'package:base_code/package/screen_packages.dart';
 class ParticipatedPlayer extends StatelessWidget {
   ParticipatedPlayer({super.key});
 
-  List<PlayerTeams> list = Get.arguments;
+  final List<PlayerTeams> list = Get.arguments;
   final controller = Get.put<Controller>(Controller());
 
   @override

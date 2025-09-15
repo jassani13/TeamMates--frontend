@@ -13,7 +13,7 @@ class ScoreModel {
         this.serverTime});
 
   ScoreModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new ScoreData.fromJson(json['data']) : null;
+    data = json['data'] != null ? ScoreData.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -21,14 +21,14 @@ class ScoreModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['ResponseCode'] = this.responseCode;
-    data['ResponseMsg'] = this.responseMsg;
-    data['Result'] = this.result;
-    data['ServerTime'] = this.serverTime;
+    data['ResponseCode'] = responseCode;
+    data['ResponseMsg'] = responseMsg;
+    data['Result'] = result;
+    data['ServerTime'] = serverTime;
     return data;
   }
 }
@@ -44,16 +44,16 @@ class ScoreData {
     if (json['history'] != null) {
       history = <History>[];
       json['history'].forEach((v) {
-        history!.add(new History.fromJson(v));
+        history!.add(History.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['current'] = this.current;
-    if (this.history != null) {
-      data['history'] = this.history!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['current'] = current;
+    if (history != null) {
+      data['history'] = history!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -85,13 +85,13 @@ class History {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['score_id'] = this.scoreId;
-    data['activity_id'] = this.activityId;
-    data['is_current'] = this.isCurrent;
-    data['score'] = this.score;
-    data['created_at'] = this.createdAt;
-    data['updated_at'] = this.updatedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['score_id'] = scoreId;
+    data['activity_id'] = activityId;
+    data['is_current'] = isCurrent;
+    data['score'] = score;
+    data['created_at'] = createdAt;
+    data['updated_at'] = updatedAt;
     return data;
   }
 }

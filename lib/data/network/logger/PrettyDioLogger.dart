@@ -1,4 +1,4 @@
-library pretty_dio_logger;
+library;
 
 import 'dart:async';
 import 'dart:math' as math;
@@ -213,7 +213,7 @@ class PrettyDioLogger extends Interceptor {
       final isLast = index == data.length - 1;
       var value = data[key];
 //      key = '\"$key\"';
-      if (value is String) value = '\"${value.toString().replaceAll(RegExp(r'(\r|\n)+'), " ")}\"';
+      if (value is String) value = '"${value.toString().replaceAll(RegExp(r'(\r|\n)+'), " ")}"';
       if (value is Map) {
         if (compact && _canFlattenMap(value)) {
           logPrint(vColor!('║${_indent(tabs)} $key: $value${!isLast ? ',' : ''}'));
@@ -317,7 +317,7 @@ class AnsiColor {
 
   String call(String msg) {
     if (color) {
-      return '${this}$msg$ansiDefault';
+      return '$this$msg$ansiDefault';
     } else {
       return msg;
     }

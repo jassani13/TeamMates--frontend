@@ -1,5 +1,4 @@
 import 'package:base_code/model/event_tag_model.dart';
-import 'package:base_code/module/bottom/home/home_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 

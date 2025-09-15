@@ -1,13 +1,7 @@
-import 'dart:convert';
-import 'package:base_code/components/common_icon_button.dart';
-import 'package:base_code/components/shimmer.dart';
-import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/module/bottom/roster/allPlayer/all_player_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/material.dart';
 
-import '../../../../utils/common_function.dart';
 
 class AllPlayerScreen extends StatelessWidget {
   AllPlayerScreen({super.key});
@@ -419,7 +413,7 @@ class AllPlayerScreen extends StatelessWidget {
                   ),
                   if (isStaff)
                     Text(
-                      "${member.staff_role ?? "Staff"}",
+                      member.staff_role ?? "Staff",
                       style: TextStyle().normal14w500.textColor(
                         AppColor.grey4EColor,
                       ),

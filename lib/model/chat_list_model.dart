@@ -62,26 +62,26 @@ class ChatListData {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['chat_id'] = this.chatId;
-    data['team_chat_id'] = this.teamChatId;
-    data['team_id'] = this.teamId;
-    data['msg'] = this.msg;
-    data['sender_id'] = this.senderId;
-    data['receiver_id'] = this.receiverId;
-    data['msg_type'] = this.msgType;
-    data['created_at'] = this.createdAt;
-    data['user_id'] = this.userId;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
-    data['unread_count'] = this.unreadCount;
-    data['other_id'] = this.otherId;
-    data['profile'] = this.profile;
-    data['team_name'] = this.teamName;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['chat_id'] = chatId;
+    data['team_chat_id'] = teamChatId;
+    data['team_id'] = teamId;
+    data['msg'] = msg;
+    data['sender_id'] = senderId;
+    data['receiver_id'] = receiverId;
+    data['msg_type'] = msgType;
+    data['created_at'] = createdAt;
+    data['user_id'] = userId;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
+    data['unread_count'] = unreadCount;
+    data['other_id'] = otherId;
+    data['profile'] = profile;
+    data['team_name'] = teamName;
 
-    data['team_image'] = this.teamImage;
-    data['team_icon'] = this.teamIcon;
-    data['sender_name'] = this.senderName;
+    data['team_image'] = teamImage;
+    data['team_icon'] = teamIcon;
+    data['sender_name'] = senderName;
     return data;
   }
 }

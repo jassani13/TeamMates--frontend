@@ -1,7 +1,6 @@
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class GameProgressScreen extends StatelessWidget {
   GameProgressScreen({super.key});

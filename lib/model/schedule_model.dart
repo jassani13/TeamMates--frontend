@@ -130,73 +130,73 @@ class ScheduleData {
       });
     }
 
-    team = json['team'] != null ? new Team.fromJson(json['team']) : null;
+    team = json['team'] != null ? Team.fromJson(json['team']) : null;
     location = json['location'] != null
-        ? new Locationn.fromJson(json['location'])
+        ? Locationn.fromJson(json['location'])
         : null;
     opponent = json['opponent'] != null
-        ? new OpponentModel.fromJson(json['opponent'])
+        ? OpponentModel.fromJson(json['opponent'])
         : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['week_day'] = this.weekDay;
-    data['challenge_id'] = this.challengeId;
-    data['activity_id'] = this.activityId;
-    data['activity_type'] = this.activityType;
-    data['activity_name'] = this.activityName;
-    data['notify_team'] = this.notifyTeam;
-    data['is_time_tbd'] = this.isTimeTbd;
-    data['is_live'] = this.isLive;
-    data['event_date'] = this.eventDate;
-    data['start_time'] = this.startTime;
-    data['end_time'] = this.endTime;
-    data['time_zone'] = this.timeZone;
-    data['location_details'] = this.locationDetails;
-    data['assignments'] = this.assignments;
-    data['activity_user_status'] = this.activityUserStatus;
-    data['duration'] = this.duration;
-    data['arrive_early'] = this.arriveEarly;
-    data['extra_label'] = this.extraLabel;
-    data['area_type'] = this.areaType;
-    data['uniform'] = this.uniform;
-    data['flag_color'] = this.flagColor;
-    data['notes'] = this.notes;
-    data['standings'] = this.standings;
-    data['location_id'] = this.locationId;
-    data['total_participate'] = this.totalParticipate;
-    data['opponent_id'] = this.opponentId;
-    data['user_by'] = this.userBy;
-    data['team_id'] = this.teamId;
-    data['status'] = this.status;
-    data['reason'] = this.reason;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['week_day'] = weekDay;
+    data['challenge_id'] = challengeId;
+    data['activity_id'] = activityId;
+    data['activity_type'] = activityType;
+    data['activity_name'] = activityName;
+    data['notify_team'] = notifyTeam;
+    data['is_time_tbd'] = isTimeTbd;
+    data['is_live'] = isLive;
+    data['event_date'] = eventDate;
+    data['start_time'] = startTime;
+    data['end_time'] = endTime;
+    data['time_zone'] = timeZone;
+    data['location_details'] = locationDetails;
+    data['assignments'] = assignments;
+    data['activity_user_status'] = activityUserStatus;
+    data['duration'] = duration;
+    data['arrive_early'] = arriveEarly;
+    data['extra_label'] = extraLabel;
+    data['area_type'] = areaType;
+    data['uniform'] = uniform;
+    data['flag_color'] = flagColor;
+    data['notes'] = notes;
+    data['standings'] = standings;
+    data['location_id'] = locationId;
+    data['total_participate'] = totalParticipate;
+    data['opponent_id'] = opponentId;
+    data['user_by'] = userBy;
+    data['team_id'] = teamId;
+    data['status'] = status;
+    data['reason'] = reason;
 
 
-    data['is_multi_day'] = this.isMultiDay;
-    data['start_date'] = this.startDate;
-    data['end_date'] = this.endDate;
-    data['max_create_date'] = this.maxCreateDate;
+    data['is_multi_day'] = isMultiDay;
+    data['start_date'] = startDate;
+    data['end_date'] = endDate;
+    data['max_create_date'] = maxCreateDate;
 
-    if (this.tags != null) {
-      data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
+    if (tags != null) {
+      data['tags'] = tags!.map((tag) => tag.toJson()).toList();
     }
 
 
-    if (this.team != null) {
-      data['team'] = this.team?.toJson();
+    if (team != null) {
+      data['team'] = team?.toJson();
     }
-    if (this.location != null) {
-      data['team'] = this.location?.toJson();
+    if (location != null) {
+      data['team'] = location?.toJson();
     }
-    if (this.opponent != null) {
-      data['opponent'] = this.opponent?.toJson();
+    if (opponent != null) {
+      data['opponent'] = opponent?.toJson();
     }
-    if (this.canSendNudge != null) {
-      data['can_send_nudge'] = this.canSendNudge;
+    if (canSendNudge != null) {
+      data['can_send_nudge'] = canSendNudge;
     }
-    if (this.lastNudgeSent != null) {
-      data['last_nudge_sent'] = this.lastNudgeSent;
+    if (lastNudgeSent != null) {
+      data['last_nudge_sent'] = lastNudgeSent;
     }
     return data;
   }
@@ -308,7 +308,7 @@ class ActivityDetailsModel {
 
   ActivityDetailsModel.fromJson(Map<String, dynamic> json) {
     data =
-        json['data'] != null ? new ScheduleData.fromJson(json['data']) : null;
+        json['data'] != null ? ScheduleData.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -316,14 +316,14 @@ class ActivityDetailsModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['ResponseCode'] = this.responseCode;
-    data['ResponseMsg'] = this.responseMsg;
-    data['Result'] = this.result;
-    data['ServerTime'] = this.serverTime;
+    data['ResponseCode'] = responseCode;
+    data['ResponseMsg'] = responseMsg;
+    data['Result'] = result;
+    data['ServerTime'] = serverTime;
     return data;
   }
 }
@@ -360,15 +360,15 @@ class Locationn {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['location_id'] = this.locationId;
-    data['user_by'] = this.userBy;
-    data['location'] = this.location;
-    data['address'] = this.address;
-    data['link'] = this.link;
-    data['notes'] = this.notes;
-    data['latitude'] = this.latitude;
-    data['longitude'] = this.longitude;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['location_id'] = locationId;
+    data['user_by'] = userBy;
+    data['location'] = location;
+    data['address'] = address;
+    data['link'] = link;
+    data['notes'] = notes;
+    data['latitude'] = latitude;
+    data['longitude'] = longitude;
     return data;
   }
 }
@@ -402,14 +402,14 @@ class Opponent {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['opponent_id'] = this.opponentId;
-    data['user_by'] = this.userBy;
-    data['opponent_name'] = this.opponentName;
-    data['contact_name'] = this.contactName;
-    data['phone_number'] = this.phoneNumber;
-    data['email'] = this.email;
-    data['notes'] = this.notes;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['opponent_id'] = opponentId;
+    data['user_by'] = userBy;
+    data['opponent_name'] = opponentName;
+    data['contact_name'] = contactName;
+    data['phone_number'] = phoneNumber;
+    data['email'] = email;
+    data['notes'] = notes;
     return data;
   }
 }

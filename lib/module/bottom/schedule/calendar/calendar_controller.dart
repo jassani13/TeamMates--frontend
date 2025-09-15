@@ -100,10 +100,10 @@ class CalendarViewController extends GetxController {
               'description': eventDescription,
               'location': eventLocation,
               'dtstart': {
-                'dt': scheduleItem.eventDate! + 'T' + startTimeStr,
+                'dt': '${scheduleItem.eventDate!}T$startTimeStr',
               },
               'dtend': {
-                'dt': scheduleItem.eventDate! + 'T' + endTimeStr,
+                'dt': '${scheduleItem.eventDate!}T$endTimeStr',
               },
               'activity_id': scheduleItem.activityId,
               'activity_name': scheduleItem.activityName,
@@ -402,7 +402,7 @@ class CalendarViewController extends GetxController {
             (team) => team.name?.toLowerCase() == teamName.toLowerCase(),
             orElse: () => Roster(),
           );
-          if (matchedTeam?.teamId == null) {
+          if (matchedTeam.teamId == null) {
             errors.add(
                 'Row $rowNum: Team "$teamName" not found in existing teams.');
             continue;
@@ -418,7 +418,7 @@ class CalendarViewController extends GetxController {
                 opponentName.toLowerCase(),
             orElse: () => OpponentModel(),
           );
-          if (matchedOpponent?.opponentId == null) {
+          if (matchedOpponent.opponentId == null) {
             errors.add(
                 'Row $rowNum: Opponent "$opponentName" not found in existing opponents.');
             continue;
@@ -433,7 +433,7 @@ class CalendarViewController extends GetxController {
                 location.address?.toLowerCase() == locationName.toLowerCase(),
             orElse: () => LocationData(),
           );
-          if (matchedLocation?.locationId == null) {
+          if (matchedLocation.locationId == null) {
             errors.add(
                 'Row $rowNum: Location "$locationName" not found in existing locations.');
             continue;

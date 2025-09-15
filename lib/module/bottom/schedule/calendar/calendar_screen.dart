@@ -1,7 +1,6 @@
 import 'package:base_code/module/bottom/schedule/calendar/calendar_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/gestures.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
@@ -748,8 +747,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           } else {
                             // For non-game, team_name and opponent can be blank, others required
                             for (final field in expectedHeader) {
-                              if ((field == 'team_name' || field == 'opponent'))
+                              if ((field == 'team_name' || field == 'opponent')) {
                                 continue;
+                              }
                               if ((event[field] ?? '').toString().isEmpty) {
                                 errors.add(
                                     'Row ${i + 1}: Field "$field" is required for event_type "$eventType".');
@@ -757,8 +757,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             }
                             // If any required field is missing, skip this row
                             if (errors.isNotEmpty &&
-                                errors.last.startsWith('Row ${i + 1}:'))
+                                errors.last.startsWith('Row ${i + 1}:')) {
                               continue;
+                            }
                           }
 
                           validEvents.add(event);
