@@ -37,7 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+                  Gap(Platform.isAndroid
+                      ? ScreenUtil().statusBarHeight + 20
+                      : ScreenUtil().statusBarHeight + 10),
                   Row(
                     children: [
                       Expanded(
@@ -49,7 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               "${AppPref().userModel?.firstName ?? ""} ${AppPref().userModel?.lastName ?? ""}",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle().normal16w600.textColor(AppColor.black12Color),
+                              style: TextStyle()
+                                  .normal16w600
+                                  .textColor(AppColor.black12Color),
                             ),
                           ],
                         ),
@@ -85,37 +89,75 @@ class _HomeScreenState extends State<HomeScreen> {
                             return homeController.isShimmer.value
                                 ? SizedBox()
                                 : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (AppPref().role != "coach") ...[
                                         _cancelledActivity(),
                                       ],
                                       Obx(() {
-                                        return (homeController.homeModel.value?.data?.upcomingActivities ?? []).isEmpty
+                                        return (homeController
+                                                        .homeModel
+                                                        .value
+                                                        ?.data
+                                                        ?.upcomingActivities ??
+                                                    [])
+                                                .isEmpty
                                             ? SizedBox()
                                             : Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  CommonTitleText(text: "Upcoming"),
+                                                  CommonTitleText(
+                                                      text: "Upcoming"),
                                                   ListView.builder(
-                                                    padding: EdgeInsets.only(top: 10),
+                                                    padding: EdgeInsets.only(
+                                                        top: 10),
                                                     physics: ScrollPhysics(),
-                                                    itemCount: homeController.homeModel.value?.data?.upcomingActivities?.length,
+                                                    itemCount: homeController
+                                                        .homeModel
+                                                        .value
+                                                        ?.data
+                                                        ?.upcomingActivities
+                                                        ?.length,
                                                     shrinkWrap: true,
-                                                    itemBuilder: (context, index) {
-                                                      ScheduleData? scheduleData = homeController.homeModel.value?.data?.upcomingActivities?[index];
+                                                    itemBuilder:
+                                                        (context, index) {
+                                                      ScheduleData?
+                                                          scheduleData =
+                                                          homeController
+                                                                  .homeModel
+                                                                  .value
+                                                                  ?.data
+                                                                  ?.upcomingActivities?[
+                                                              index];
                                                       return Padding(
-                                                        padding: EdgeInsets.only(top: index == 0 ? 0 : 16.0),
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                top: index == 0
+                                                                    ? 0
+                                                                    : 16.0),
                                                         child: GestureDetector(
                                                           onTap: () {
-                                                            Get.toNamed(AppRouter.gameProgress, arguments: {
-                                                              'user_id': scheduleData?.userBy,
-                                                              'activity_id': scheduleData?.activityId,
-                                                            });
+                                                            Get.toNamed(
+                                                                AppRouter
+                                                                    .gameProgress,
+                                                                arguments: {
+                                                                  'user_id':
+                                                                      scheduleData
+                                                                          ?.userBy,
+                                                                  'activity_id':
+                                                                      scheduleData
+                                                                          ?.activityId,
+                                                                });
                                                           },
-                                                          child: CommonScheduleCard(
-                                                            scheduleData: scheduleData,
-                                                            isBtn: AppPref().role == 'team',
+                                                          child:
+                                                              CommonScheduleCard(
+                                                            scheduleData:
+                                                                scheduleData,
+                                                            isBtn: AppPref()
+                                                                    .role ==
+                                                                'team',
                                                             isHome: true,
                                                           ),
                                                         ),
@@ -127,44 +169,91 @@ class _HomeScreenState extends State<HomeScreen> {
                                               );
                                       }),
                                       Obx(() {
-                                        return (homeController.homeModel.value?.data?.challenges ?? []).isEmpty
+                                        return (homeController.homeModel.value
+                                                        ?.data?.challenges ??
+                                                    [])
+                                                .isEmpty
                                             ? SizedBox()
                                             : Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  CommonTitleText(text: "Coach's Goal Challenge"),
+                                                  CommonTitleText(
+                                                      text:
+                                                          "Coach's Goal Challenge"),
                                                   Gap(24),
                                                   ListView.builder(
-                                                      itemCount: homeController.homeModel.value?.data?.challenges?.length,
+                                                      itemCount: homeController
+                                                          .homeModel
+                                                          .value
+                                                          ?.data
+                                                          ?.challenges
+                                                          ?.length,
                                                       shrinkWrap: true,
                                                       padding: EdgeInsets.zero,
                                                       physics: ScrollPhysics(),
-                                                      itemBuilder: (context, index) {
-                                                        Challenge? challenge = homeController.homeModel.value?.data?.challenges?[index];
+                                                      itemBuilder:
+                                                          (context, index) {
+                                                        Challenge? challenge =
+                                                            homeController
+                                                                    .homeModel
+                                                                    .value
+                                                                    ?.data
+                                                                    ?.challenges?[
+                                                                index];
                                                         return GestureDetector(
                                                           onTap: () {
-                                                            if (AppPref().role == "coach") {
-                                                              Get.toNamed(AppRouter.challengeMembers, arguments: {
-                                                                "challenge_id": challenge.challengeId ?? "",
-                                                                "isHome": true,
-                                                              });
+                                                            if (AppPref()
+                                                                    .role ==
+                                                                "coach") {
+                                                              Get.toNamed(
+                                                                  AppRouter
+                                                                      .challengeMembers,
+                                                                  arguments: {
+                                                                    "challenge_id":
+                                                                        challenge.challengeId ??
+                                                                            "",
+                                                                    "isHome":
+                                                                        true,
+                                                                  });
                                                             } else {
-                                                              if ((DateUtilities.getTimeLeft(challenge.endAt ?? "-")) == "-") {
-                                                                AppToast.showAppToast("This challenge is no longer available.",
-                                                                    bgColor: AppColor.redColor);
+                                                              if ((DateUtilities
+                                                                      .getTimeLeft(
+                                                                          challenge.endAt ??
+                                                                              "-")) ==
+                                                                  "-") {
+                                                                AppToast.showAppToast(
+                                                                    "This challenge is no longer available.",
+                                                                    bgColor:
+                                                                        AppColor
+                                                                            .redColor);
                                                               } else {
-                                                                Get.toNamed(AppRouter.challengeMembers, arguments: {
-                                                                  "challenge_id": challenge.challengeId ?? "",
-                                                                  "isHome": true,
-                                                                });
+                                                                Get.toNamed(
+                                                                    AppRouter
+                                                                        .challengeMembers,
+                                                                    arguments: {
+                                                                      "challenge_id":
+                                                                          challenge.challengeId ??
+                                                                              "",
+                                                                      "isHome":
+                                                                          true,
+                                                                    });
                                                               }
                                                             }
                                                           },
                                                           child: CommonStatCard(
                                                             index: index,
-                                                            challenge: challenge!,
-                                                            isCoach: AppPref().role == "coach",
-                                                            pWidth: MediaQuery.of(context).size.width - 96 - 8,
+                                                            challenge:
+                                                                challenge!,
+                                                            isCoach: AppPref()
+                                                                    .role ==
+                                                                "coach",
+                                                            pWidth: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width -
+                                                                96 -
+                                                                8,
                                                           ),
                                                         );
                                                       }),
@@ -180,8 +269,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (AppPref().role != "coach")
                             GestureDetector(
                               onTap: () async {
-                                if (homeController.contact.value != "Not Added yet") {
-                                  final Uri callUri = Uri.parse("tel:${homeController.contact.value}");
+                                if (homeController.contact.value !=
+                                    "Not Added yet") {
+                                  final Uri callUri = Uri.parse(
+                                      "tel:${homeController.contact.value}");
                                   if (await canLaunchUrl(callUri)) {
                                     await launchUrl(callUri);
                                   } else {
@@ -207,13 +298,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Row(
                                       children: [
                                         Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             SvgPicture.asset(AppImage.info),
                                             Gap(8),
                                             Text(
                                               "Emergency Contact",
-                                              style: TextStyle().normal14w500.textColor(
+                                              style: TextStyle()
+                                                  .normal14w500
+                                                  .textColor(
                                                     AppColor.white,
                                                   ),
                                             ),
@@ -223,7 +317,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Obx(() {
                                           return Text(
                                             homeController.contact.value,
-                                            style: TextStyle().normal16w600.textColor(
+                                            style: TextStyle()
+                                                .normal16w600
+                                                .textColor(
                                                   AppColor.white,
                                                 ),
                                           );
@@ -260,8 +356,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     GestureDetector(
                       onTap: () {
                         Get.toNamed(AppRouter.gameProgress, arguments: {
-                          'user_id': homeController.homeModel.value?.data?.canceledActivity?.userBy,
-                          'activity_id': homeController.homeModel.value?.data?.canceledActivity?.activityId,
+                          'user_id': homeController
+                              .homeModel.value?.data?.canceledActivity?.userBy,
+                          'activity_id': homeController.homeModel.value?.data
+                              ?.canceledActivity?.activityId,
                         });
                       },
                       child: Container(
@@ -313,7 +411,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                 ),
                                 Text(
-                                  homeController.homeModel.value?.data?.canceledActivity?.reason ?? "-",
+                                  homeController.homeModel.value?.data
+                                          ?.canceledActivity?.reason ??
+                                      "-",
                                   style: TextStyle().normal16w500.textColor(
                                         AppColor.black12Color,
                                       ),
@@ -352,15 +452,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: ListView.builder(
                       shrinkWrap: true,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                       physics: ScrollPhysics(),
-                      itemCount: homeController.homeModel.value?.data?.news?.length,
+                      itemCount:
+                          homeController.homeModel.value?.data?.news?.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () async {
-                            final Uri url = Uri.parse(homeController.homeModel.value?.data?.news?[index].url ?? "");
+                            final Uri url = Uri.parse(homeController
+                                    .homeModel.value?.data?.news?[index].url ??
+                                "");
                             if (await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+                              await launchUrl(url,
+                                  mode: LaunchMode.inAppBrowserView);
                             } else {
                               throw "Could not launch $url";
                             }
@@ -377,14 +482,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if ((homeController.homeModel.value?.data?.news?[index].image ?? "").isNotEmpty)
+                                if ((homeController.homeModel.value?.data
+                                            ?.news?[index].image ??
+                                        "")
+                                    .isNotEmpty)
                                   ClipRRect(
                                       borderRadius: BorderRadius.only(
                                         topRight: Radius.circular(16),
                                         topLeft: Radius.circular(16),
                                       ),
                                       child: getImageView(
-                                        finalUrl: homeController.homeModel.value?.data?.news?[index].image ?? "",
+                                        finalUrl: homeController.homeModel.value
+                                                ?.data?.news?[index].image ??
+                                            "",
                                         height: 137,
                                         width: double.infinity,
                                         fit: BoxFit.cover,
@@ -392,20 +502,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        homeController.homeModel.value?.data?.news?[index].title ?? "",
-                                        style: TextStyle().normal16w500.textColor(
-                                              AppColor.black12Color,
-                                            ),
+                                        homeController.homeModel.value?.data
+                                                ?.news?[index].title ??
+                                            "",
+                                        style:
+                                            TextStyle().normal16w500.textColor(
+                                                  AppColor.black12Color,
+                                                ),
                                         maxLines: 2,
                                         softWrap: true,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Gap(7),
                                       ExpandableText(
-                                        homeController.homeModel.value?.data?.news?[index].description ?? "",
+                                        homeController.homeModel.value?.data
+                                                ?.news?[index].description ??
+                                            "",
                                         index: index,
                                       ),
                                     ],
@@ -436,8 +552,10 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                buildStandingsData(context, value: "60", title: "Push up", score: "8/12"),
-                buildStandingsData(context, value: "60", title: "Running", score: "8/12"),
+                buildStandingsData(context,
+                    value: "60", title: "Push up", score: "8/12"),
+                buildStandingsData(context,
+                    value: "60", title: "Running", score: "8/12"),
               ],
             ),
           ),
@@ -479,9 +597,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           buildStandingsData(context),
-          buildStandingsData(context, value: "60", title: "The Tigers", score: "9/12"),
-          buildStandingsData(context, value: "30", title: "The Bears", score: "5/12"),
-          buildStandingsData(context, value: "90", title: "Dance", score: "11/12"),
+          buildStandingsData(context,
+              value: "60", title: "The Tigers", score: "9/12"),
+          buildStandingsData(context,
+              value: "30", title: "The Bears", score: "5/12"),
+          buildStandingsData(context,
+              value: "90", title: "Dance", score: "11/12"),
         ],
       ),
     );
@@ -509,7 +630,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 horizontal: 12,
                 vertical: 2,
               ),
-              decoration: BoxDecoration(color: AppColor.white, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                  color: AppColor.white,
+                  borderRadius: BorderRadius.circular(8)),
               child: Text(
                 score ?? "8 /12",
                 style: TextStyle().normal18w500.textColor(

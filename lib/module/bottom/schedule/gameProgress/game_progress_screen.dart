@@ -37,7 +37,9 @@ class GameProgressScreen extends StatelessWidget {
                 Get.toNamed(
                   AppRouter.addGame,
                   arguments: {
-                    "activity": controller.activityDetails.value.data?.activityType ?? "",
+                    "activity":
+                        controller.activityDetails.value.data?.activityType ??
+                            "",
                     "activityDetail": controller.activityDetails.value.data,
                   },
                 )?.then((result) {
@@ -52,7 +54,9 @@ class GameProgressScreen extends StatelessWidget {
         ],
         title: Obx(
           () => CommonTitleText(
-            text: ((controller.activityDetails.value.data?.activityType ?? "") == "game")
+            text: ((controller.activityDetails.value.data?.activityType ??
+                        "") ==
+                    "game")
                 ? "${controller.activityDetails.value.data?.team?.name ?? ""} vs ${controller.activityDetails.value.data?.opponent?.opponentName ?? ""}"
                 : controller.activityDetails.value.data?.activityName ?? "",
           ),
@@ -83,11 +87,13 @@ class GameProgressScreen extends StatelessWidget {
                                 Obx(
                                   () => Switch(
                                       padding: EdgeInsets.zero,
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                       value: controller.isLive.value,
                                       activeColor: AppColor.redColor,
                                       onChanged: (val) async {
-                                        controller.isLive.value = !controller.isLive.value;
+                                        controller.isLive.value =
+                                            !controller.isLive.value;
                                         controller.gameLiveStatus();
                                       }),
                                 )
@@ -95,7 +101,7 @@ class GameProgressScreen extends StatelessWidget {
                             ),
                         ],
                       ),
-                      
+
                       // NEW: RSVP Nudge Section (Coach Only)
                       if (AppPref().role == "coach") ...[
                         Gap(16),
@@ -118,41 +124,55 @@ class GameProgressScreen extends StatelessWidget {
                                   SizedBox(width: 8),
                                   Text(
                                     "RSVP Management",
-                                    style: TextStyle().normal16w500.textColor(AppColor.black12Color),
+                                    style: TextStyle()
+                                        .normal16w500
+                                        .textColor(AppColor.black12Color),
                                   ),
                                 ],
                               ),
                               SizedBox(height: 12),
                               Text(
                                 "Send a reminder to team members who haven't responded yet.",
-                                style: TextStyle().normal14w400.textColor(AppColor.grey6EColor),
+                                style: TextStyle()
+                                    .normal14w400
+                                    .textColor(AppColor.grey6EColor),
                               ),
                               SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: (controller.activityDetails.value.data?.canSendNudge ?? true)
+                                  onPressed: (controller.activityDetails.value
+                                              .data?.canSendNudge ??
+                                          true)
                                       ? () => _showNudgeConfirmation(context)
                                       : null,
                                   icon: Icon(
                                     Icons.send_outlined,
                                     size: 18,
-                                    color: (controller.activityDetails.value.data?.canSendNudge ?? true)
+                                    color: (controller.activityDetails.value
+                                                .data?.canSendNudge ??
+                                            true)
                                         ? AppColor.white
                                         : AppColor.grey6EColor,
                                   ),
                                   label: Text(
-                                    (controller.activityDetails.value.data?.canSendNudge ?? true)
+                                    (controller.activityDetails.value.data
+                                                ?.canSendNudge ??
+                                            true)
                                         ? "Send Nudge to Unanswered"
                                         : "Nudge Sent Recently",
                                     style: TextStyle().normal14w500.textColor(
-                                      (controller.activityDetails.value.data?.canSendNudge ?? true)
-                                          ? AppColor.white
-                                          : AppColor.grey6EColor,
-                                    ),
+                                          (controller.activityDetails.value.data
+                                                      ?.canSendNudge ??
+                                                  true)
+                                              ? AppColor.white
+                                              : AppColor.grey6EColor,
+                                        ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: (controller.activityDetails.value.data?.canSendNudge ?? true)
+                                    backgroundColor: (controller.activityDetails
+                                                .value.data?.canSendNudge ??
+                                            true)
                                         ? AppColor.black12Color
                                         : AppColor.greyEAColor,
                                     shape: RoundedRectangleBorder(
@@ -162,18 +182,22 @@ class GameProgressScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              if (controller.activityDetails.value.data?.lastNudgeSent != null) ...[
+                              if (controller.activityDetails.value.data
+                                      ?.lastNudgeSent !=
+                                  null) ...[
                                 SizedBox(height: 8),
                                 Text(
                                   "Last nudge sent: ${_formatLastNudgeTime(controller.activityDetails.value.data!.lastNudgeSent!)}",
-                                  style: TextStyle().normal12w400.textColor(AppColor.grey6EColor),
+                                  style: TextStyle()
+                                      .normal12w400
+                                      .textColor(AppColor.grey6EColor),
                                 ),
                               ],
                             ],
                           ),
                         ),
                       ],
-                      
+
                       // EXISTING CODE CONTINUES - All your existing widgets stay the same
                       Gap(16),
                       Row(
@@ -183,31 +207,50 @@ class GameProgressScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               CommonTitleText(
-
-                                text: (controller.activityDetails.value.data?.eventDate?.isNotEmpty ?? false)
-                                    ? DateFormat('EEEE, MMMM d, y').format(DateTime.parse(controller.activityDetails.value.data?.eventDate ?? ''))
+                                text: (controller.activityDetails.value.data
+                                            ?.eventDate?.isNotEmpty ??
+                                        false)
+                                    ? DateFormat('EEEE, MMMM d, y').format(
+                                        DateTime.parse(controller
+                                                .activityDetails
+                                                .value
+                                                .data
+                                                ?.eventDate ??
+                                            ''))
                                     : '',
-
                               ),
-                              if (controller.activityDetails.value.data?.startTime != null || controller.activityDetails.value.data?.endTime != null)
+                              if (controller.activityDetails.value.data
+                                          ?.startTime !=
+                                      null ||
+                                  controller.activityDetails.value.data
+                                          ?.endTime !=
+                                      null)
                                 Text(
                                   DateUtilities.formatTime(
-                                      controller.activityDetails.value.data?.startTime ?? "", controller.activityDetails.value.data?.endTime ?? ""),
+                                      controller.activityDetails.value.data
+                                              ?.startTime ??
+                                          "",
+                                      controller.activityDetails.value.data
+                                              ?.endTime ??
+                                          ""),
                                   style: TextStyle().normal16w500.textColor(
                                         AppColor.grey4EColor,
                                       ),
                                 ),
                             ],
                           )),
-
                           Visibility(
-                            visible: controller.activityDetails.value.data?.isLive == 1,
+                            visible:
+                                controller.activityDetails.value.data?.isLive ==
+                                    1,
                             child: GestureDetector(
                               onTap: () {
-                                launchURL('https://watch.livebarn.com/en/signin');
+                                launchURL(
+                                    'https://watch.livebarn.com/en/signin');
                               },
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 9),
                                 decoration: BoxDecoration(
                                   color: AppColor.white,
                                   borderRadius: BorderRadius.circular(8),
@@ -240,14 +283,19 @@ class GameProgressScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      
+
                       // ALL YOUR EXISTING WIDGETS CONTINUE HERE...
                       // (Game in progress section, location, activity details, etc.)
                       // I'm keeping them as they were in your original code
-                      
+
                       Visibility(
-                        visible: (controller.activityDetails.value.data?.isLive == 1 &&
-                            ((controller.activityDetails.value.data?.activityType ?? "") == "game")),
+                        visible:
+                            (controller.activityDetails.value.data?.isLive ==
+                                    1 &&
+                                ((controller.activityDetails.value.data
+                                            ?.activityType ??
+                                        "") ==
+                                    "game")),
                         child: Column(
                           children: [
                             Gap(16),
@@ -256,7 +304,8 @@ class GameProgressScreen extends StatelessWidget {
                                 Get.toNamed(
                                   AppRouter.liveScore,
                                   arguments: {
-                                    'activity_data': controller.activityDetails.value.data,
+                                    'activity_data':
+                                        controller.activityDetails.value.data,
                                   },
                                 );
                               },
@@ -293,13 +342,16 @@ class GameProgressScreen extends StatelessWidget {
                         ),
                       ),
                       Obx(() {
-                        return (controller.activityDetails.value.data?.reason ?? "").isEmpty
+                        return (controller.activityDetails.value.data?.reason ??
+                                    "")
+                                .isEmpty
                             ? Gap(24)
                             : Column(
                                 children: [
                                   Gap(24),
                                   Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 9),
                                     decoration: BoxDecoration(
                                       color: AppColor.white,
                                       borderRadius: BorderRadius.circular(8),
@@ -322,7 +374,9 @@ class GameProgressScreen extends StatelessWidget {
                                         Expanded(
                                           child: Text(
                                             "Canceled - Due to ${controller.activityDetails.value.data?.reason ?? "-"}",
-                                            style: TextStyle().normal16w500.textColor(
+                                            style: TextStyle()
+                                                .normal16w500
+                                                .textColor(
                                                   AppColor.redColor,
                                                 ),
                                           ),
@@ -334,51 +388,76 @@ class GameProgressScreen extends StatelessWidget {
                                 ],
                               );
                       }),
-                      
+
                       // ALL YOUR EXISTING buildContainer WIDGETS...
                       buildContainer(
                           image: AppImage.location,
                           isIcon: true,
-                          heading: controller.activityDetails.value.data?.location?.address ?? "-",
+                          heading: controller.activityDetails.value.data
+                                  ?.location?.address ??
+                              "-",
                           subHeading: "Open in google map",
                           value: "Location",
                           onSubHeadingTap: () {
                             openGoogleMaps(
-                              address: controller.activityDetails.value.data?.location?.address,
-                              googleMapLink: controller.activityDetails.value.data?.location?.link,
-                              lat: double.parse(controller.activityDetails.value.data?.location?.latitude ?? "0.0"),
-                              lng: double.parse(controller.activityDetails.value.data?.location?.longitude ?? "0.0"),
+                              address: controller.activityDetails.value.data
+                                  ?.location?.address,
+                              googleMapLink: controller
+                                  .activityDetails.value.data?.location?.link,
+                              lat: double.parse(controller.activityDetails.value
+                                      .data?.location?.latitude ??
+                                  "0.0"),
+                              lng: double.parse(controller.activityDetails.value
+                                      .data?.location?.longitude ??
+                                  "0.0"),
                             );
                           }),
                       buildContainer(
                         image: AppImage.activityName,
-                        heading: controller.activityDetails.value.data?.activityName ?? "-",
+                        heading: controller
+                                .activityDetails.value.data?.activityName ??
+                            "-",
                         value: "Activity Name",
                         isIcon: false,
                       ),
                       buildContainer(
                         image: AppImage.locationDetail,
                         isIcon: false,
-                        heading: controller.activityDetails.value.data?.locationDetails ?? "-",
+                        heading: controller
+                                .activityDetails.value.data?.locationDetails ??
+                            "-",
                         value: "Location Detail",
                       ),
                       GestureDetector(
                         onTap: () {
-                          if ((controller.activityDetails.value.data?.team?.playerTeams ?? []).isNotEmpty) {
+                          if ((controller.activityDetails.value.data?.team
+                                      ?.playerTeams ??
+                                  [])
+                              .isNotEmpty) {
                             if (AppPref().role == "coach") {
-                              Get.toNamed(AppRouter.participatedPlayer, arguments: controller.activityDetails.value.data?.team?.playerTeams ?? []);
+                              Get.toNamed(AppRouter.participatedPlayer,
+                                  arguments: controller.activityDetails.value
+                                          .data?.team?.playerTeams ??
+                                      []);
                             }
                           } else {
+                            print("No player participated yet");
                             AppToast.showAppToast("No player participated yet");
                           }
                         },
                         child: buildContainer(
                           image: AppImage.player,
                           isIcon: true,
-                          heading: ((controller.activityDetails.value.data?.team?.playerTeams ?? []).isEmpty)
+                          heading: ((controller.activityDetails.value.data?.team
+                                          ?.playerTeams ??
+                                      [])
+                                  .isEmpty)
                               ? "-"
-                              : (controller.activityDetails.value.data?.team?.playerTeams ?? [])
-                                  .map((player) => "${player.firstName} ${player.lastName}")
+                              : (controller.activityDetails.value.data?.team
+                                          ?.playerTeams ??
+                                      [])
+                                  .map((player) =>
+                                      "${player.firstName} ${player.lastName}")
                                   .join(", "),
                           value: "Player List",
                         ),
@@ -387,47 +466,66 @@ class GameProgressScreen extends StatelessWidget {
                       buildContainer(
                         image: AppImage.assignment,
                         isIcon: false,
-                        heading: controller.activityDetails.value.data?.assignments ?? "-",
+                        heading: controller
+                                .activityDetails.value.data?.assignments ??
+                            "-",
                         value: "Assignment",
                       ),
                       buildContainer(
                         image: AppImage.duration,
                         isIcon: false,
-                        heading: (controller.activityDetails.value.data?.duration ?? "0").isEmpty
+                        heading: (controller
+                                        .activityDetails.value.data?.duration ??
+                                    "0")
+                                .isEmpty
                             ? "-"
-                            : DateUtilities.formatDuration(int.parse(controller.activityDetails.value.data?.duration ?? "0")),
+                            : DateUtilities.formatDuration(int.parse(controller
+                                    .activityDetails.value.data?.duration ??
+                                "0")),
                         value: "Duration",
                       ),
                       buildContainer(
                         image: AppImage.arriveEarly,
                         isIcon: false,
-                        heading: controller.activityDetails.value.data?.arriveEarly ?? "-",
+                        heading: controller
+                                .activityDetails.value.data?.arriveEarly ??
+                            "-",
                         value: "Arrive Early",
                       ),
                       buildContainer(
                         image: AppImage.uniform,
                         isIcon: false,
-                        heading: controller.activityDetails.value.data?.uniform ?? "-",
+                        heading:
+                            controller.activityDetails.value.data?.uniform ??
+                                "-",
                         value: "Uniform",
                       ),
                       buildContainer(
                         image: AppImage.flag,
                         isIcon: false,
-                        heading: controller.activityDetails.value.data?.flagColor ?? "-",
+                        heading:
+                            controller.activityDetails.value.data?.flagColor ??
+                                "-",
                         value: "Flag Color",
                       ),
                       buildContainer(
                         image: AppImage.notes,
-                        heading: controller.activityDetails.value.data?.notes ?? "-",
+                        heading:
+                            controller.activityDetails.value.data?.notes ?? "-",
                         isIcon: false,
                         value: "Notes",
                       ),
-                      if ((controller.activityDetails.value.data?.activityType ?? "") == "game")
+                      if ((controller
+                                  .activityDetails.value.data?.activityType ??
+                              "") ==
+                          "game")
                         buildContainer(
                           isIcon: false,
                           isLast: true,
                           image: AppImage.opponents,
-                          heading: controller.activityDetails.value.data?.opponent?.opponentName ?? "-",
+                          heading: controller.activityDetails.value.data
+                                  ?.opponent?.opponentName ??
+                              "-",
                           value: "Opponent",
                         ),
 
@@ -489,7 +587,7 @@ class GameProgressScreen extends StatelessWidget {
     await Get.find<ScheduleController>().sendRsvpNudgeApiCall(
       activityId: controller.activityDetails.value.data?.activityId ?? 0,
     );
-    
+
     // Refresh activity details to update nudge status
     // You might need to call your existing method to refresh the data
     // controller.getActivityDetails(); // Add this if you have such method
@@ -549,7 +647,8 @@ class GameProgressScreen extends StatelessWidget {
                       child: SvgPicture.asset(
                         image ?? AppImage.name,
                         height: 20,
-                        colorFilter: ColorFilter.mode(AppColor.black12Color, BlendMode.srcIn),
+                        colorFilter: ColorFilter.mode(
+                            AppColor.black12Color, BlendMode.srcIn),
                       ),
                     ),
                   ),
@@ -570,14 +669,19 @@ class GameProgressScreen extends StatelessWidget {
                             onTap: onSubHeadingTap,
                             child: Text(
                               subHeading ?? "",
-                              style: TextStyle(decoration: TextDecoration.underline, decorationColor: Colors.black).normal14w500.textColor(
+                              style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: Colors.black)
+                                  .normal14w500
+                                  .textColor(
                                     AppColor.black,
                                   ),
                             ),
                           ),
                         ),
                         Text(
-                          value ?? "My assignments\nAttendance, clock, fieldprep, Photogragher",
+                          value ??
+                              "My assignments\nAttendance, clock, fieldprep, Photogragher",
                           style: TextStyle().normal14w500.textColor(
                                 AppColor.grey6EColor,
                               ),

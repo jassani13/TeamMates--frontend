@@ -86,42 +86,46 @@ class ScheduleData {
   });
 
   ScheduleData.fromJson(Map<String, dynamic> json) {
-    weekDay = json['week_day'];
-    challengeId = json['challenge_id'];
-    activityId = json['activity_id'];
-    activityType = json['activity_type'];
-    activityName = json['activity_name'];
-    notifyTeam = json['notify_team'];
-    isTimeTbd = json['is_time_tbd'];
-    isLive = json['is_live'];
-    eventDate = json['event_date'];
-    startTime = json['start_time'];
-    endTime = json['end_time'];
-    timeZone = json['time_zone'];
-    totalParticipate = json['total_participate'];
-    activityUserStatus = json['activity_user_status'];
-    locationDetails = json['location_details'];
-    canSendNudge = json['can_send_nudge'];
-    lastNudgeSent = json['last_nudge_sent'];
-    assignments = json['assignments'];
-    duration = json['duration'];
-    arriveEarly = json['arrive_early'];
-    extraLabel = json['extra_label'];
-    areaType = json['area_type'];
-    uniform = json['uniform'];
-    flagColor = json['flag_color'];
-    notes = json['notes'];
-    standings = json['standings'];
-    locationId = json['location_id'];
-    opponentId = json['opponent_id'];
-    userBy = json['user_by'];
-    teamId = json['team_id'];
-    status = json['status'];
-    reason = json['reason'];
-    maxCreateDate = json['max_create_date'];
-    isMultiDay = json['is_multi_day'];
-    startDate = json['start_date'];
-    endDate = json['end_date'];
+    try {
+      weekDay = json['week_day'];
+      challengeId = json['challenge_id'];
+      activityId = json['activity_id'];
+      activityType = json['activity_type'];
+      activityName = json['activity_name'];
+      notifyTeam = json['notify_team'];
+      isTimeTbd = json['is_time_tbd'];
+      isLive = json['is_live'];
+      eventDate = json['event_date'];
+      startTime = json['start_time'];
+      endTime = json['end_time'];
+      timeZone = json['time_zone'];
+      totalParticipate = json['total_participate'];
+      activityUserStatus = json['activity_user_status'];
+      locationDetails = json['location_details'];
+      canSendNudge = json['can_send_nudge'];
+      lastNudgeSent = json['last_nudge_sent'];
+      assignments = json['assignments'];
+      duration = json['duration'];
+      arriveEarly = json['arrive_early'];
+      extraLabel = json['extra_label'];
+      areaType = json['area_type'];
+      uniform = json['uniform'];
+      flagColor = json['flag_color'];
+      notes = json['notes'];
+      standings = json['standings'];
+      locationId = json['location_id'];
+      opponentId = json['opponent_id'];
+      userBy = json['user_by'];
+      teamId = json['team_id'];
+      status = json['status'];
+      reason = json['reason'];
+      maxCreateDate = json['max_create_date'];
+      isMultiDay = json['is_multi_day'];
+      startDate = json['start_date'];
+      endDate = json['end_date'];
+    } catch (e) {
+      print('Error parsing schedule data: $e');
+    }
 
     if (json['tags'] != null) {
       tags = <EventTag>[];
@@ -172,7 +176,6 @@ class ScheduleData {
     data['status'] = this.status;
     data['reason'] = this.reason;
 
-
     data['is_multi_day'] = this.isMultiDay;
     data['start_date'] = this.startDate;
     data['end_date'] = this.endDate;
@@ -181,7 +184,6 @@ class ScheduleData {
     if (this.tags != null) {
       data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
     }
-
 
     if (this.team != null) {
       data['team'] = this.team?.toJson();
@@ -200,7 +202,6 @@ class ScheduleData {
     }
     return data;
   }
-
 
   // Multi-day helper methods
 
@@ -288,7 +289,6 @@ class ScheduleData {
   String get tagIdsString {
     if (tags == null || tags!.isEmpty) return '';
     return tags!.map((tag) => tag.tagId.toString()).join(',');
-
   }
 }
 

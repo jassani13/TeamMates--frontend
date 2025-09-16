@@ -25,12 +25,14 @@ Future<T?> callApi<T>(Future<T> request, [bool doShowLoader = true]) async {
 }
 
 onResponseError(onError) {
-  debugPrint("onResponseError:onError ${onError.toString()} || ${onError.response.statusCode}");
+  debugPrint(
+      "onResponseError:onError ${onError.toString()} || ${onError.response.statusCode}");
   if (onError is DioException) {
     switch (onError.response?.statusCode) {
       case 400:
       case 401:
-        AppToast.showAppToast('Login expires. Please re-login with Phone number.');
+        AppToast.showAppToast(
+            'Login expires. Please re-login with Phone number.');
         break;
       case 403:
       case 404:
@@ -39,7 +41,8 @@ onResponseError(onError) {
         var json = onError.response?.data;
         if (json.runtimeType.toString() != "_Map<String, dynamic>") {
           var json = onError.response?.data;
-          showErrorSheet(json.toString().replaceAll('[', '').replaceAll(']', ''));
+          showErrorSheet(
+              json.toString().replaceAll('[', '').replaceAll(']', ''));
           break;
         }
         if (json.runtimeType.toString() == "List<dynamic>") {
@@ -47,7 +50,8 @@ onResponseError(onError) {
           showErrorSheet(json[0].replaceAll('[', '').replaceAll(']', ''));
           break;
         }
-        showErrorSheet(json["message"].toString().replaceAll('[', '').replaceAll(']', ''));
+        showErrorSheet(
+            json["message"].toString().replaceAll('[', '').replaceAll(']', ''));
         break;
       case 408:
       case 409:
@@ -56,10 +60,14 @@ onResponseError(onError) {
         var json = onError.response?.data;
         if (json.runtimeType.toString() != "_Map<String, dynamic>") {
           var json = onError.response?.data;
-          showErrorSheet(json.toString().replaceAll('[', '').replaceAll(']', ''));
+          showErrorSheet(
+              json.toString().replaceAll('[', '').replaceAll(']', ''));
           break;
         }
-        showErrorSheet(json["ResponseMsg"].toString().replaceAll('[', '').replaceAll(']', ''));
+        showErrorSheet(json["ResponseMsg"]
+            .toString()
+            .replaceAll('[', '')
+            .replaceAll(']', ''));
         break;
       case 423:
       case 426:
@@ -83,7 +91,8 @@ Future<void> showErrorSheet(String errorText, {Function()? onTap}) async {
     builder: (context) => Container(
       decoration: BoxDecoration(
           color: context.theme.scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+          borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20), topRight: Radius.circular(20))),
       padding: const EdgeInsetsDirectional.only(
         start: 24,
         end: 24,
@@ -96,7 +105,8 @@ Future<void> showErrorSheet(String errorText, {Function()? onTap}) async {
           Center(
               child: Text(
             "Error",
-            style: const TextStyle().normal24w600.textColor(AppColor.black12Color),
+            style:
+                const TextStyle().normal24w600.textColor(AppColor.black12Color),
           )),
           const Gap(16),
           for (var data in errorText.split(',')) ...{
@@ -108,13 +118,16 @@ Future<void> showErrorSheet(String errorText, {Function()? onTap}) async {
                 children: [
                   Padding(
                     padding: const EdgeInsetsDirectional.only(top: 4),
-                    child: CircleAvatar(backgroundColor: AppColor.black12Color, radius: 5),
+                    child: CircleAvatar(
+                        backgroundColor: AppColor.black12Color, radius: 5),
                   ),
                   const Gap(8),
                   Expanded(
                       child: Text(
                     data.trim().capitalizeFirst!,
-                    style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.black12Color),
                   )),
                 ],
               ),

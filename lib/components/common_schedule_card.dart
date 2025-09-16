@@ -232,5 +232,4 @@ class CommonScheduleCard extends StatelessWidget {
       ],
     );
   }
-
 }

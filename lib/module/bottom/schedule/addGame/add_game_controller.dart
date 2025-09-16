@@ -14,7 +14,8 @@ class AddGameController extends GetxController {
   Rx<TextEditingController> dateController = TextEditingController().obs;
   // TA-42: Frequency end date controller for editing frequency
   Rx<TextEditingController> freqEndDateController = TextEditingController().obs;
-  Rx<TextEditingController> activityNameController = TextEditingController().obs;
+  Rx<TextEditingController> activityNameController =
+      TextEditingController().obs;
 
   Rx<TextEditingController> endTimeController = TextEditingController().obs;
   Rx<TextEditingController> startTimeController = TextEditingController().obs;
@@ -74,7 +75,8 @@ class AddGameController extends GetxController {
     try {
       // TA-42: Frequency validation
       if (selectedDays.isNotEmpty && freqEndDateController.value.text.isEmpty) {
-        AppToast.showAppToast("An end date is required when a frequency is selected.");
+        AppToast.showAppToast(
+            "An end date is required when a frequency is selected.");
         return;
       }
       FormData formData = FormData.fromMap({
@@ -85,9 +87,8 @@ class AddGameController extends GetxController {
         "notify_team": notify.value == true ? 1 : 0,
         "activity_type": activityType,
         "activity_name": activityNameController.value.text.trim(),
-        if (isGame == true) "team_id": selectedTeam.value?.teamId ?? 0,
-        if (isGame == true)
-          "opponent_id": selectedOpponent.value?.opponentId ?? 0,
+        "team_id": selectedTeam.value?.teamId ?? 0,
+        "opponent_id": selectedOpponent.value?.opponentId ?? 0,
         "is_time_tbd": isTimeTBD.value == true ? 1 : 0,
         // TA-37: Multi-day event support
         "is_multi_day": isMultiDay.value ? 1 : 0,
@@ -103,7 +104,9 @@ class AddGameController extends GetxController {
         "location_details": locationDetailsController.value.text.trim(),
         "assignments": assignmentController.value.text.trim(),
         "duration": durationController.value.text.trim(),
-        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear"
+            ? ""
+            : arriveController.value.text.trim(),
         "extra_label": extraLabelController.value.text.trim(),
         "area_type": isAway.value == true ? 'Away' : 'Home',
         "uniform": uniformController.value.text.trim(),
@@ -163,7 +166,9 @@ class AddGameController extends GetxController {
         "location_details": locationDetailsController.value.text.trim(),
         "assignments": assignmentController.value.text.trim(),
         "duration": durationController.value.text.trim(),
-        "arrive_early": arriveController.value.text.trim() == "Clear" ? "" : arriveController.value.text.trim(),
+        "arrive_early": arriveController.value.text.trim() == "Clear"
+            ? ""
+            : arriveController.value.text.trim(),
         "extra_label": extraLabelController.value.text.trim(),
         "area_type": isAway.value == true ? 'Away' : 'Home',
         "uniform": uniformController.value.text.trim(),
@@ -410,7 +415,7 @@ class AddGameController extends GetxController {
         DateTime minDate = now;
         DateTime maxDate = DateTime(now.year + 1, now.month, now.day);
         DateTime effectiveInitial =
-        (initial != null && initial.isAfter(minDate)) ? initial : minDate;
+            (initial != null && initial.isAfter(minDate)) ? initial : minDate;
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Container(
@@ -424,20 +429,25 @@ class AddGameController extends GetxController {
                   children: [
                     Text(
                       "Select Date",
-                      style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                      style: const TextStyle()
+                          .normal14w500
+                          .textColor(AppColor.black12Color),
                     ),
                     const Spacer(),
                     TextButton(
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
                           DateTime now = DateTime.now();
-                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                          storeValue.text =
+                              "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
                         }
                         Get.back();
                       },
                       child: Text(
                         "Done",
-                        style: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        style: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                   ],
@@ -447,7 +457,9 @@ class AddGameController extends GetxController {
                   child: CupertinoTheme(
                     data: CupertinoThemeData(
                       textTheme: CupertinoTextThemeData(
-                        dateTimePickerTextStyle: const TextStyle().normal14w500.textColor(AppColor.black12Color),
+                        dateTimePickerTextStyle: const TextStyle()
+                            .normal14w500
+                            .textColor(AppColor.black12Color),
                       ),
                     ),
                     child: CupertinoDatePicker(
@@ -482,7 +494,8 @@ class AddGameController extends GetxController {
         DateTime now = DateTime.now();
         DateTime minDate = now.subtract(const Duration(seconds: 2));
         DateTime maxDate = now.add(const Duration(days: 366));
-        DateTime effectiveInitial = (initial != null && initial.isAfter(minDate)) ? initial : minDate;
+        DateTime effectiveInitial =
+            (initial != null && initial.isAfter(minDate)) ? initial : minDate;
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: Container(
@@ -505,7 +518,8 @@ class AddGameController extends GetxController {
                       onPressed: () {
                         if (storeValue.text.isEmpty) {
                           DateTime now = DateTime.now();
-                          storeValue.text = "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                          storeValue.text =
+                              "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
                         }
                         Get.back();
                       },
@@ -896,12 +910,12 @@ class AddGameController extends GetxController {
     isGame.value = Get.arguments['activity'] == 'game';
     activityDetail.value = Get.arguments['activityDetail'];
     activityType.value = Get.arguments['activity'];
-    
+
     // TA-32: Load event tags for coaches
-    if (AppPref().role == 'coach') {
-      getEventTagsApiCall();
-    }
-    
+    // if (AppPref().role == 'coach') {
+    //   getEventTagsApiCall();
+    // }
+
     // Delay reactive updates until after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (activityDetail.value != null) {
@@ -917,10 +931,12 @@ class AddGameController extends GetxController {
             activityDetail.value?.location?.address ?? "";
         locationDetailsController.value.text =
             activityDetail.value?.locationDetails ?? "";
-        assignmentController.value.text = activityDetail.value?.assignments ?? "";
+        assignmentController.value.text =
+            activityDetail.value?.assignments ?? "";
         durationController.value.text = activityDetail.value?.duration ?? "";
         arriveController.value.text = activityDetail.value?.arriveEarly ?? "";
-        extraLabelController.value.text = activityDetail.value?.extraLabel ?? "";
+        extraLabelController.value.text =
+            activityDetail.value?.extraLabel ?? "";
         noteController.value.text = activityDetail.value?.notes ?? "";
         flagController.value.text = activityDetail.value?.flagColor ?? "";
         uniformController.value.text = activityDetail.value?.uniform ?? "";
@@ -931,11 +947,13 @@ class AddGameController extends GetxController {
         isTimeTBD.value = activityDetail.value?.isTimeTbd == 1;
         isStanding.value = activityDetail.value?.standings == 1;
         isCanceled.value = activityDetail.value?.status == "canceled";
-        
+
         if (selectedTeam.value == null) selectedTeam.value = Roster();
-        if (selectedOpponent.value == null) selectedOpponent.value = OpponentModel();
-        if (selectedLocation.value == null) selectedLocation.value = LocationData();
-        
+        if (selectedOpponent.value == null)
+          selectedOpponent.value = OpponentModel();
+        if (selectedLocation.value == null)
+          selectedLocation.value = LocationData();
+
         selectedTeam.value?.teamId = activityDetail.value?.teamId ?? 0;
         selectedOpponent.value?.opponentId =
             activityDetail.value?.opponentId ?? 0;
@@ -944,41 +962,43 @@ class AddGameController extends GetxController {
         selectedTeam.refresh();
         selectedLocation.refresh();
         selectedOpponent.refresh();
-        
+
         if (activityDetail.value?.weekDay != null) {
           selectedDays.add(int.parse(activityDetail.value?.weekDay ?? "0"));
           print(selectedDays);
         }
-        
+
         // TA-42: Populate frequency end date for editing
-        if (activityDetail.value?.maxCreateDate != null && activityDetail.value!.maxCreateDate!.isNotEmpty) {
-          freqEndDateController.value.text = activityDetail.value!.maxCreateDate!;
+        if (activityDetail.value?.maxCreateDate != null &&
+            activityDetail.value!.maxCreateDate!.isNotEmpty) {
+          freqEndDateController.value.text =
+              activityDetail.value!.maxCreateDate!;
         }
-        
+
         // TA-37: Populate multi-day event data
         isMultiDay.value = (activityDetail.value?.isMultiDay ?? 0) == 1;
         if (isMultiDay.value) {
-          startDateController.value.text = activityDetail.value?.startDate ?? "";
+          startDateController.value.text =
+              activityDetail.value?.startDate ?? "";
           endDateController.value.text = activityDetail.value?.endDate ?? "";
         } else {
           dateController.value.text = activityDetail.value?.eventDate ?? "";
         }
       }
-      
+
       // TA-32: Populate selected tags for editing
       if (activityDetail.value?.tags != null &&
           activityDetail.value!.tags!.isNotEmpty) {
         selectedTags.assignAll(activityDetail.value!.tags!);
         _updateTagDisplay();
       }
-      
-      if (activityType.value == 'game') {
-        getRosterApiCall();
-        getOpponentListApiCall();
-      }
+
+      getRosterApiCall();
+      getOpponentListApiCall();
+
       getLocationListApiCall();
     });
-    
+
     super.onInit();
   }
 }

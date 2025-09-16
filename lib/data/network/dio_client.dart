@@ -2,14 +2,11 @@ import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:flutter/foundation.dart' as Foundation;
 
-
 late Dio dio;
 
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
-
-
 
 //const String publicImageUrl = "http://34.205.17.49/TeamMates/public/";
 //const String baseUrl = kDebugMode
@@ -23,11 +20,10 @@ const bool useLocalServer = true; // Change this to switch servers
 //const String localBaseUrl = 'http://10.0.2.2:8000'; // For Android Emulator
 //const String localBaseUrl = 'http://127.0.0.1:8000'; // Test ENV for iOS Simulator
 const String productionBaseUrl = 'http://34.205.17.49/TeamMates';
- const String localBaseUrl = 'http://127.0.0.1:8000'; // Test ENV
+const String localBaseUrl = 'http://192.168.100.5:8000'; // Test ENV
 
-const String baseUrl = useLocalServer && kDebugMode 
-    ? localBaseUrl 
-    : productionBaseUrl;
+const String baseUrl =
+    useLocalServer && kDebugMode ? localBaseUrl : productionBaseUrl;
 
 // Keep existing publicImageUrl logic
 // const String publicImageUrl = useLocalServer && kDebugMode
