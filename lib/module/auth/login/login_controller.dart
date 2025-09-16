@@ -59,6 +59,7 @@ class LoginController extends GetxController {
     }
   }
 
+
   Future signInWithApple() async {
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
