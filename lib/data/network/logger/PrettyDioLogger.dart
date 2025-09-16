@@ -18,7 +18,6 @@ class CleanDioLogger extends Interceptor {
       const encoder = JsonEncoder.withIndent('  ');
       final prettyJson = encoder.convert(data);
 
-      // ek hi block me print hoga, har line ke aage "flutter:" nahi aayega
       debugPrint(prettyJson, wrapWidth: 1024);
     } catch (_) {
       debugPrint(data.toString(), wrapWidth: 1024);
