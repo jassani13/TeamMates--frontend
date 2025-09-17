@@ -18,7 +18,7 @@ import UserNotifications
         }
 
         if #available(iOS 10.0, *) {
-            UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
+            UNUserNotificationCenter.current().delegate = self
         }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             if granted {
@@ -27,7 +27,6 @@ import UserNotifications
                 }
             }
         }
-
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }

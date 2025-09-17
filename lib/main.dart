@@ -3,9 +3,11 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
-
-Future myBackgroundMessageHandler(RemoteMessage message) async {
-  debugPrint("myBackgroundMessageHandler: ${message.notification?.title}");
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint("Handling a background message: ${message.messageId}");
+  await Firebase.initializeApp();
+  handleMessage(message);
 }
 
 void main() async {
@@ -44,11 +46,13 @@ void main() async {
   await dioSetUp();
 
   await PushNotificationService().initialize();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   Get.put<GlobalController>(GlobalController());
   Get.put<InAppPurchaseController>(InAppPurchaseController());
 
   final String defaultLocale = Platform.localeName.split('_')[0];
-  AppPref().languageCode = (defaultLocale.toLowerCase() == 'ar') ? defaultLocale : 'en';
+  AppPref().languageCode =
+      (defaultLocale.toLowerCase() == 'ar') ? defaultLocale : 'en';
   if (AppPref().languageCode.isEmpty) {
     AppPref().languageCode = 'en';
   }
