@@ -1,10 +1,7 @@
 import 'package:base_code/module/bottom/roster/allPlayer/all_player_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
-import '../roster_controller.dart';
 
 class AddPlayerController extends GetxController {
   RxList<PlayerDetailModel> playerList = <PlayerDetailModel>[].obs;

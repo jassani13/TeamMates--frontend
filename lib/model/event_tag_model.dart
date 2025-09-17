@@ -24,7 +24,7 @@ class EventTag {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     data['tag_id'] = tagId;
     // REMOVED: data['team_id'] = teamId;
     data['tag_name'] = tagName;
@@ -66,7 +66,7 @@ class EventTag {
 
   // Helper method for API requests (when creating new tags)
   Map<String, dynamic> toCreateJson() {
-    final Map<String, dynamic> data = Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     // REMOVED: data['team_id'] = teamId;
     data['tag_name'] = tagName;
     data['tag_color'] = tagColor;

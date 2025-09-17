@@ -18,7 +18,7 @@ class RosterDetailModel {
     if (json['data'] != null) {
       data = <RosterDetails>[];
       json['data'].forEach((v) {
-        data!.add(new RosterDetails.fromJson(v));
+        data!.add(RosterDetails.fromJson(v));
       });
     }
     responseCode = json['ResponseCode'];
@@ -28,14 +28,14 @@ class RosterDetailModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.map((v) => v.toJson()).toList();
     }
-    data['ResponseCode'] = this.responseCode;
-    data['ResponseMsg'] = this.responseMsg;
-    data['Result'] = this.result;
-    data['ServerTime'] = this.serverTime;
+    data['ResponseCode'] = responseCode;
+    data['ResponseMsg'] = responseMsg;
+    data['Result'] = result;
+    data['ServerTime'] = serverTime;
     return data;
   }
 }
@@ -77,24 +77,24 @@ class RosterDetails {
     if (json['player_teams'] != null) {
       playerTeams = <PlayerTeams>[];
       json['player_teams'].forEach((v) {
-        playerTeams!.add(new PlayerTeams.fromJson(v));
+        playerTeams!.add(PlayerTeams.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['team_id'] = this.teamId;
-    data['user_by'] = this.userBy;
-    data['icon'] = this.icon;
-    data['name'] = this.name;
-    data['zipcode'] = this.zipcode;
-    data['country'] = this.country;
-    data['sports'] = this.sports;
-    data['team_code'] = this.teamCode;
-    data['icon_image'] = this.iconImage;
-    if (this.playerTeams != null) {
-      data['player_teams'] = this.playerTeams!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['team_id'] = teamId;
+    data['user_by'] = userBy;
+    data['icon'] = icon;
+    data['name'] = name;
+    data['zipcode'] = zipcode;
+    data['country'] = country;
+    data['sports'] = sports;
+    data['team_code'] = teamCode;
+    data['icon_image'] = iconImage;
+    if (playerTeams != null) {
+      data['player_teams'] = playerTeams!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -259,9 +259,9 @@ class Pivot {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['team_id'] = this.teamId;
-    data['user_id'] = this.userId;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['team_id'] = teamId;
+    data['user_id'] = userId;
     return data;
   }
 }

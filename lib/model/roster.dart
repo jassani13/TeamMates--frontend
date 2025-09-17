@@ -40,18 +40,18 @@ class Roster {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['team_id'] = this.teamId;
-    data['user_by'] = this.userBy;
-    data['icon'] = this.icon;
-    data['name'] = this.name;
-    data['zipcode'] = this.zipcode;
-    data['country'] = this.country;
-    data['sports'] = this.sports;
-    data['team_code'] = this.teamCode;
-    data['player_teams_count'] = this.playerTeamsCount;
-    data['icon_image'] = this.iconImage;
-    data['team_image'] = this.teamImage;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['team_id'] = teamId;
+    data['user_by'] = userBy;
+    data['icon'] = icon;
+    data['name'] = name;
+    data['zipcode'] = zipcode;
+    data['country'] = country;
+    data['sports'] = sports;
+    data['team_code'] = teamCode;
+    data['player_teams_count'] = playerTeamsCount;
+    data['icon_image'] = iconImage;
+    data['team_image'] = teamImage;
     return data;
   }
 }

@@ -1,13 +1,10 @@
 import 'package:base_code/components/common_progress_bar.dart';
-import 'package:base_code/components/common_stat_card.dart';
-import 'package:base_code/model/challenge_model.dart';
-import 'package:base_code/module/bottom/home/home_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter/gestures.dart';
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

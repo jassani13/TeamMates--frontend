@@ -1,11 +1,9 @@
-import 'package:base_code/components/socket_service.dart';
 import 'package:base_code/module/bottom/bottom_controller.dart';
 import 'package:base_code/module/bottom/chat/chat_screen.dart';
 import 'package:base_code/module/bottom/home/home_screen.dart';
 import 'package:base_code/module/bottom/roster/roster_screen.dart';
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/module/bottom/stats/stats_screen.dart';
-import 'package:base_code/module/subscription/subscription_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/utils/double_back.dart';
@@ -14,8 +12,6 @@ class BottomScreen extends StatelessWidget {
   BottomScreen({super.key});
 
   final bottomController = Get.put<BottomController>(BottomController());
-  final String storedPasscode = "1234";
-  bool isAuthenticated = false;
   final List<Widget> pages = [
     HomeScreen(),
     ScheduleScreen(),

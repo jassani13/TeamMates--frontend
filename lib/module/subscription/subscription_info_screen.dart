@@ -1,8 +1,5 @@
-import 'package:base_code/components/common_title_text.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 class SubscriptionInfoScreen extends StatelessWidget {
   final bool isMonthly;

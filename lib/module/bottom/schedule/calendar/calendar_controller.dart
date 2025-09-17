@@ -100,10 +100,10 @@ class CalendarViewController extends GetxController {
               'description': eventDescription,
               'location': eventLocation,
               'dtstart': {
-                'dt': scheduleItem.eventDate! + 'T' + startTimeStr,
+                'dt': '${scheduleItem.eventDate!}T$startTimeStr',
               },
               'dtend': {
-                'dt': scheduleItem.eventDate! + 'T' + endTimeStr,
+                'dt': '${scheduleItem.eventDate!}T$endTimeStr',
               },
               'activity_id': scheduleItem.activityId,
               'activity_name': scheduleItem.activityName,
@@ -166,49 +166,49 @@ class CalendarViewController extends GetxController {
 
   Future<void> loadICSFromUrl({required String url, required int urlId}) async {
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final String icsData = response.body;
-        final ICalendar ical = ICalendar.fromString(icsData);
+      var response = await callApi(dio.get<String>(url));
+      if (response != null && response.statusCode == 200 && response.data != null && response.statusCode == 200) {
+      final String icsData = response.data!;
+      final ICalendar ical = ICalendar.fromString(icsData);
 
-        for (var event in ical.data) {
-          if (event['type'] != 'VEVENT') continue;
+      for (var event in ical.data) {
+        if (event['type'] != 'VEVENT') continue;
 
-          final startObj = event['dtstart'];
-          DateTime? start;
+        final startObj = event['dtstart'];
+        DateTime? start;
 
-          if (startObj is DateTime) {
-            start = startObj;
-          } else if (startObj is IcsDateTime) {
-            start = startObj.toDateTime();
-          }
-
-          if (start == null) continue;
-
-          final eventDate = DateTime(start.year, start.month, start.day);
-          final summary = {
-            ...event,
-            'type': 'external_calendar',
-            'link': url,
-            'web_cal_id': urlId,
-          };
-
-          // final existing = events[eventDate]?.toSet() ?? <dynamic>{};
-          // existing.add(summary);
-          // events[eventDate] = existing.toList();
-          // ✅ Add to externalEvents instead of events
-          if (externalEvents[eventDate] == null) {
-            externalEvents[eventDate] = [];
-          }
-          externalEvents[eventDate].add(summary);
+        if (startObj is DateTime) {
+          start = startObj;
+        } else if (startObj is IcsDateTime) {
+          start = startObj.toDateTime();
         }
 
-        // Merge with internal events and update display
-        _mergeEventsForDisplay();
+        if (start == null) continue;
 
-        if (kDebugMode) {
-          print("Events added from $url");
+        final eventDate = DateTime(start.year, start.month, start.day);
+        final summary = {
+          ...event,
+          'type': 'external_calendar',
+          'link': url,
+          'web_cal_id': urlId,
+        };
+
+        // final existing = events[eventDate]?.toSet() ?? <dynamic>{};
+        // existing.add(summary);
+        // events[eventDate] = existing.toList();
+        // ✅ Add to externalEvents instead of events
+        if (externalEvents[eventDate] == null) {
+          externalEvents[eventDate] = [];
         }
+        externalEvents[eventDate].add(summary);
+      }
+
+      // Merge with internal events and update display
+      _mergeEventsForDisplay();
+
+      if (kDebugMode) {
+        print("Events added from $url");
+      }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -402,7 +402,7 @@ class CalendarViewController extends GetxController {
             (team) => team.name?.toLowerCase() == teamName.toLowerCase(),
             orElse: () => Roster(),
           );
-          if (matchedTeam?.teamId == null) {
+          if (matchedTeam.teamId == null) {
             errors.add(
                 'Row $rowNum: Team "$teamName" not found in existing teams.');
             continue;
@@ -418,7 +418,7 @@ class CalendarViewController extends GetxController {
                 opponentName.toLowerCase(),
             orElse: () => OpponentModel(),
           );
-          if (matchedOpponent?.opponentId == null) {
+          if (matchedOpponent.opponentId == null) {
             errors.add(
                 'Row $rowNum: Opponent "$opponentName" not found in existing opponents.');
             continue;
@@ -433,7 +433,7 @@ class CalendarViewController extends GetxController {
                 location.address?.toLowerCase() == locationName.toLowerCase(),
             orElse: () => LocationData(),
           );
-          if (matchedLocation?.locationId == null) {
+          if (matchedLocation.locationId == null) {
             errors.add(
                 'Row $rowNum: Location "$locationName" not found in existing locations.');
             continue;

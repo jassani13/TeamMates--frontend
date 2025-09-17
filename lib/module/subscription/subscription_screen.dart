@@ -2,7 +2,6 @@ import 'package:base_code/in_app_purchase_controller.dart';
 import 'package:base_code/module/subscription/subscription_info_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   SubscriptionScreen({super.key});

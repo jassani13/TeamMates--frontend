@@ -4,7 +4,7 @@ import 'package:base_code/package/screen_packages.dart';
 class AddStaffForm extends StatefulWidget {
   final int teamId;
   final Function onStaffAdded;
-  const AddStaffForm({required this.teamId, required this.onStaffAdded, Key? key}) : super(key: key);
+  const AddStaffForm({required this.teamId, required this.onStaffAdded, super.key});
 
   @override
   State<AddStaffForm> createState() => _AddStaffFormState();

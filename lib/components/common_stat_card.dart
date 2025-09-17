@@ -1,5 +1,4 @@
 import 'package:base_code/components/common_progress_bar.dart';
-import 'package:base_code/model/challenge_model.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 

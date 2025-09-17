@@ -1,4 +1,3 @@
-import 'package:base_code/main.dart';
 import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';

@@ -1,7 +1,5 @@
-import 'package:base_code/main.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/material.dart';
 
 class RosterScreen extends StatelessWidget {
   RosterScreen({super.key});

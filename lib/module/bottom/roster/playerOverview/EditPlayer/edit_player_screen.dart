@@ -1,12 +1,7 @@
-import 'package:base_code/components/common_icon_button.dart';
-import 'package:base_code/components/horizontal_list.dart';
-import 'package:base_code/model/roster.dart';
 import 'package:base_code/module/bottom/roster/allPlayer/all_player_controller.dart';
 import 'package:base_code/module/bottom/roster/playerOverview/EditPlayer/edit_player_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:base_code/utils/common_function.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class EditPlayerScreen extends StatefulWidget {
   const EditPlayerScreen({super.key});

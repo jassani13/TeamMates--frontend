@@ -13,7 +13,7 @@ class AllChallengeModel {
         this.serverTime});
 
   AllChallengeModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new ChallengeModel.fromJson(json['data']) : null;
+    data = json['data'] != null ? ChallengeModel.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -21,14 +21,14 @@ class AllChallengeModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['ResponseCode'] = this.responseCode;
-    data['ResponseMsg'] = this.responseMsg;
-    data['Result'] = this.result;
-    data['ServerTime'] = this.serverTime;
+    data['ResponseCode'] = responseCode;
+    data['ResponseMsg'] = responseMsg;
+    data['Result'] = result;
+    data['ServerTime'] = serverTime;
     return data;
   }
 }
@@ -40,22 +40,22 @@ class ChallengeModel {
   ChallengeModel({this.score, this.list});
 
   ChallengeModel.fromJson(Map<String, dynamic> json) {
-    score = json['score'] != null ? new Score.fromJson(json['score']) : null;
+    score = json['score'] != null ? Score.fromJson(json['score']) : null;
     if (json['list'] != null) {
       list = <Challenge>[];
       json['list'].forEach((v) {
-        list!.add(new Challenge.fromJson(v));
+        list!.add(Challenge.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.score != null) {
-      data['score'] = this.score!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (score != null) {
+      data['score'] = score!.toJson();
     }
-    if (this.list != null) {
-      data['list'] = this.list!.map((v) => v.toJson()).toList();
+    if (list != null) {
+      data['list'] = list!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -77,11 +77,11 @@ class Score {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['grade'] = this.grade;
-    data['score_number'] = this.scoreNumber;
-    data['percentage'] = this.percentage;
-    data['total_participate'] = this.totalParticipate;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['grade'] = grade;
+    data['score_number'] = scoreNumber;
+    data['percentage'] = percentage;
+    data['total_participate'] = totalParticipate;
     return data;
   }
 }
@@ -136,28 +136,28 @@ class Challenge {
     if (json['participates'] != null) {
       participates = <Participates>[];
       json['participates'].forEach((v) {
-        participates!.add(new Participates.fromJson(v));
+        participates!.add(Participates.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['challenge_id'] = this.challengeId;
-    data['name'] = this.name;
-    data['description'] = this.description;
-    data['start_at'] = this.startAt;
-    data['end_at'] = this.endAt;
-    data['notes'] = this.notes;
-    data['notify_team'] = this.notifyTeam;
-    data['user_id'] = this.userId;
-    data['participate_count'] = this.participateCount;
-    data['participate_status'] = this.participateStatus;
-    data['attendance_percentage'] = this.attendancePercentage;
-    data['time_status'] = this.timeStatus;
-    data['per_challenge_score'] = this.perChallengeScore;
-    if (this.participates != null) {
-      data['participates'] = this.participates!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['challenge_id'] = challengeId;
+    data['name'] = name;
+    data['description'] = description;
+    data['start_at'] = startAt;
+    data['end_at'] = endAt;
+    data['notes'] = notes;
+    data['notify_team'] = notifyTeam;
+    data['user_id'] = userId;
+    data['participate_count'] = participateCount;
+    data['participate_status'] = participateStatus;
+    data['attendance_percentage'] = attendancePercentage;
+    data['time_status'] = timeStatus;
+    data['per_challenge_score'] = perChallengeScore;
+    if (participates != null) {
+      data['participates'] = participates!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -177,17 +177,17 @@ class Participates {
     challengeId = json['challenge_id'];
     userId = json['user_id'];
     status = json['status'];
-    user = json['user'] != null ? new User.fromJson(json['user']) : null;
+    user = json['user'] != null ? User.fromJson(json['user']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['cp_id'] = this.cpId;
-    data['challenge_id'] = this.challengeId;
-    data['user_id'] = this.userId;
-    data['status'] = this.status;
-    if (this.user != null) {
-      data['user'] = this.user!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['cp_id'] = cpId;
+    data['challenge_id'] = challengeId;
+    data['user_id'] = userId;
+    data['status'] = status;
+    if (user != null) {
+      data['user'] = user!.toJson();
     }
     return data;
   }
@@ -210,12 +210,12 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['user_id'] = this.userId;
-    data['first_name'] = this.firstName;
-    data['last_name'] = this.lastName;
-    data['profile'] = this.profile;
-    data['gender'] = this.gender;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['user_id'] = userId;
+    data['first_name'] = firstName;
+    data['last_name'] = lastName;
+    data['profile'] = profile;
+    data['gender'] = gender;
     return data;
   }
 }

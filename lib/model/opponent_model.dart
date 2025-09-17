@@ -29,14 +29,14 @@ class OpponentModel {
     );
   }
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['opponent_id'] = this.opponentId;
-    data['user_by'] = this.userBy;
-    data['opponent_name'] = this.opponentName;
-    data['contact_name'] = this.contactName;
-    data['phone_number'] = this.phoneNumber;
-    data['email'] = this.email;
-    data['notes'] = this.notes;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['opponent_id'] = opponentId;
+    data['user_by'] = userBy;
+    data['opponent_name'] = opponentName;
+    data['contact_name'] = contactName;
+    data['phone_number'] = phoneNumber;
+    data['email'] = email;
+    data['notes'] = notes;
     return data;
   }
 }

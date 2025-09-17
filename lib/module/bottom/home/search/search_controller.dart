@@ -1,5 +1,4 @@
 import 'package:base_code/package/config_packages.dart';
-import 'package:base_code/package/screen_packages.dart';
 
 class SearchScreenController extends GetxController {
   AutoScrollController controller=AutoScrollController();

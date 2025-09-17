@@ -1,7 +1,6 @@
 import 'package:base_code/demo.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 class SampleApp extends StatefulWidget {

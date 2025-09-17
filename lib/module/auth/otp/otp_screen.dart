@@ -1,4 +1,3 @@
-import 'package:base_code/module/auth/forgot_password/forgot_password_controller.dart';
 import 'package:base_code/module/auth/otp/otp_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';

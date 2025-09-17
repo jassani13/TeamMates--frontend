@@ -2,14 +2,9 @@ import 'package:base_code/module/bottom/roster/allPlayer/all_player_controller.d
 import 'package:base_code/module/bottom/roster/playerOverview/play_overview_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:gap/gap.dart';
-import 'dart:io';
 
 class PlayOverviewScreen extends StatefulWidget {
-  PlayOverviewScreen({super.key});
+  const PlayOverviewScreen({super.key});
 
   @override
   State<PlayOverviewScreen> createState() => _PlayOverviewScreenState();

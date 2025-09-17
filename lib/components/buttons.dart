@@ -19,7 +19,7 @@ class CommonAppButton extends StatelessWidget {
   final Widget? prefixIcon;
 
   const CommonAppButton(
-      {Key? key,
+      {super.key,
       this.onTap,
       this.buttonType = ButtonType.enable,
       this.text,
@@ -33,8 +33,7 @@ class CommonAppButton extends StatelessWidget {
       this.width,
       this.boxShadow,
       this.border,
-      this.prefixIcon})
-      : super(key: key);
+      this.prefixIcon});
 
   @override
   Widget build(BuildContext context) {

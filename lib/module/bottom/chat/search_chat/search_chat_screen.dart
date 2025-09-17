@@ -1,4 +1,3 @@
-import 'package:base_code/main.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -61,10 +60,11 @@ class SearchChatScreen extends StatelessWidget {
   Widget _buildSearchField(bool isTeam) => CommonTextField(
         onChange: (value) {
           final query = (value ?? '').trim().toLowerCase();
-          if (isTeam)
+          if (isTeam) {
             controller.searchTeamQuery.value = query;
-          else
+          } else {
             controller.searchPlayerQuery.value = query;
+          }
         },
         prefixIcon: const Icon(Icons.search, color: AppColor.grey4EColor),
         controller: isTeam ? controller.searchTeamController : controller.searchPlayerController,
@@ -188,7 +188,7 @@ class SearchChatScreen extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: getImageView(
-            finalUrl: '${roster.profile ?? ''}',
+            finalUrl: roster.profile ?? '',
             fit: BoxFit.cover,
             height: 48,
             width: 48,

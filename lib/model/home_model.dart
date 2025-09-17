@@ -1,4 +1,3 @@
-import 'package:base_code/model/challenge_model.dart';
 
 import '../package/config_packages.dart';
 
@@ -17,7 +16,7 @@ class HomeModel {
       this.serverTime});
 
   HomeModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? new Data.fromJson(json['data']) : null;
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
     responseCode = json['ResponseCode'];
     responseMsg = json['ResponseMsg'];
     result = json['Result'];
@@ -25,14 +24,14 @@ class HomeModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    data['ResponseCode'] = this.responseCode;
-    data['ResponseMsg'] = this.responseMsg;
-    data['Result'] = this.result;
-    data['ServerTime'] = this.serverTime;
+    data['ResponseCode'] = responseCode;
+    data['ResponseMsg'] = responseMsg;
+    data['Result'] = result;
+    data['ServerTime'] = serverTime;
     return data;
   }
 }
@@ -51,42 +50,42 @@ class Data {
 
   Data.fromJson(Map<String, dynamic> json) {
     canceledActivity = json['canceled_activity'] != null
-        ? new ScheduleData.fromJson(json['canceled_activity'])
+        ? ScheduleData.fromJson(json['canceled_activity'])
         : null;
     if (json['upcoming_activities'] != null) {
       upcomingActivities = <ScheduleData>[];
       json['upcoming_activities'].forEach((v) {
-        upcomingActivities!.add(new ScheduleData.fromJson(v));
+        upcomingActivities!.add(ScheduleData.fromJson(v));
       });
     }
     if (json['challenges'] != null) {
       challenges = <Challenge>[];
       json['challenges'].forEach((v) {
-        challenges!.add(new Challenge.fromJson(v));
+        challenges!.add(Challenge.fromJson(v));
       });
     }
     if (json['news'] != null) {
       news = <News>[];
       json['news'].forEach((v) {
-        news!.add(new News.fromJson(v));
+        news!.add(News.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.canceledActivity != null) {
-      data['canceled_activity'] = this.canceledActivity!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (canceledActivity != null) {
+      data['canceled_activity'] = canceledActivity!.toJson();
     }
-    if (this.upcomingActivities != null) {
+    if (upcomingActivities != null) {
       data['upcoming_activities'] =
-          this.upcomingActivities!.map((v) => v.toJson()).toList();
+          upcomingActivities!.map((v) => v.toJson()).toList();
     }
-    if (this.challenges != null) {
-      data['challenges'] = this.challenges!.map((v) => v.toJson()).toList();
+    if (challenges != null) {
+      data['challenges'] = challenges!.map((v) => v.toJson()).toList();
     }
-    if (this.news != null) {
-      data['news'] = this.news!.map((v) => v.toJson()).toList();
+    if (news != null) {
+      data['news'] = news!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -130,17 +129,17 @@ class News {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['author'] = this.author;
-    data['title'] = this.title;
-    data['description'] = this.description;
-    data['url'] = this.url;
-    data['source'] = this.source;
-    data['image'] = this.image;
-    data['category'] = this.category;
-    data['language'] = this.language;
-    data['country'] = this.country;
-    data['published_at'] = this.publishedAt;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['author'] = author;
+    data['title'] = title;
+    data['description'] = description;
+    data['url'] = url;
+    data['source'] = source;
+    data['image'] = image;
+    data['category'] = category;
+    data['language'] = language;
+    data['country'] = country;
+    data['published_at'] = publishedAt;
     return data;
   }
 }

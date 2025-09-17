@@ -1,4 +1,3 @@
-import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:flutter/foundation.dart' as Foundation;
 
@@ -36,10 +35,8 @@ Future<void> dioSetUp({int? language}) async {
   }));
 
   if (!Foundation.kReleaseMode) {
-    var logger = PrettyDioLogger(
-      maxWidth: 232,
-      requestHeader: true,
-      requestBody: true,
+    var logger = CleanDioLogger(
+
     );
     dio.interceptors.add(logger);
   }

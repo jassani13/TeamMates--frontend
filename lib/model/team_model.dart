@@ -46,27 +46,27 @@ class Team {
     if (json['player_teams'] != null) {
       playerTeams = <PlayerTeams>[];
       json['player_teams'].forEach((v) {
-        playerTeams!.add(new PlayerTeams.fromJson(v));
+        playerTeams!.add(PlayerTeams.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['team_id'] = this.teamId;
-    data['user_by'] = this.userBy;
-    data['icon'] = this.icon;
-    data['image'] = this.image;
-    data['name'] = this.name;
-    data['zipcode'] = this.zipcode;
-    data['country'] = this.country;
-    data['sports'] = this.sports;
-    data['team_code'] = this.teamCode;
-    data['player_teams_count'] = this.playerTeamsCount;
-    data['icon_image'] = this.iconImage;
-    data['team_image'] = this.teamImage;
-    if (this.playerTeams != null) {
-      data['player_teams'] = this.playerTeams!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['team_id'] = teamId;
+    data['user_by'] = userBy;
+    data['icon'] = icon;
+    data['image'] = image;
+    data['name'] = name;
+    data['zipcode'] = zipcode;
+    data['country'] = country;
+    data['sports'] = sports;
+    data['team_code'] = teamCode;
+    data['player_teams_count'] = playerTeamsCount;
+    data['icon_image'] = iconImage;
+    data['team_image'] = teamImage;
+    if (playerTeams != null) {
+      data['player_teams'] = playerTeams!.map((v) => v.toJson()).toList();
     }
     return data;
   }

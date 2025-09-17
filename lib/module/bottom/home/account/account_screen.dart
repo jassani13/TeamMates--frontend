@@ -1,4 +1,3 @@
-import 'package:base_code/data/pref/app_preferences.dart' as SignInWithApple;
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
@@ -44,7 +43,7 @@ class AccountScreen extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
                           child: getImageView(
-                            finalUrl: '${accountController.userModel.value.profile ?? ""}',
+                            finalUrl: accountController.userModel.value.profile ?? "",
                             height: 48,
                             width: 48,
                             fit: BoxFit.cover,

@@ -1,7 +1,6 @@
 import 'package:base_code/module/bottom/schedule/calendar/calendar_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
-import 'package:flutter/gestures.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +11,149 @@ class CalendarScreen extends StatefulWidget {
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
+
+  static Widget buildExternalEventCard(Map<String, dynamic> event) {
+    final String summary = event['summary']?.toString() ?? 'No Title';
+    final String location = event['location']?.toString() ?? 'Unknown Location';
+    final String description =
+    cleanDescription(event['description']?.toString() ?? '');
+    final String? mapUrl =
+    extractMapUrl(event['description']?.toString() ?? '');
+
+    final dynamic rawDt = event['dtstart']?.dt;
+    final dynamic rawDtEnd = event['dtend']?.dt;
+
+    if (rawDt == null || rawDtEnd == null) {
+      return const SizedBox.shrink();
+    }
+
+    late DateTime start, end;
+    try {
+      start = DateTime.parse(rawDt.toString()).toLocal();
+      end = DateTime.parse(rawDtEnd.toString()).toLocal();
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
+
+    final String formattedDate = DateFormat('EEEE, MMMM d, y').format(start);
+    final String formattedTime =
+        '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.green, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.black12Color.withOpacity(0.09),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Event Header
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.green.withOpacity(0.2),
+                child: Icon(Icons.event, color: Colors.green),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      summary,
+                      style: TextStyle()
+                          .normal16w700
+                          .textColor(AppColor.black12Color),
+                    ),
+                    Text(
+                      'External Calendar',
+                      style: TextStyle().normal12w500.textColor(Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          /// Date & Time
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                '$formattedDate | $formattedTime',
+                style: TextStyle()
+                    .normal14w500
+                    .textColor(AppColor.black12Color.withOpacity(0.7)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          /// Location
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined,
+                  size: 16, color: Colors.grey),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  location,
+                  style: TextStyle()
+                      .normal14w500
+                      .textColor(AppColor.black12Color.withOpacity(0.7)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          /// Description / Map Link
+          if (mapUrl != null)
+            InkWell(
+              onTap: () async {
+                final uri = Uri.parse(mapUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Row(
+                children: [
+                  const Icon(Icons.map_outlined, size: 16, color: Colors.blue),
+                  const SizedBox(width: 6),
+                  Text(
+                    'View on Map',
+                    style: TextStyle()
+                        .normal14w600
+                        .textColor(AppColor.primaryColorLight),
+                  ),
+                ],
+              ),
+            )
+          else
+            Text(
+              description,
+              style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
@@ -261,7 +403,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (isInternalEvent) {
       return _buildInternalEventCard(event);
     } else {
-      return _buildExternalEventCard(event);
+      return CalendarScreen.buildExternalEventCard(event);
     }
   }
 
@@ -457,157 +599,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildExternalEventCard(Map<String, dynamic> event) {
-    final String summary = event['summary']?.toString() ?? 'No Title';
-    final String location = event['location']?.toString() ?? 'Unknown Location';
-    final String description =
-        cleanDescription(event['description']?.toString() ?? '');
-    final String? mapUrl =
-        extractMapUrl(event['description']?.toString() ?? '');
-
-    final dynamic rawDt = event['dtstart']?.dt;
-    final dynamic rawDtEnd = event['dtend']?.dt;
-
-    if (rawDt == null || rawDtEnd == null) {
-      return const SizedBox.shrink();
-    }
-
-    late DateTime start, end;
-    try {
-      start = DateTime.parse(rawDt.toString());
-      end = DateTime.parse(rawDtEnd.toString());
-    } catch (e) {
-      return const SizedBox.shrink();
-    }
-
-    final String formattedDate = DateFormat('EEEE, MMMM d, y').format(start);
-    final String formattedTime =
-        '${DateFormat('h:mm a').format(start)} - ${DateFormat('h:mm a').format(end)}';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black12Color.withOpacity(0.09),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// Event Header
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.green.withOpacity(0.2),
-                child: Icon(Icons.event, color: Colors.green),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      summary,
-                      style: TextStyle()
-                          .normal16w700
-                          .textColor(AppColor.black12Color),
-                    ),
-                    Text(
-                      'External Calendar',
-                      style: TextStyle().normal12w500.textColor(Colors.green),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          /// Date & Time
-          Row(
-            children: [
-              const Icon(Icons.access_time, size: 16, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                '$formattedDate | $formattedTime',
-                style: TextStyle()
-                    .normal14w500
-                    .textColor(AppColor.black12Color.withOpacity(0.7)),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          /// Location
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined,
-                  size: 16, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  location,
-                  style: TextStyle()
-                      .normal14w500
-                      .textColor(AppColor.black12Color.withOpacity(0.7)),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          /// Description / Map Link
-          if (mapUrl != null)
-            InkWell(
-              onTap: () async {
-                final uri = Uri.parse(mapUrl);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-              child: Row(
-                children: [
-                  const Icon(Icons.map_outlined, size: 16, color: Colors.blue),
-                  const SizedBox(width: 6),
-                  Text(
-                    'View on Map',
-                    style: TextStyle()
-                        .normal14w600
-                        .textColor(AppColor.primaryColorLight),
-                  ),
-                ],
-              ),
-            )
-          else
-            Text(
-              description,
-              style: TextStyle().normal14w500.textColor(AppColor.black12Color),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String cleanDescription(String raw) {
+  static String cleanDescription(String raw) {
     return raw.split('\r\n').firstWhere(
           (line) => !line.toLowerCase().startsWith('map'),
           orElse: () => '',
         );
   }
 
-  String? extractMapUrl(String raw) {
+  static String? extractMapUrl(String raw) {
     final mapRegex = RegExp(r'(http[s]?:\/\/maps\.google\.com\?q=[^\s]+)');
     final match = mapRegex.firstMatch(raw);
     return match?.group(0);
@@ -748,8 +747,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           } else {
                             // For non-game, team_name and opponent can be blank, others required
                             for (final field in expectedHeader) {
-                              if ((field == 'team_name' || field == 'opponent'))
+                              if ((field == 'team_name' || field == 'opponent')) {
                                 continue;
+                              }
                               if ((event[field] ?? '').toString().isEmpty) {
                                 errors.add(
                                     'Row ${i + 1}: Field "$field" is required for event_type "$eventType".');
@@ -757,8 +757,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             }
                             // If any required field is missing, skip this row
                             if (errors.isNotEmpty &&
-                                errors.last.startsWith('Row ${i + 1}:'))
+                                errors.last.startsWith('Row ${i + 1}:')) {
                               continue;
+                            }
                           }
 
                           validEvents.add(event);

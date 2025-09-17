@@ -6,10 +6,10 @@ class RosterScreen extends StatelessWidget {
   final List<dynamic> staff;
 
   const RosterScreen({
-    Key? key,
+    super.key,
     required this.players,
     required this.staff,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
