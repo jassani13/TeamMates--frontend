@@ -101,10 +101,11 @@ class LoginController extends GetxController {
 
   Future<void> loginApiCall() async {
     try {
+      String? tkn = AppPref().fcmToken;
       var data = {
         "email": lEmailController.text.toString(),
         "password": lPasswordController.text.toString(),
-        "fcm_token": AppPref().fcmToken,
+        "fcm_token": tkn,
       };
       var res = await callApi(
         dio.post(
