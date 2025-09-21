@@ -9,6 +9,8 @@ import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
+import 'module/bottom/chat/groupChat/group_chat_screen.dart';
+
 class AppRouter {
   static const splash = '/splash';
   static const login = '/login';
@@ -80,6 +82,7 @@ class AppRouter {
     GetPage(name: personalChat, page: () => PersonalChatScreen()),
     GetPage(name: teamChat, page: () => TeamChatScreen()),
     GetPage(name: createGroupChat, page: () => CreateGroupChatScreen()),
+    GetPage(name: groupChat, page: () => GroupChatScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),

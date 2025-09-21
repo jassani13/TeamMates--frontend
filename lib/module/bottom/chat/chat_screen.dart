@@ -636,8 +636,15 @@ class _ChatScreenState extends State<ChatScreen> {
             shrinkWrap: true,
             itemBuilder: (context, index) {
               final item = groups[index];
+              debugPrint("group_image: ${item.groupImage}");
               return GestureDetector(
                 onTap: () {
+                  Get.toNamed(
+                    AppRouter.groupChat,
+                    arguments: {
+                      'groupData': item,
+                    },
+                  );
                   // Navigate to your group chat detail when ready
                   // Get.toNamed(AppRouter.groupChat, arguments: {'groupData': item});
                 },
@@ -656,7 +663,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       ClipOval(
                         child: getImageView(
                           fit: BoxFit.cover,
-                          errorWidget: const Icon(Icons.groups, size: 40),
+                          errorWidget:
+                              const Icon(Icons.account_circle, size: 40),
                           finalUrl: item.groupImage ?? "",
                         ),
                       ),
