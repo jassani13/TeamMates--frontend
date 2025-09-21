@@ -10,6 +10,6 @@ class ChatScreenController extends GetxController{
   RxInt selectedChatMethod= 0.obs;
   AutoScrollController controller=AutoScrollController();
   List<ChatListData> chatListData = <ChatListData>[];
-  List<ChatListData> grpChatListData = <ChatListData>[];
+  List<ChatListData> teamChatListData = <ChatListData>[];
   Map<String,dynamic> onlineUsers = {};
 }

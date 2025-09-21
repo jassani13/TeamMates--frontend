@@ -4,6 +4,8 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../../../model/group_chat_model.dart';
+
 late IO.Socket socket;
 
 class ChatScreen extends StatefulWidget {
@@ -33,10 +35,13 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.onConnect((_) {
       emitPersonalChatList();
       emitTeamChatList();
+      joinGroupRooms();
+      emitGroupChatList();
       if (kDebugMode) {
         print('<------------ CONNECTED TO SERVER ------------>');
       }
     });
+
     socket.onDisconnect((_) {
       if (kDebugMode) {
         print('<------------ DISCONNECTED TO SERVER ------------>');
@@ -53,6 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
       debugPrint('Error details: $data');
     });
   }
+
+  void joinGroupRooms() => socket.emit('joinGroupRooms', AppPref().userId);
+
+  void emitGroupChatList() => socket.emit('getGroupChatList', AppPref().userId);
 
   void emitPersonalChatList() {
     if (kDebugMode) {
@@ -72,9 +81,12 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.on('setChatUserList', (data) {
       final list = data['resData'];
       if (kDebugMode) {
-        print('<------------ ON - setChatUserList ------------>');
+        print('<------------ ON - setChatUserList: $data ------------>');
       }
-      chatController.chatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
+      chatController.chatListData = list
+          .map((e) => ChatListData.fromJson(e))
+          .toList()
+          .cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -86,9 +98,12 @@ class _ChatScreenState extends State<ChatScreen> {
       final list = data['resData'];
 
       if (kDebugMode) {
-        print('<------------ ON - setTeamChatList ------------>');
+        print('<------------ ON - setTeamChatListL: $data ------------>');
       }
-      chatController.grpChatListData = list.map((e) => ChatListData.fromJson(e)).toList().cast<ChatListData>();
+      chatController.teamChatListData = list
+          .map((e) => ChatListData.fromJson(e))
+          .toList()
+          .cast<ChatListData>();
       if (mounted) {
         setState(() {});
       }
@@ -118,8 +133,10 @@ class _ChatScreenState extends State<ChatScreen> {
         print('<------------ ON - updateChatList $data ------------>');
       }
       int index = chatController.chatListData.indexWhere((test) =>
-          (test.senderId == data.senderId && test.receiverId == data.receiverId) ||
-          (test.senderId == data.receiverId && test.receiverId == data.senderId));
+          (test.senderId == data.senderId &&
+              test.receiverId == data.receiverId) ||
+          (test.senderId == data.receiverId &&
+              test.receiverId == data.senderId));
       if (index != -1) {
         chatController.chatListData[index] = data;
         if (mounted) {
@@ -143,14 +160,15 @@ class _ChatScreenState extends State<ChatScreen> {
       if (kDebugMode) {
         print('<------------ ON - updateTeamChatList $data ------------>');
       }
-      int index = chatController.grpChatListData.indexWhere((test) => data.teamId == test.teamId);
+      int index = chatController.teamChatListData
+          .indexWhere((test) => data.teamId == test.teamId);
       if (index != -1) {
-        chatController.grpChatListData[index] = data;
+        chatController.teamChatListData[index] = data;
         if (mounted) {
           setState(() {});
         }
       } else {
-        chatController.grpChatListData.add(data);
+        chatController.teamChatListData.add(data);
         if (mounted) {
           setState(() {});
         }
@@ -158,16 +176,50 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void onGroupChatList() {
+    debugPrint("onGroupChatList");
+    socket.on('setGroupChatList', (data) {
+      debugPrint("onGroupChatList: $data");
+      List<GroupChatModel> items = GroupChatModel.listFromResData(data);
+      debugPrint("Group chat is: $items");
+      // chatController.groupChatList
+      //   ..clear()
+      //   ..addAll(items);
+      //
+      // if (mounted) setState(() {});
+    });
+  }
+
+  void updateGroupChatList() {
+    debugPrint("updateGroupChatList");
+    socket.on('updateGroupChatList', (val) {
+      debugPrint("updateGroupChatList:$val");
+      final e = Map<String, dynamic>.from(val['resData'] ?? {});
+      final item = GroupChatModel.fromJson(e);
+
+      // final list = chatController.groupChatList;
+      // final idx = list.indexWhere((x) => x.groupId == item.groupId);
+      // if (idx != -1) {
+      //   list[idx] = item;
+      // } else {
+      //   list.add(item);
+      // }
+      // if (mounted) setState(() {});
+    });
+  }
+
   @override
   void initState() {
     connectSocket();
-
     onPersonalChatList();
     onTeamChatList();
     updateChatList();
     updateTeamChatList();
+    onGroupChatList();
+    updateGroupChatList();
     userOnline();
     updateUserStatus();
+
     super.initState();
   }
 
@@ -184,7 +236,9 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Column(
             children: [
-              Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+              Gap(Platform.isAndroid
+                  ? ScreenUtil().statusBarHeight + 20
+                  : ScreenUtil().statusBarHeight + 10),
               Row(
                 children: [
                   Gap(16),
@@ -257,7 +311,8 @@ class _ChatScreenState extends State<ChatScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+                  padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height / 3.3),
                   child: Center(
                       child: buildNoData(
                     text: "No Conversations Yet",
@@ -311,12 +366,16 @@ class _ChatScreenState extends State<ChatScreen> {
                                 finalUrl: chatData.profile ?? "",
                                 fit: BoxFit.cover),
                           ),
-                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
+                          if (chatController.onlineUsers
+                                  .containsKey(chatData.receiverId) ==
+                              true)
                             Container(
                               height: 12,
                               width: 12,
-                              decoration:
-                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
+                              decoration: BoxDecoration(
+                                  color: AppColor.greenColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColor.white)),
                             ),
                         ],
                       ),
@@ -332,7 +391,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                             ),
                             Text(
-                              chatData.msgType == 'text' ? chatData.msg ?? "" : "Sent a file",
+                              chatData.msgType == 'text'
+                                  ? chatData.msg ?? ""
+                                  : "Sent a file",
                               style: TextStyle().normal14w500.textColor(
                                     AppColor.grey4EColor,
                                   ),
@@ -356,7 +417,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             children: [
                               Gap(4),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColor.greyF6Color,
                                   borderRadius: BorderRadius.circular(4),
@@ -380,7 +442,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _tamChatList() {
-    return chatController.grpChatListData.isEmpty
+    return chatController.teamChatListData.isEmpty
         ? SingleChildScrollView(
             physics: AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -388,7 +450,8 @@ class _ChatScreenState extends State<ChatScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
+                  padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).size.height / 3.3),
                   child: Center(
                       child: buildNoData(
                     text: "No Conversations Yet",
@@ -400,10 +463,10 @@ class _ChatScreenState extends State<ChatScreen> {
         : ListView.builder(
             physics: NeverScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(horizontal: 16),
-            itemCount: chatController.grpChatListData.length,
+            itemCount: chatController.teamChatListData.length,
             shrinkWrap: true,
             itemBuilder: (context, index) {
-              final chatData = chatController.grpChatListData[index];
+              final chatData = chatController.teamChatListData[index];
               return GestureDetector(
                 onTap: () {
                   // if (AppPref().role == 'coach') {
@@ -432,12 +495,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   //     );
                   //   }
                   // } else {
-                    Get.toNamed(
-                      AppRouter.teamChat,
-                      arguments: {
-                        'chatData': chatData,
-                      },
-                    );
+                  Get.toNamed(
+                    AppRouter.teamChat,
+                    arguments: {
+                      'chatData': chatData,
+                    },
+                  );
                   // }
                 },
                 behavior: HitTestBehavior.translucent,
@@ -467,15 +530,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                 Icons.account_circle,
                                 size: 40,
                               ),
-                              finalUrl: (chatData.teamIcon ?? "").isEmpty ? chatData.teamImage ?? "" : chatData.teamIcon ?? "",
+                              finalUrl: (chatData.teamIcon ?? "").isEmpty
+                                  ? chatData.teamImage ?? ""
+                                  : chatData.teamIcon ?? "",
                             ),
                           ),
-                          if (chatController.onlineUsers.containsKey(chatData.receiverId) == true)
+                          if (chatController.onlineUsers
+                                  .containsKey(chatData.receiverId) ==
+                              true)
                             Container(
                               height: 12,
                               width: 12,
-                              decoration:
-                                  BoxDecoration(color: AppColor.greenColor, shape: BoxShape.circle, border: Border.all(color: AppColor.white)),
+                              decoration: BoxDecoration(
+                                  color: AppColor.greenColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColor.white)),
                             ),
                         ],
                       ),
@@ -515,7 +584,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             children: [
                               Gap(4),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: AppColor.greyF6Color,
                                   borderRadius: BorderRadius.circular(4),
