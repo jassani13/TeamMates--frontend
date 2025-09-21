@@ -1,5 +1,5 @@
 import 'package:base_code/module/bottom/chat/chat_screen.dart';
-import 'package:base_code/module/bottom/chat/group_chat/group_chat_controller.dart';
+import 'package:base_code/module/bottom/chat/teamChat/team_chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:file_picker/file_picker.dart';
@@ -8,17 +8,17 @@ import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
-class GroupChatScreen extends StatefulWidget {
-  const GroupChatScreen({super.key});
+class TeamChatScreen extends StatefulWidget {
+  const TeamChatScreen({super.key});
 
   @override
-  State<GroupChatScreen> createState() => _GroupChatScreenState();
+  State<TeamChatScreen> createState() => _TeamChatScreenState();
 }
 
-class _GroupChatScreenState extends State<GroupChatScreen> {
+class _TeamChatScreenState extends State<TeamChatScreen> {
   List<types.Message> _messages = [];
   late ChatListData chatData;
-  final groupChatController = Get.put(GroupChatController());
+  final groupChatController = Get.put(TeamChatController());
   final user = types.User(id: AppPref().userId.toString());
   bool isLoading = false;
 

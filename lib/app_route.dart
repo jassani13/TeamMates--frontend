@@ -1,6 +1,6 @@
 import 'package:base_code/module/auth/forgot_password/forgot_password_screen.dart';
 import 'package:base_code/module/auth/otp/otp_screen.dart';
-import 'package:base_code/module/bottom/chat/group_chat/group_chat_screen.dart';
+import 'package:base_code/module/bottom/chat/teamChat/team_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/personalChat/personal_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/search_chat/search_chat_screen.dart';
 import 'package:base_code/module/bottom/schedule/calendar/calendar_screen.dart';
@@ -74,7 +74,7 @@ class AppRouter {
     GetPage(name: participatedPlayer, page: () => ParticipatedPlayer()),
     GetPage(name: schedule, page: () => ScheduleScreen()),
     GetPage(name: personalChat, page: () => PersonalChatScreen()),
-    GetPage(name: grpChat, page: () => GroupChatScreen()),
+    GetPage(name: grpChat, page: () => TeamChatScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),

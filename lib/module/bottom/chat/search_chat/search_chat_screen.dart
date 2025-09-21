@@ -16,6 +16,18 @@ class SearchChatScreen extends StatelessWidget {
             backgroundColor: AppColor.white,
             title: const CommonTitleText(text: 'Search'),
             centerTitle: false,
+            actions: [
+              Visibility(
+                visible: AppPref().role == 'coach',
+                child: CommonIconButton(
+                  image: AppImage.plus,
+                  onTap: () {
+                    //Get.toNamed(AppRouter.searchChatScreen);
+                  },
+                ),
+              ),
+              Gap(16)
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
