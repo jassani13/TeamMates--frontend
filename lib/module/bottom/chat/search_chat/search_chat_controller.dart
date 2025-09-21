@@ -6,6 +6,7 @@ class SearchChatController extends GetxController {
   List chatList = ["Teams", "Players"];
   RxList<Roster> allRosterModelList = <Roster>[].obs;
   RxList<PlayerTeams> allPlayerModelList = <PlayerTeams>[].obs;
+  RxList<String> selectedPlayersForChatGroup = <String>[].obs;
   var searchTeamQuery = ''.obs;
   var searchPlayerQuery = ''.obs;
   RxInt selectedChatMethod = 0.obs;

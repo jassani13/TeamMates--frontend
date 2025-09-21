@@ -433,7 +433,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   //   }
                   // } else {
                     Get.toNamed(
-                      AppRouter.grpChat,
+                      AppRouter.teamChat,
                       arguments: {
                         'chatData': chatData,
                       },

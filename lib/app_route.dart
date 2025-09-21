@@ -1,5 +1,6 @@
 import 'package:base_code/module/auth/forgot_password/forgot_password_screen.dart';
 import 'package:base_code/module/auth/otp/otp_screen.dart';
+import 'package:base_code/module/bottom/chat/groupChat/create_group_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/teamChat/team_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/personalChat/personal_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/search_chat/search_chat_screen.dart';
@@ -38,7 +39,9 @@ class AppRouter {
   static const liveScore = '/liveScore';
   static const participatedPlayer = '/participatedPlayer';
   static const schedule = '/schedule';
-  static const grpChat = '/grp_chat';
+  static const teamChat = '/teamChat';
+  static const groupChat = '/groupChat';
+  static const createGroupChat = '/createGroupChat';
   static const otp = '/otp';
   static const forgotPassword = '/forgot_password';
   static const calendar = '/calendar';
@@ -65,7 +68,8 @@ class AppRouter {
     GetPage(name: addGame, page: () => AddGameScreen()),
     GetPage(name: newOpponent, page: () => NewOpponentScreen()),
     GetPage(name: newLocation, page: () => NewLocationScreen()),
-    GetPage(name: volunteerAssignments, page: () => VolunteerAssignmentsScreen()),
+    GetPage(
+        name: volunteerAssignments, page: () => VolunteerAssignmentsScreen()),
     GetPage(name: challengeMembers, page: () => ChallengeMembersScreen()),
     GetPage(name: createChallenge, page: () => CreateChallengeScreen()),
     GetPage(name: gameProgress, page: () => GameProgressScreen()),
@@ -74,7 +78,8 @@ class AppRouter {
     GetPage(name: participatedPlayer, page: () => ParticipatedPlayer()),
     GetPage(name: schedule, page: () => ScheduleScreen()),
     GetPage(name: personalChat, page: () => PersonalChatScreen()),
-    GetPage(name: grpChat, page: () => TeamChatScreen()),
+    GetPage(name: teamChat, page: () => TeamChatScreen()),
+    GetPage(name: createGroupChat, page: () => CreateGroupChatScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),

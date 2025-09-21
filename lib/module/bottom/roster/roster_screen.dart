@@ -189,7 +189,7 @@ class RosterScreen extends StatelessWidget {
                                                     //   }
                                                     // } else {
                                                       Get.toNamed(
-                                                        AppRouter.grpChat,
+                                                        AppRouter.teamChat,
                                                         arguments: {
                                                           'chatData': ChatListData(
                                                             teamName: roster.name,

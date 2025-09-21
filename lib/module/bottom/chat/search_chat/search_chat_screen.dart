@@ -17,15 +17,20 @@ class SearchChatScreen extends StatelessWidget {
             title: const CommonTitleText(text: 'Search'),
             centerTitle: false,
             actions: [
-              Visibility(
-                visible: AppPref().role == 'coach',
-                child: CommonIconButton(
-                  image: AppImage.plus,
-                  onTap: () {
-                    //Get.toNamed(AppRouter.searchChatScreen);
-                  },
-                ),
-              ),
+              Obx(() {
+                return Visibility(
+                  visible: AppPref().role == 'coach' &&
+                      controller.selectedPlayersForChatGroup.isNotEmpty,
+                  child: CommonIconButton(
+                    image: AppImage.plus,
+                    onTap: () {
+                      Get.toNamed(AppRouter.createGroupChat,arguments: {
+                        'selectedPlayers': controller.selectedPlayersForChatGroup
+                      });
+                    },
+                  ),
+                );
+              }),
               Gap(16)
             ],
           ),
@@ -54,7 +59,8 @@ class SearchChatScreen extends StatelessWidget {
           items: controller.chatList,
           selectedIndex: controller.selectedChatMethod,
           controller: controller.controller,
-          onItemSelected: (index) => controller.selectedChatMethod.value = index,
+          onItemSelected: (index) =>
+              controller.selectedChatMethod.value = index,
         ),
       );
 
@@ -65,7 +71,9 @@ class SearchChatScreen extends StatelessWidget {
         const Gap(8),
         _buildSearchField(isTeam),
         const Gap(16),
-        Expanded(child: isTeam ? _buildTeamList(context) : _buildPlayerList(context)),
+        Expanded(
+            child:
+                isTeam ? _buildTeamList(context) : _buildPlayerList(context)),
       ],
     );
   }
@@ -79,7 +87,9 @@ class SearchChatScreen extends StatelessWidget {
             controller.searchPlayerQuery.value = query;
         },
         prefixIcon: const Icon(Icons.search, color: AppColor.grey4EColor),
-        controller: isTeam ? controller.searchTeamController : controller.searchPlayerController,
+        controller: isTeam
+            ? controller.searchTeamController
+            : controller.searchPlayerController,
         hintText: isTeam ? 'Search team...' : 'Search player...',
       );
 
@@ -99,7 +109,11 @@ class SearchChatScreen extends StatelessWidget {
     return Obx(() {
       if (controller.isShimmer.value) return _buildShimmer();
 
-      final teams = controller.allRosterModelList.where((r) => (r.name ?? '').toLowerCase().contains(controller.searchTeamQuery.value)).toList();
+      final teams = controller.allRosterModelList
+          .where((r) => (r.name ?? '')
+              .toLowerCase()
+              .contains(controller.searchTeamQuery.value))
+          .toList();
 
       if (teams.isEmpty) return _showEmptyState();
 
@@ -123,7 +137,8 @@ class SearchChatScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: getImageView(
-              finalUrl: '${(roster.iconImage ?? '').isNotEmpty ? roster.iconImage : roster.teamImage}',
+              finalUrl:
+                  '${(roster.iconImage ?? '').isNotEmpty ? roster.iconImage : roster.teamImage}',
               fit: BoxFit.cover,
               height: 48,
               width: 48,
@@ -134,15 +149,22 @@ class SearchChatScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(roster.name ?? '', style: TextStyle().normal20w500.textColor(AppColor.black12Color)),
-                Text('${roster.playerTeamsCount ?? ''} Participants', style: TextStyle().normal14w500.textColor(AppColor.grey4EColor)),
+                Text(roster.name ?? '',
+                    style: TextStyle()
+                        .normal20w500
+                        .textColor(AppColor.black12Color)),
+                Text('${roster.playerTeamsCount ?? ''} Participants',
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.grey4EColor)),
               ],
             ),
           ),
           const Gap(16),
           if (AppPref().role == 'coach')
             _buildChatButton(
-              onTap: () => _onTeamChatTap(roster.teamId.toString(), roster.name, context),
+              onTap: () => _onTeamChatTap(
+                  roster.teamId.toString(), roster.name, context),
             ),
         ],
       ),
@@ -162,12 +184,12 @@ class SearchChatScreen extends StatelessWidget {
     //     _showSubscriptionDialog(middleText: "Buy a subscription to\naccess Team Chat.");
     //   }
     // } else {
-      Get.toNamed(
-        AppRouter.grpChat,
-        arguments: {
-          'chatData': ChatListData(teamName: teamName, teamId: teamId),
-        },
-      );
+    Get.toNamed(
+      AppRouter.teamChat,
+      arguments: {
+        'chatData': ChatListData(teamName: teamName, teamId: teamId),
+      },
+    );
     // }
   }
 
@@ -176,7 +198,9 @@ class SearchChatScreen extends StatelessWidget {
       if (controller.isShimmer.value) return _buildShimmer();
 
       final players = controller.allPlayerModelList
-          .where((p) => ('${p.firstName} ${p.lastName}').toLowerCase().contains(controller.searchPlayerQuery.value))
+          .where((p) => ('${p.firstName} ${p.lastName}')
+              .toLowerCase()
+              .contains(controller.searchPlayerQuery.value))
           .toList();
 
       if (players.isEmpty) return _showEmptyState(message: 'No Player Found');
@@ -194,37 +218,63 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   Widget _buildPlayerRow(PlayerTeams roster) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: getImageView(
-            finalUrl: '${roster.profile ?? ''}',
-            fit: BoxFit.cover,
-            height: 48,
-            width: 48,
-          ),
+    return Obx(() {
+      final isSelected = controller.selectedPlayersForChatGroup
+          .contains(roster.userId.toString());
+      return GestureDetector(
+        onTap: () {
+          if (isSelected) {
+            controller.selectedPlayersForChatGroup
+                .remove(roster.userId.toString());
+          } else {
+            controller.selectedPlayersForChatGroup
+                .add(roster.userId.toString());
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+              color: isSelected ? AppColor.greyF6Color : Colors.transparent,
+              borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: getImageView(
+                finalUrl: '${roster.profile ?? ''}',
+                fit: BoxFit.cover,
+                height: 48,
+                width: 48,
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: Text(
+                '${roster.firstName} ${roster.lastName}',
+                style:
+                    TextStyle().normal20w500.textColor(AppColor.black12Color),
+              ),
+            ),
+            const Gap(16),
+            if (AppPref().role == 'coach')
+              isSelected
+                  ? Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                    )
+                  : _buildChatButton(
+                      onTap: () => _onPlayerChatTap(roster.userId.toString(),
+                          roster.firstName ?? "", roster.lastName ?? ""),
+                    ),
+          ]),
         ),
-        const Gap(16),
-        Expanded(
-          child: Text(
-            '${roster.firstName} ${roster.lastName}',
-            style: TextStyle().normal20w500.textColor(AppColor.black12Color),
-          ),
-        ),
-        const Gap(16),
-        if (AppPref().role == 'coach')
-          _buildChatButton(
-            onTap: () => _onPlayerChatTap(roster.userId.toString(), roster.firstName ?? "", roster.lastName ?? ""),
-          ),
-      ]),
-    );
+      );
+    });
   }
 
   void _onPlayerChatTap(String userId, String firstName, String lastName) {
     Get.toNamed(AppRouter.personalChat, arguments: {
-      'chatData': ChatListData(firstName: firstName, lastName: lastName, otherId: userId),
+      'chatData': ChatListData(
+          firstName: firstName, lastName: lastName, otherId: userId),
     });
   }
 }
