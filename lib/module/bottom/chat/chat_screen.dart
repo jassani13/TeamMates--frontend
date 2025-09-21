@@ -181,12 +181,11 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.on('setGroupChatList', (data) {
       debugPrint("onGroupChatList: $data");
       List<GroupChatModel> items = GroupChatModel.listFromResData(data);
-      debugPrint("Group chat is: $items");
-      // chatController.groupChatList
-      //   ..clear()
-      //   ..addAll(items);
-      //
-      // if (mounted) setState(() {});
+      chatController.groupChatList
+        ..clear()
+        ..addAll(items);
+
+      if (mounted) setState(() {});
     });
   }
 
@@ -197,14 +196,14 @@ class _ChatScreenState extends State<ChatScreen> {
       final e = Map<String, dynamic>.from(val['resData'] ?? {});
       final item = GroupChatModel.fromJson(e);
 
-      // final list = chatController.groupChatList;
-      // final idx = list.indexWhere((x) => x.groupId == item.groupId);
-      // if (idx != -1) {
-      //   list[idx] = item;
-      // } else {
-      //   list.add(item);
-      // }
-      // if (mounted) setState(() {});
+      final list = chatController.groupChatList;
+      final idx = list.indexWhere((x) => x.groupId == item.groupId);
+      if (idx != -1) {
+        list[idx] = item;
+      } else {
+        list.add(item);
+      }
+      if (mounted) setState(() {});
     });
   }
 
@@ -288,9 +287,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       if (chatController.selectedChatMethod.value == 0) ...[
                         _tamChatList(),
-                      ] else ...[
+                      ] else if (chatController.selectedChatMethod.value ==
+                          1) ...[
                         _personalChatList(),
-                      ]
+                      ] else ...[
+                        _groupChatList(),
+                      ],
                     ],
                   ),
                 ),
@@ -606,5 +608,117 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               );
             });
+  }
+
+  Widget _groupChatList() {
+    final groups = chatController.groupChatList;
+    return groups.isEmpty
+        ? SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).size.height / 3.3,
+                  ),
+                  child: Center(
+                      child: buildNoData(text: "No Group Conversations")),
+                ),
+              ],
+            ),
+          )
+        : ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: groups.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final item = groups[index];
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to your group chat detail when ready
+                  // Get.toNamed(AppRouter.groupChat, arguments: {'groupData': item});
+                },
+                behavior: HitTestBehavior.translucent,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    border: index == 0
+                        ? null
+                        : const Border(
+                            top: BorderSide(color: AppColor.greyF6Color),
+                          ),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: getImageView(
+                          fit: BoxFit.cover,
+                          errorWidget: const Icon(Icons.groups, size: 40),
+                          finalUrl: item.groupImage ?? "",
+                        ),
+                      ),
+                      const Gap(16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.groupName ?? 'Group',
+                              style: TextStyle()
+                                  .normal16w500
+                                  .textColor(AppColor.black12Color),
+                            ),
+                            Text(
+                              (item.msg ?? '').isEmpty
+                                  ? 'No messages yet'
+                                  : (item.msg!),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle()
+                                  .normal14w500
+                                  .textColor(AppColor.grey4EColor),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Gap(16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            item.createdAt == null ||
+                                    (item.createdAt?.isEmpty ?? true)
+                                ? ''
+                                : DateUtilities.getTimeAgo(item.createdAt!),
+                            style: TextStyle()
+                                .normal14w500
+                                .textColor(AppColor.grey4EColor),
+                          ),
+                          const Gap(4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColor.greyF6Color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${item.unreadCount ?? 0}',
+                              style: TextStyle()
+                                  .normal14w500
+                                  .textColor(AppColor.black),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
   }
 }
