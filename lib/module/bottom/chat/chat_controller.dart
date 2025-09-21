@@ -3,7 +3,7 @@ import 'package:base_code/package/config_packages.dart';
 
 class ChatScreenController extends GetxController{
   List chatList = [
-    "Group",
+    "Team Chats",
     "Individual Chats",
   ];
   RxInt selectedChatMethod= 0.obs;
