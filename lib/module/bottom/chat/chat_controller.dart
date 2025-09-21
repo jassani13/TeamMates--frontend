@@ -5,6 +5,7 @@ class ChatScreenController extends GetxController{
   List chatList = [
     "Team Chats",
     "Individual Chats",
+    "Group Chats",
   ];
   RxInt selectedChatMethod= 0.obs;
   AutoScrollController controller=AutoScrollController();
