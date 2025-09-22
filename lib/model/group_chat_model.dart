@@ -9,19 +9,20 @@ class GroupChatModel {
   final String? createdAt; // 'YYYY-MM-DD HH:mm:ss'
   final int? unreadCount;
   final String? senderName;
+  final int? ownerId;
 
-  const GroupChatModel({
-    this.groupId,
-    this.groupName,
-    this.groupImage,
-    this.groupChatId,
-    this.senderId,
-    this.msg,
-    this.msgType,
-    this.createdAt,
-    this.unreadCount,
-    this.senderName,
-  });
+  const GroupChatModel(
+      {this.groupId,
+      this.groupName,
+      this.groupImage,
+      this.groupChatId,
+      this.senderId,
+      this.msg,
+      this.msgType,
+      this.createdAt,
+      this.unreadCount,
+      this.senderName,
+      this.ownerId});
 
   factory GroupChatModel.fromJson(Map<String, dynamic> json) {
     String? _asString(dynamic v) {
@@ -40,17 +41,17 @@ class GroupChatModel {
     }
 
     return GroupChatModel(
-      groupId: _asString(json['group_id']),
-      groupName: _asString(json['group_name']),
-      groupImage: _asString(json['group_image']),
-      groupChatId: _asString(json['group_chat_id']),
-      senderId: _asString(json['sender_id']),
-      msg: _asString(json['msg']),
-      msgType: _asString(json['msg_type']),
-      createdAt: _asString(json['created_at']),
-      unreadCount: _asInt(json['unread_count']) ?? 0,
-      senderName: _asString(json['sender_name']),
-    );
+        groupId: _asString(json['group_id']),
+        groupName: _asString(json['group_name']),
+        groupImage: _asString(json['group_image']),
+        groupChatId: _asString(json['group_chat_id']),
+        senderId: _asString(json['sender_id']),
+        msg: _asString(json['msg']),
+        msgType: _asString(json['msg_type']),
+        createdAt: _asString(json['created_at']),
+        unreadCount: _asInt(json['unread_count']) ?? 0,
+        senderName: _asString(json['sender_name']),
+        ownerId: _asInt(json['owner_id']));
   }
 
   Map<String, dynamic> toJson() => {
@@ -64,6 +65,7 @@ class GroupChatModel {
         'created_at': createdAt,
         'unread_count': unreadCount,
         'sender_name': senderName,
+        'owner_id': ownerId,
       };
 
   GroupChatModel copyWith({
@@ -77,6 +79,7 @@ class GroupChatModel {
     String? createdAt,
     int? unreadCount,
     String? senderName,
+    int? ownerId,
   }) {
     return GroupChatModel(
       groupId: groupId ?? this.groupId,
@@ -89,6 +92,7 @@ class GroupChatModel {
       createdAt: createdAt ?? this.createdAt,
       unreadCount: unreadCount ?? this.unreadCount,
       senderName: senderName ?? this.senderName,
+      ownerId: ownerId ?? this.ownerId,
     );
   }
 

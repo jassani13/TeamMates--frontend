@@ -176,10 +176,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  void onGroupChatList() {
-    debugPrint("onGroupChatList");
+  void setGroupChatList() {
+    debugPrint("setGroupChatList");
     socket.on('setGroupChatList', (data) {
-      debugPrint("onGroupChatList: $data");
+      debugPrint("setGroupChatList: $data");
       List<GroupChatModel> items = GroupChatModel.listFromResData(data);
       chatController.groupChatList
         ..clear()
@@ -214,7 +214,7 @@ class _ChatScreenState extends State<ChatScreen> {
     onTeamChatList();
     updateChatList();
     updateTeamChatList();
-    onGroupChatList();
+    setGroupChatList();
     updateGroupChatList();
     userOnline();
     updateUserStatus();

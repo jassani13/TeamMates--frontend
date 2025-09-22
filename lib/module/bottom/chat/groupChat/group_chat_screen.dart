@@ -212,10 +212,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(
+        "group.ownerId=>${group.ownerId} :: AppPref().userId=>${AppPref().userId}");
     return GestureDetector(
       onTap: () => hideKeyboard(),
       child: Scaffold(
-        appBar: AppBar(title: Text(group.groupName ?? 'Group')),
+        appBar: AppBar(
+          title: Text(group.groupName ?? 'Group'),
+          actions: [
+            if (group.ownerId == AppPref().userId)
+              IconButton(
+                  onPressed: () {
+                    Get.toNamed(AppRouter.editGroupChat,
+                        arguments: {"groupData": group});
+                  },
+                  icon: Icon(CupertinoIcons.settings))
+          ],
+        ),
         body: Stack(
           children: [
             Chat(
@@ -283,7 +296,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             borderRadius: BorderRadius.circular(10)),
         constraints: BoxConstraints(
             maxWidth: MediaQuery.of(Get.context!).size.width * 0.7),
-        child: Text(message.metadata?['msg'] ?? '',style: TextStyle(color: AppColor.black12Color),),
+        child: Text(
+          message.metadata?['msg'] ?? '',
+          style: TextStyle(color: AppColor.black12Color),
+        ),
       );
     }
 

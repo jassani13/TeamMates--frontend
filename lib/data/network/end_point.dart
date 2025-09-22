@@ -52,5 +52,5 @@ class ApiEndPoint {
 
   // group chat endpoints
   static const String createGroupChat = "/api/createGroup";
-  static const String addGroupMembers = "/api/addGroupMembers";
+  static const String getGroupMembers = "/api/getGroupMembers";
 }

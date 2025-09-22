@@ -7,6 +7,7 @@ import '../../../../package/config_packages.dart';
 
 class GroupChatController extends GetxController {
   Rx<String> groupImagePath = "".obs;
+  RxList<UserModel> members = <UserModel>[].obs;
   final picker = ImagePicker();
 
   Future getImage({required ImageSource source}) async {
@@ -85,6 +86,74 @@ class GroupChatController extends GetxController {
     } catch (e) {
       debugPrint(
           "Exception - group_chat_controller.dart - createGroupChat(): $e");
+    }
+  }
+
+  Future<void> editGroupChat(
+      List<String> selectedPlayers, String groupName) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "owner_id": AppPref().userId,
+        "name": groupName,
+      };
+      for (int i = 0; i < selectedPlayers.length; i++) {
+        payload["members[$i]"] = selectedPlayers[i];
+      }
+      final data = FormData.fromMap({
+        ...payload,
+        if (groupImagePath.value.isNotEmpty)
+          'image': await MultipartFile.fromFile(
+            groupImagePath.value,
+            filename: basename(groupImagePath.value),
+          ),
+      });
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.createGroupChat,
+          data: data,
+        ),
+        true,
+      );
+      debugPrint("createGroupChat response: $res");
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Chat Group created successfully');
+        var jsonData = res?.data;
+        String groupId = jsonData['data']['group_id'].toString();
+        //userModel.value = UserModel.fromJson(jsonData['data']);
+        //AppPref().userModel = userModel.value;
+
+        //Get.back(result: userModel.value);
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - createGroupChat(): $e");
+    }
+  }
+
+  Future<void> getGroupMembers(String groupId) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "group_id": groupId,
+        "owner_id": AppPref().userId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getGroupMembers,
+          data: payload,
+        ),
+        true,
+      );
+      if (res?.statusCode == 200) {
+        final map = (res?.data as Map<String, dynamic>);
+        final list = (map['data'] as List<dynamic>);
+        members.assignAll(
+            list.map((e) => UserModel.fromJson(e as Map<String, dynamic>)));
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - getGroupMembers(): $e");
+      members.clear();
     }
   }
 }

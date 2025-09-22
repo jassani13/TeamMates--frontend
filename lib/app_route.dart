@@ -10,6 +10,7 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
 import 'module/bottom/chat/groupChat/group_chat_screen.dart';
+import 'module/bottom/chat/groupChat/edit_group_chat_screen.dart';
 
 class AppRouter {
   static const splash = '/splash';
@@ -44,6 +45,7 @@ class AppRouter {
   static const teamChat = '/teamChat';
   static const groupChat = '/groupChat';
   static const createGroupChat = '/createGroupChat';
+  static const editGroupChat = '/updateGroupChat';
   static const otp = '/otp';
   static const forgotPassword = '/forgot_password';
   static const calendar = '/calendar';
@@ -83,6 +85,7 @@ class AppRouter {
     GetPage(name: teamChat, page: () => TeamChatScreen()),
     GetPage(name: createGroupChat, page: () => CreateGroupChatScreen()),
     GetPage(name: groupChat, page: () => GroupChatScreen()),
+    GetPage(name: editGroupChat, page: () => EditGroupChatScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),
