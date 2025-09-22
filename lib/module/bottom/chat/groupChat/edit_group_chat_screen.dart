@@ -53,10 +53,12 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
+      // in _EditGroupChatScreenState.build (replace body:)
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // Group image picker (unchanged)
             GestureDetector(
               onTap: () => controller.showOptions(context),
               child: Obx(() {
@@ -67,12 +69,8 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                     radius: 50,
                     backgroundColor: AppColor.greyF6Color,
                     child: pickedPath.isNotEmpty
-                        ? Image.file(
-                            File(pickedPath),
-                            fit: BoxFit.cover,
-                            width: 120,
-                            height: 120,
-                          )
+                        ? Image.file(File(pickedPath),
+                            fit: BoxFit.cover, width: 120, height: 120)
                         : (existingImageUrl != null &&
                                 existingImageUrl!.isNotEmpty)
                             ? getImageView(
@@ -88,21 +86,139 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                 );
               }),
             ),
-            const Gap(20),
+            const Gap(16),
             CommonTextField(
               controller: groupNameController,
               hintText: "Group name",
               prefixIcon: const Icon(Icons.group, color: AppColor.grey4EColor),
             ),
-            const Spacer(),
+            const Gap(16),
+            Row(
+              children: const [
+                Text("Members",
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColor.black12Color)),
+              ],
+            ),
+            const Gap(8),
+            Expanded(
+              child: Obx(() {
+                final items = controller.members;
+                if (items.isEmpty) {
+                  return const Center(child: Text("No members found"));
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await controller.getGroupMembers(groupId ?? '');
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (ctx, i) {
+                      final m = items[i];
+                      final isOwner = (m.role?.toLowerCase() == 'owner');
+                      final initials = ((m.firstName ?? '').isNotEmpty
+                              ? m.firstName![0]
+                              : '?') +
+                          ((m.lastName ?? '').isNotEmpty ? m.lastName![0] : '');
+                      final imageUrl =
+                          (m.profile ?? '').isNotEmpty ? m.profile! : '';
+
+                      return Container(
+                        decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: getImageView(
+                                finalUrl: imageUrl ?? '',
+                                fit: BoxFit.cover,
+                                height: 48,
+                                width: 48,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                      "${m.firstName ?? ''} ${m.lastName ?? ''}"
+                                          .trim(),
+                                      style: TextStyle()
+                                          .normal20w500
+                                          .textColor(AppColor.black12Color)),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isOwner
+                                          ? Colors.blue.shade50
+                                          : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      (m.role ?? 'member').capitalize!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: isOwner
+                                            ? Colors.blue
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (!isOwner)
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red.shade600,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 4),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side:
+                                        BorderSide(color: Colors.red.shade100),
+                                  ),
+                                  backgroundColor: Colors.red.shade50,
+                                ),
+                                icon: const Icon(Icons.person_remove_rounded,
+                                    size: 16),
+                                label: const Text("Remove",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12)),
+                                onPressed: () async {
+                                  controller.removeGroupMember(
+                                      groupId ?? "", "${m.userId}");
+                                },
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
+            ),
+            const Gap(12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColor.black12Color,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                      borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: () async {
@@ -115,24 +231,98 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                     Get.snackbar("Error", "Please enter a group name");
                     return;
                   }
-
-                  // await controller.updateGroupChat(
-                  //   groupId: groupId!,
-                  //   name: name,
-                  // );
+                  // TODO: call your update endpoint when ready
                 },
-                child: const Text(
-                  "Save changes",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600),
-                ),
+                child: const Text("Save changes",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600)),
               ),
             ),
           ],
         ),
       ),
+      // body: Padding(
+      //   padding: const EdgeInsets.all(20),
+      //   child: Column(
+      //     children: [
+      //       GestureDetector(
+      //         onTap: () => controller.showOptions(context),
+      //         child: Obx(() {
+      //           final pickedPath = controller.groupImagePath.value;
+      //           return ClipRRect(
+      //             borderRadius: BorderRadius.circular(50),
+      //             child: CircleAvatar(
+      //               radius: 50,
+      //               backgroundColor: AppColor.greyF6Color,
+      //               child: pickedPath.isNotEmpty
+      //                   ? Image.file(
+      //                       File(pickedPath),
+      //                       fit: BoxFit.cover,
+      //                       width: 120,
+      //                       height: 120,
+      //                     )
+      //                   : (existingImageUrl != null &&
+      //                           existingImageUrl!.isNotEmpty)
+      //                       ? getImageView(
+      //                           finalUrl: existingImageUrl!,
+      //                           height: 120,
+      //                           width: 120,
+      //                           fit: BoxFit.cover,
+      //                           errorWidget: const Icon(Icons.groups, size: 40),
+      //                         )
+      //                       : const Icon(Icons.camera_alt,
+      //                           color: Colors.grey, size: 30),
+      //             ),
+      //           );
+      //         }),
+      //       ),
+      //       const Gap(20),
+      //       CommonTextField(
+      //         controller: groupNameController,
+      //         hintText: "Group name",
+      //         prefixIcon: const Icon(Icons.group, color: AppColor.grey4EColor),
+      //       ),
+      //       const Spacer(),
+      //       SizedBox(
+      //         width: double.infinity,
+      //         child: ElevatedButton(
+      //           style: ElevatedButton.styleFrom(
+      //             backgroundColor: AppColor.black12Color,
+      //             shape: RoundedRectangleBorder(
+      //               borderRadius: BorderRadius.circular(12),
+      //             ),
+      //             padding: const EdgeInsets.symmetric(vertical: 14),
+      //           ),
+      //           onPressed: () async {
+      //             final name = groupNameController.text.trim();
+      //             if ((groupId ?? '').isEmpty) {
+      //               Get.snackbar("Error", "Invalid group");
+      //               return;
+      //             }
+      //             if (name.isEmpty) {
+      //               Get.snackbar("Error", "Please enter a group name");
+      //               return;
+      //             }
+      //
+      //             // await controller.updateGroupChat(
+      //             //   groupId: groupId!,
+      //             //   name: name,
+      //             // );
+      //           },
+      //           child: const Text(
+      //             "Save changes",
+      //             style: TextStyle(
+      //                 color: Colors.white,
+      //                 fontSize: 16,
+      //                 fontWeight: FontWeight.w600),
+      //           ),
+      //         ),
+      //       ),
+      //     ],
+      //   ),
+      // ),
     );
   }
 }

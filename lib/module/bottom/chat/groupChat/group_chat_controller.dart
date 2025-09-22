@@ -156,4 +156,29 @@ class GroupChatController extends GetxController {
       members.clear();
     }
   }
+
+  Future<void> removeGroupMember(String groupId, String memberId) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "group_id": groupId,
+        "member_id": memberId,
+        "owner_id": AppPref().userId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.removeGroupMember,
+          data: payload,
+        ),
+        true,
+      );
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Member removed successfully');
+        await getGroupMembers(groupId);
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - removeGroupMember(): $e");
+    }
+  }
 }
