@@ -218,7 +218,6 @@ class _ChatScreenState extends State<ChatScreen> {
     updateGroupChatList();
     userOnline();
     updateUserStatus();
-
     super.initState();
   }
 

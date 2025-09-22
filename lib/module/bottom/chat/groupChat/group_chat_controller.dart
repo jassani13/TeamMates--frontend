@@ -4,6 +4,7 @@ import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:path/path.dart';
 
 import '../../../../package/config_packages.dart';
+import '../chat_screen.dart';
 
 class GroupChatController extends GetxController {
   Rx<String> groupImagePath = "".obs;
@@ -76,8 +77,9 @@ class GroupChatController extends GetxController {
       debugPrint("createGroupChat response: $res");
       if (res?.statusCode == 200) {
         AppToast.showAppToast('Chat Group created successfully');
-        var jsonData = res?.data;
-        String groupId = jsonData['data']['group_id'].toString();
+        socket.emit('getGroupChatList', AppPref().userId);
+        //var jsonData = res?.data;
+        //String groupId = jsonData['data']['group_id'].toString();
         //userModel.value = UserModel.fromJson(jsonData['data']);
         //AppPref().userModel = userModel.value;
 
@@ -89,16 +91,13 @@ class GroupChatController extends GetxController {
     }
   }
 
-  Future<void> editGroupChat(
-      List<String> selectedPlayers, String groupName) async {
+  Future<void> editGroupChat(String groupName, String groupId) async {
     try {
       final Map<String, dynamic> payload = {
         "owner_id": AppPref().userId,
-        "name": groupName,
+        "group_id": groupId,
+        if (groupName.isNotEmpty) "name": groupName,
       };
-      for (int i = 0; i < selectedPlayers.length; i++) {
-        payload["members[$i]"] = selectedPlayers[i];
-      }
       final data = FormData.fromMap({
         ...payload,
         if (groupImagePath.value.isNotEmpty)
@@ -109,16 +108,17 @@ class GroupChatController extends GetxController {
       });
       var res = await callApi(
         dio.post(
-          ApiEndPoint.createGroupChat,
+          ApiEndPoint.editGroupChat,
           data: data,
         ),
         true,
       );
-      debugPrint("createGroupChat response: $res");
+      debugPrint("editGroupChat response: $res");
       if (res?.statusCode == 200) {
         AppToast.showAppToast('Chat Group created successfully');
-        var jsonData = res?.data;
-        String groupId = jsonData['data']['group_id'].toString();
+        socket.emit('getGroupChatList', AppPref().userId);
+        //var jsonData = res?.data;
+        //String groupId = jsonData['data']['group_id'].toString();
         //userModel.value = UserModel.fromJson(jsonData['data']);
         //AppPref().userModel = userModel.value;
 

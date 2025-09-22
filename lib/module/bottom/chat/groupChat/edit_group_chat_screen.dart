@@ -17,6 +17,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
 
   String? groupId;
   String? existingImageUrl;
+  String? initialName;
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
         groupNameController.text = (data['group_name'] ?? '').toString();
         existingImageUrl = (data['group_image'] ?? '').toString();
       }
+      initialName = groupNameController.text;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.getGroupMembers(groupId ?? '');
       });
@@ -212,34 +214,50 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
               }),
             ),
             const Gap(12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColor.black12Color,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () async {
-                  final name = groupNameController.text.trim();
-                  if ((groupId ?? '').isEmpty) {
-                    Get.snackbar("Error", "Invalid group");
-                    return;
-                  }
-                  if (name.isEmpty) {
-                    Get.snackbar("Error", "Please enter a group name");
-                    return;
-                  }
-                  // TODO: call your update endpoint when ready
+            // Show only when name or image updated
+            Obx(() {
+              final imageChanged = controller.groupImagePath.value.isNotEmpty;
+              return ValueListenableBuilder<TextEditingValue>(
+                valueListenable: groupNameController,
+                builder: (_, __, ___) {
+                  final nameChanged = groupNameController.text.trim() !=
+                      (initialName ?? '').trim();
+                  final show = nameChanged || imageChanged;
+                  if (!show) return const SizedBox.shrink();
+
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColor.black12Color,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () async {
+                        final name = groupNameController.text.trim();
+                        if ((groupId ?? '').isEmpty) {
+                          Get.snackbar("Error", "Invalid group");
+                          return;
+                        }
+                        if (name.isEmpty) {
+                          Get.snackbar("Error", "Please enter a group name");
+                          return;
+                        }
+                        controller.editGroupChat(name, groupId ?? '');
+                      },
+                      child: const Text(
+                        "Save changes",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  );
                 },
-                child: const Text("Save changes",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),
