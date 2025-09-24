@@ -54,6 +54,19 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
           "Edit Group",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
+        actions: [
+          CommonIconButton(
+            image: AppImage.plus,
+            onTap: () {
+              Get.toNamed(AppRouter.addGroupMembersScreen,arguments: {
+                "group_id":groupId??"",
+                "players": Get.put<SearchChatController>(SearchChatController()).allPlayerModelList
+              });
+            },
+          ),
+          Gap(16)
+          //controller.members
+        ],
       ),
       // in _EditGroupChatScreenState.build (replace body:)
       body: Padding(

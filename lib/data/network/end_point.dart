@@ -55,4 +55,5 @@ class ApiEndPoint {
   static const String editGroupChat = "/api/editGroupChat";
   static const String getGroupMembers = "/api/getGroupMembers";
   static const String removeGroupMember = "/api/removeGroupMember";
+  static const String addGroupMembers = "/api/addGroupMembers";
 }

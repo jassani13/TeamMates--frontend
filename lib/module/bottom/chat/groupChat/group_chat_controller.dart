@@ -156,7 +156,32 @@ class GroupChatController extends GetxController {
       members.clear();
     }
   }
-
+  Future<void> addMembersToGroup({
+    required String groupId,
+    required List<String> memberIds,
+  }) async {
+    try {
+      final map = <String, dynamic>{
+        'group_id': groupId,
+        'added_by': AppPref().userId,
+      };
+      for (int i = 0; i < memberIds.length; i++) {
+        map['members[$i]'] = memberIds[i];
+      }
+      final form = FormData.fromMap(map);
+      final res = await callApi(dio.post(ApiEndPoint.addGroupMembers, data: form), true);
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Members added');
+        // Optionally refresh members list:
+        await getGroupMembers(groupId);
+      } else {
+        AppToast.showAppToast('Failed to add members');
+      }
+    } catch (e) {
+      debugPrint('Exception - addMembersToGroup(): $e');
+      AppToast.showAppToast('Error adding members');
+    }
+  }
   Future<void> removeGroupMember(String groupId, String memberId) async {
     try {
       final Map<String, dynamic> payload = {
