@@ -48,4 +48,8 @@ class ApiEndPoint {
   static const String createEventTag = "/api/createEventTag";
   static const String updateEventTag = "/api/updateEventTag";
   static const String deleteEventTag = "/api/deleteEventTag";
+  // chat module endpoints
+  static const String createPersonalChat = "/api/chat/createPersonal";
+  static const String createTeamChat = "/api/chat/createTeam";
+  static const String createGroupChat = "/api/chat/createGroup";
 }

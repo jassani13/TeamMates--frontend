@@ -17,8 +17,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
   void connectSocket() {
-     socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
-    // socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
+     //socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
+     socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
     //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
