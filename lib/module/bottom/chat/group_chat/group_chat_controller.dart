@@ -2,9 +2,13 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:path/path.dart';
 
+import '../chat_screen.dart';
+
 class GroupChatController extends GetxController {
   Rx<String> groupImagePath = "".obs;
   final ImagePicker picker = ImagePicker();
+  RxList<UserModel> members = <UserModel>[].obs;
+
   // Future<String> setMediaChatApiCall({
   //   required result,
   // }) async {
@@ -73,6 +77,7 @@ class GroupChatController extends GetxController {
       ),
     );
   }
+
   Future<String?> createGroupChat(
       List<String> selectedPlayers, String groupName) async {
     try {
@@ -110,5 +115,99 @@ class GroupChatController extends GetxController {
           "Exception - group_chat_controller.dart - createGroupChat(): $e");
     }
     return null;
+  }
+
+  Future<void> fetchConversationMembers(String conversationId) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "conversation_id": conversationId,
+        "owner_id": AppPref().userId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.getGroupMembers,
+          data: payload,
+        ),
+        true,
+      );
+      if (res?.statusCode == 200) {
+        final map = (res?.data as Map<String, dynamic>);
+        final list = (map['data'] as List<dynamic>);
+        members.assignAll(
+            list.map((e) => UserModel.fromJson(e as Map<String, dynamic>)));
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - getGroupMembers(): $e");
+      members.clear();
+    }
+  }
+
+  Future<void> editGroupConversation(
+    String groupId,
+    String groupName,
+  ) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "owner_id": AppPref().userId,
+        "conversation_id": groupId,
+        if (groupName.isNotEmpty) "name": groupName,
+      };
+      final data = FormData.fromMap({
+        ...payload,
+        if (groupImagePath.value.isNotEmpty)
+          'image': await MultipartFile.fromFile(
+            groupImagePath.value,
+            filename: basename(groupImagePath.value),
+          ),
+      });
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.updateGroup,
+          data: data,
+        ),
+        true,
+      );
+      debugPrint("editGroupChat response: $res");
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Chat Group created successfully');
+        //socket.emit('getGroupChatList', AppPref().userId);
+        //var jsonData = res?.data;
+        //String groupId = jsonData['data']['group_id'].toString();
+        //userModel.value = UserModel.fromJson(jsonData['data']);
+        //AppPref().userModel = userModel.value;
+
+        //Get.back(result: userModel.value);
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - createGroupChat(): $e");
+    }
+  }
+
+  Future<void> removeGroupMember(String groupId, String memberId) async {
+    try {
+      final Map<String, dynamic> payload = {
+        "group_id": groupId,
+        "member_id": memberId,
+        "owner_id": AppPref().userId,
+      };
+
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.removeGroupMember,
+          data: payload,
+        ),
+        true,
+      );
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Member removed successfully');
+        await fetchConversationMembers(groupId);
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - removeGroupMember(): $e");
+    }
   }
 }

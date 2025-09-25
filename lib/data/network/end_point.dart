@@ -52,4 +52,7 @@ class ApiEndPoint {
   static const String createPersonalChat = "/api/chat/createPersonal";
   static const String createTeamChat = "/api/chat/createTeam";
   static const String createGroupChat = "/api/chat/createGroup";
+  static const String getGroupMembers = "/api/chat/getGroupMembers";
+  static const String updateGroup = "/api/chat/updateGroup";
+  static const String removeGroupMember = "/api/chat/removeGroupMember";
 }

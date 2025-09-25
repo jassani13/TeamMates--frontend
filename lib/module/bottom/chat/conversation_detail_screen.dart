@@ -183,14 +183,44 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onReaction(dynamic data) {
-    // data: {message_id, user_id, reaction_type}
+    debugPrint("_onReaction data: $data");
+    if (data == null) return;
     final mid = data['message_id']?.toString();
     if (mid == null) return;
+
+    // Optional: if conversation_id is sent, ensure it matches current convo
+    final cid = data['conversation_id']?.toString();
+    if (cid != null && cid != conversationId) return;
+
     final idx = _messages.indexWhere((m) => m.id == mid);
     if (idx == -1) return;
-    final existing = _messages[idx].metadata?['reactions'] as List? ?? [];
-    final updated = [...existing, {'user_id': data['user_id'], 'reaction': data['reaction_type']}];
-    _messages[idx] = ConversationMessageFactory.applyReactions(_messages[idx], updated);
+
+    // Prefer full authoritative list if provided
+    List reactions;
+    if (data['reactions'] is List) {
+      reactions = List.from(data['reactions'].map((r) => {
+        'user_id': r['user_id'].toString(),
+        'reaction': r['reaction'],
+      }));
+    } else {
+      // Legacy fallback: append single reaction
+      final existing = _messages[idx].metadata?['reactions'] as List? ?? [];
+      reactions = [...existing, {
+        'user_id': data['user_id'].toString(),
+        'reaction': data['reaction_type']
+      }];
+    }
+
+    // Deduplicate by user_id (keep last one)
+    final map = <String, Map<String, dynamic>>{};
+    for (final r in reactions) {
+      final uid = r['user_id'].toString();
+      map[uid] = {'user_id': uid, 'reaction': r['reaction']};
+    }
+    final normalized = map.values.toList();
+
+    _messages[idx] =
+        ConversationMessageFactory.applyReactions(_messages[idx], normalized);
     setState(() {});
   }
 
@@ -251,6 +281,35 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     if (file == null || file.path == null) return;
     await _sendAttachment(file.path!, msgType: 'pdf');
   }
+  Widget _reactionBar(types.Message m) {
+    final reactions = (m.metadata?['reactions'] as List?) ?? [];
+    if (reactions.isEmpty) return const SizedBox.shrink();
+    // Group by reaction emoji
+    final grouped = <String, int>{};
+    for (final r in reactions) {
+      final emoji = r['reaction'] ?? '';
+      if (emoji.isEmpty) continue;
+      grouped[emoji] = (grouped[emoji] ?? 0) + 1;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+      child: Wrap(
+        spacing: 4,
+        children: grouped.entries.map((e) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text('${e.key} ${e.value > 1 ? e.value : ''}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   void _showAttachmentSheet() {
     showModalBottomSheet(
@@ -298,6 +357,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
           return ListTile(
             title: Text(e, style: const TextStyle(fontSize: 22)),
             onTap: () {
+              debugPrint("Reacting with $e to message ${message.id}");
               socket.emit('message_reaction', {
                 'message_id': message.id,
                 'reaction_type': e,
