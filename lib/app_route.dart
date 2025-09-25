@@ -1,5 +1,7 @@
 import 'package:base_code/module/auth/forgot_password/forgot_password_screen.dart';
 import 'package:base_code/module/auth/otp/otp_screen.dart';
+import 'package:base_code/module/bottom/chat/conversation_detail_screen.dart';
+import 'package:base_code/module/bottom/chat/group_chat/create_group_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/group_chat/group_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/personalChat/personal_chat_screen.dart';
 import 'package:base_code/module/bottom/chat/search_chat/search_chat_screen.dart';
@@ -43,6 +45,8 @@ class AppRouter {
   static const participatedPlayer = '/participatedPlayer';
   static const schedule = '/schedule';
   static const grpChat = '/grp_chat';
+  static const createGroupChat = '/createGroupChat';
+  static const conversationDetailScreen = '/conversationDetailScreen';
   static const otp = '/otp';
   static const forgotPassword = '/forgot_password';
   static const calendar = '/calendar';
@@ -80,6 +84,8 @@ class AppRouter {
     GetPage(name: schedule, page: () => ScheduleScreen()),
     GetPage(name: personalChat, page: () => PersonalChatScreen()),
     GetPage(name: grpChat, page: () => GroupChatScreen()),
+    GetPage(name: createGroupChat, page: () => CreateGroupChatScreen()),
+    GetPage(name: conversationDetailScreen, page: () => ConversationDetailScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),

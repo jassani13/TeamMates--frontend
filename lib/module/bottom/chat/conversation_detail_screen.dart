@@ -1,0 +1,351 @@
+import 'dart:async';
+import 'package:base_code/main.dart'; // for socket/AppPref if you centralize them
+import 'package:base_code/package/config_packages.dart';
+import 'package:base_code/package/screen_packages.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'chat_screen.dart';
+
+/// Factory to convert socket payloads into flutter_chat_ui messages.
+class ConversationMessageFactory {
+  static types.Message fromSocket(dynamic raw) {
+    final msgType = (raw['msg_type'] ?? 'text').toString();
+    final senderId = raw['sender_id'].toString();
+    final id = raw['message_id'].toString();
+    final createdAtStr = raw['created_at']?.toString();
+    final createdAt = createdAtStr != null
+        ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    final metadata = <String, dynamic>{
+      'msg_type': msgType,
+      'raw_msg': raw['msg'],
+      'file_url': raw['file_url'],
+      'reactions': raw['reactions'] ?? [],
+    };
+
+    if (msgType == 'media') {
+      return types.ImageMessage(
+        id: id,
+        author: types.User(id: senderId),
+        createdAt: createdAt,
+        uri: raw['file_url'] ?? raw['msg'] ?? '',
+        name: 'media',
+        size: 0,
+        height: 200,
+        width: 200,
+        metadata: metadata,
+      );
+    } else if (msgType == 'pdf') {
+      return types.FileMessage(
+        id: id,
+        author: types.User(id: senderId),
+        createdAt: createdAt,
+        uri: raw['file_url'] ?? raw['msg'] ?? '',
+        name: 'document.pdf',
+        size: 0,
+        metadata: metadata,
+      );
+    }
+    return types.TextMessage(
+      id: id,
+      author: types.User(id: senderId),
+      createdAt: createdAt,
+      text: raw['msg']?.toString() ?? '',
+      metadata: metadata,
+    );
+  }
+
+  static types.Message applyReactions(types.Message original, List reactions) {
+    final meta = {...?original.metadata, 'reactions': reactions};
+    if (original is types.TextMessage) return original.copyWith(metadata: meta);
+    if (original is types.ImageMessage) return original.copyWith(metadata: meta);
+    if (original is types.FileMessage) return original.copyWith(metadata: meta);
+    return original;
+  }
+}
+
+class ConversationDetailScreen extends StatefulWidget {
+  const ConversationDetailScreen({super.key});
+
+  @override
+  State<ConversationDetailScreen> createState() => _ConversationDetailScreenState();
+}
+
+class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
+  // Route arguments
+  late final String conversationId;
+  late final String conversationType;
+  late final String conversationTitle;
+  late final String conversationImage;
+
+  final user = types.User(id: AppPref().userId.toString());
+  final List<types.Message> _messages = [];
+
+  bool _loading = false;
+  bool _initialLoaded = false;
+  String? _lastMessageId;
+  Timer? _typingDebounce;
+  bool _typingSent = false;
+
+  // Event constants - adjust if server names change
+  static const evGetMessages = 'get_messages';
+  static const evMessagesResult = 'conversation_messages';
+  static const evSend = 'send_message';
+  static const evNewMessage = 'setNewConversationMessage'; // from backend
+  static const evTyping = 'typing';
+  static const evMessageRead = 'message_read';
+  static const evMessagesReadBroadcast = 'messages_read';
+  static const evReaction = 'message_reaction';
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments ?? {};
+    conversationId = args['conversation_id'].toString();
+    conversationType = args['type']?.toString() ?? 'personal';
+    conversationTitle = args['title']?.toString() ?? '';
+    conversationImage = args['image']?.toString() ?? '';
+    _registerSocketListeners();
+    _loadInitial();
+  }
+
+  void _registerSocketListeners() {
+    socket.on(evMessagesResult, _onMessagesResult);
+    socket.on(evNewMessage, _onNewMessage);
+    socket.on(evTyping, _onTyping);
+    socket.on(evMessagesReadBroadcast, _onMessagesRead);
+    socket.on(evReaction, _onReaction);
+  }
+
+  void _removeSocketListeners() {
+    socket.off(evMessagesResult, _onMessagesResult);
+    socket.off(evNewMessage, _onNewMessage);
+    socket.off(evTyping, _onTyping);
+    socket.off(evMessagesReadBroadcast, _onMessagesRead);
+    socket.off(evReaction, _onReaction);
+  }
+
+  void _loadInitial() {
+    _loading = true;
+    socket.emit(evGetMessages, {
+      'conversation_id': conversationId,
+    });
+    setState(() {});
+  }
+
+  void _onMessagesResult(dynamic payload) {
+    if (payload == null) return;
+    if (payload['conversation_id']?.toString() != conversationId) return;
+    final list = (payload['messages'] as List?) ?? [];
+    _messages.clear();
+    for (final raw in list) {
+      final msg = ConversationMessageFactory.fromSocket(raw);
+      _messages.insert(0, msg);
+      _lastMessageId = msg.id;
+    }
+    _initialLoaded = true;
+    _loading = false;
+    setState(() {});
+    _markRead();
+  }
+
+  void _onNewMessage(dynamic data) {
+    final raw = data['resData'] ?? data;
+    if (raw == null) return;
+    if (raw['conversation_id']?.toString() != conversationId) return;
+
+    final msg = ConversationMessageFactory.fromSocket(raw);
+    _messages.insert(0, msg);
+    _lastMessageId = msg.id;
+
+    // Mark read if it's from someone else
+    if (msg.author.id != user.id) {
+      Future.delayed(const Duration(milliseconds: 250), _markRead);
+    }
+    setState(() {});
+  }
+
+  void _onTyping(dynamic data) {
+    if (data['conversation_id']?.toString() != conversationId) return;
+    // data: {conversation_id, user_id, isTyping}
+    // Implement optional UI indicator here.
+  }
+
+  void _onMessagesRead(dynamic data) {
+    if (data['conversation_id']?.toString() != conversationId) return;
+    // data: {conversation_id, user_id, last_read_message_id}
+    // Optional: show per-user read status badges
+  }
+
+  void _onReaction(dynamic data) {
+    // data: {message_id, user_id, reaction_type}
+    final mid = data['message_id']?.toString();
+    if (mid == null) return;
+    final idx = _messages.indexWhere((m) => m.id == mid);
+    if (idx == -1) return;
+    final existing = _messages[idx].metadata?['reactions'] as List? ?? [];
+    final updated = [...existing, {'user_id': data['user_id'], 'reaction': data['reaction_type']}];
+    _messages[idx] = ConversationMessageFactory.applyReactions(_messages[idx], updated);
+    setState(() {});
+  }
+
+  void _markRead() {
+    if (_lastMessageId == null) return;
+    socket.emit(evMessageRead, {
+      'conversation_id': conversationId,
+      'last_read_message_id': _lastMessageId,
+    });
+  }
+
+  void _sendText(types.PartialText partial) {
+    socket.emit(evSend, {
+      'conversation_id': conversationId,
+      'msg': partial.text,
+      'msg_type': 'text',
+    });
+  }
+
+  Future<void> _sendAttachment(String path, {required String msgType}) async {
+    // Hook up your upload & get file_url
+    final fileUrl = path; // placeholder
+    socket.emit(evSend, {
+      'conversation_id': conversationId,
+      'msg': fileUrl.split('/').last,
+      'msg_type': msgType,
+      'file_url': fileUrl,
+    });
+  }
+
+  void _onUserTyping(String currentText) {
+    if (_typingDebounce?.isActive ?? false) _typingDebounce!.cancel();
+    if (!_typingSent) {
+      socket.emit(evTyping, {
+        'conversation_id': conversationId,
+        'isTyping': true,
+      });
+      _typingSent = true;
+    }
+    _typingDebounce = Timer(const Duration(seconds: 2), () {
+      socket.emit(evTyping, {
+        'conversation_id': conversationId,
+        'isTyping': false,
+      });
+      _typingSent = false;
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70, maxWidth: 1440);
+    if (img == null) return;
+    await _sendAttachment(img.path, msgType: 'media');
+  }
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final file = result?.files.single;
+    if (file == null || file.path == null) return;
+    await _sendAttachment(file.path!, msgType: 'pdf');
+  }
+
+  void _showAttachmentSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Image'),
+              onTap: () {
+                Get.back();
+                _pickImage();
+              },
+            ),
+            ListTile(
+              title: const Text('PDF'),
+              onTap: () {
+                Get.back();
+                _pickPdf();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onMessageTap(BuildContext ctx, types.Message message) {
+    final meta = message.metadata ?? {};
+    final msgType = meta['msg_type'];
+    if (msgType == 'pdf') {
+      final url = meta['file_url'] ?? meta['raw_msg'];
+      if (url != null) {
+        // openPdf(url);
+      }
+    }
+  }
+
+  void _onMessageLongPress(BuildContext ctx, types.Message message) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Wrap(
+        children: ['👍', '❤️', '😂', '😮', '😢', '👏'].map((e) {
+          return ListTile(
+            title: Text(e, style: const TextStyle(fontSize: 22)),
+            onTap: () {
+              socket.emit('message_reaction', {
+                'message_id': message.id,
+                'reaction_type': e,
+              });
+              Get.back();
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _removeSocketListeners();
+    _typingDebounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: hideKeyboard,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(conversationTitle.isEmpty ? 'Conversation' : conversationTitle),
+        ),
+        body: Stack(
+          children: [
+            Chat(
+              user: user,
+              messages: _messages,
+              onSendPressed: _sendText,
+              onAttachmentPressed: _showAttachmentSheet,
+              onMessageTap: _onMessageTap,
+              onMessageLongPress: _onMessageLongPress,
+              showUserAvatars: true,
+              showUserNames: true,
+              inputOptions: InputOptions(
+                onTextChanged: _onUserTyping,
+              ),
+              customDateHeaderText: (d) => DateFormat('dd MMM yyyy').format(d),
+            ),
+            if (_loading && !_initialLoaded)
+              const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      ),
+    );
+  }
+}

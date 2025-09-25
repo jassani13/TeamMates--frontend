@@ -16,6 +16,24 @@ class SearchChatScreen extends StatelessWidget {
             backgroundColor: AppColor.white,
             title: const CommonTitleText(text: 'Search'),
             centerTitle: false,
+            actions: [
+              Obx(() {
+                return Visibility(
+                  visible: AppPref().role == 'coach' &&
+                      controller.selectedPlayersIDsForGroupChat.isNotEmpty,
+                  child: CommonIconButton(
+                    image: AppImage.plus,
+                    onTap: () async{
+                      Get.toNamed(AppRouter.createGroupChat,arguments: {
+                        'selectedPlayers': controller.selectedPlayersIDsForGroupChat
+                      });
+
+                    },
+                  ),
+                );
+              }),
+              Gap(16)
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -190,33 +208,57 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   Widget _buildPlayerRow(PlayerTeams roster) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: getImageView(
-            finalUrl: '${roster.profile ?? ''}',
-            fit: BoxFit.cover,
-            height: 48,
-            width: 48,
-          ),
+    return Obx(() {
+      final isSelected = controller.selectedPlayersIDsForGroupChat
+          .contains(roster.userId.toString());
+      return GestureDetector(
+        onTap: () {
+          if (isSelected) {
+            controller.selectedPlayersIDsForGroupChat
+                .remove(roster.userId.toString());
+          } else {
+            controller.selectedPlayersIDsForGroupChat
+                .add(roster.userId.toString());
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+              color: isSelected ? AppColor.greyF6Color : Colors.transparent,
+              borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: getImageView(
+                finalUrl: '${roster.profile ?? ''}',
+                fit: BoxFit.cover,
+                height: 48,
+                width: 48,
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: Text(
+                '${roster.firstName} ${roster.lastName}',
+                style:
+                    TextStyle().normal20w500.textColor(AppColor.black12Color),
+              ),
+            ),
+            const Gap(16),
+            if (AppPref().role == 'coach')
+              isSelected
+                  ? Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                    )
+                  : _buildChatButton(
+                      onTap: () => _onPlayerChatTap(roster.userId.toString(),
+                          roster.firstName ?? "", roster.lastName ?? ""),
+                    ),
+          ]),
         ),
-        const Gap(16),
-        Expanded(
-          child: Text(
-            '${roster.firstName} ${roster.lastName}',
-            style: TextStyle().normal20w500.textColor(AppColor.black12Color),
-          ),
-        ),
-        const Gap(16),
-        if (AppPref().role == 'coach')
-          _buildChatButton(
-            onTap: () => _onPlayerChatTap(roster.userId.toString(),
-                roster.firstName ?? "", roster.lastName ?? ""),
-          ),
-      ]),
-    );
+      );
+    });
   }
 
   void _onPlayerChatTap(

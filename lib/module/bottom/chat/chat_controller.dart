@@ -1,6 +1,8 @@
 import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/package/config_packages.dart';
 
+import '../../../model/conversation_item.dart';
+
 class ChatScreenController extends GetxController{
   List chatList = [
     "Group",
@@ -10,5 +12,80 @@ class ChatScreenController extends GetxController{
   AutoScrollController controller=AutoScrollController();
   List<ChatListData> chatListData = <ChatListData>[];
   List<ChatListData> grpChatListData = <ChatListData>[];
-  Map<String,dynamic> onlineUsers = {};
+  final RxList<ConversationItem> conversations = <ConversationItem>[].obs;
+  //final RxInt selectedTab = 0.obs; // 0 = all/team, 1 = personal maybe adapt
+  final Map<String, int> unreadByConversation = {};
+  Map<dynamic, dynamic> onlineUsers = {};
+
+  void setConversations(List<dynamic> raw) {
+    final list = raw.map((e) => ConversationItem.fromJson(e)).toList();
+    conversations.assignAll(list);
+  }
+
+  List<ConversationItem> get filtered {
+
+    if (selectedChatMethod.value == 0) {
+      return conversations.where((c) => c.type != 'personal').toList();
+    } else {
+      return conversations.where((c) => c.type == 'personal').toList();
+    }
+  }
+
+  void updateOrInsert(ConversationItem item) {
+    final idx = conversations.indexWhere((c) => c.conversationId == item.conversationId);
+    if (idx >= 0) {
+      conversations[idx] = item;
+    } else {
+      conversations.insert(0, item);
+    }
+  }
+
+  void markConversationRead(String conversationId) {
+    final idx = conversations.indexWhere((c) => c.conversationId == conversationId);
+    if (idx >= 0) {
+      final c = conversations[idx];
+      conversations[idx] = ConversationItem(
+        conversationId: c.conversationId,
+        type: c.type,
+        title: c.title,
+        image: c.image,
+        lastMessage: c.lastMessage,
+        lastMessageFileUrl: c.lastMessageFileUrl,
+        msgType: c.msgType,
+        createdAt: c.createdAt,
+        unreadCount: 0,
+      );
+    }
+  }
+  void patchConversation({
+    required String convId,
+    required String lastMessage,
+    required String msgType,
+    required String fileUrl,
+    String? createdAt,
+  }) {
+    final idx = conversations.indexWhere((c) => c.conversationId == convId);
+    if (idx == -1) return;
+    final old = conversations[idx];
+    final updated = ConversationItem(
+      conversationId: old.conversationId,
+      type: old.type,
+      title: old.title,
+      image: old.image,
+      lastMessage: msgType == 'text' ? lastMessage : msgType,
+      lastMessageFileUrl: msgType == 'text' ? '' : (fileUrl.isNotEmpty ? fileUrl : ''),
+      msgType: msgType,
+      createdAt: createdAt != null && createdAt.isNotEmpty
+          ? DateTime.tryParse(createdAt)
+          : old.createdAt,
+      unreadCount: old.unreadCount, // let unread logic adjust elsewhere
+    );
+    conversations[idx] = updated;
+    // Move to top
+    conversations.sort((a, b) {
+      final at = a.createdAt?.millisecondsSinceEpoch ?? 0;
+      final bt = b.createdAt?.millisecondsSinceEpoch ?? 0;
+      return bt.compareTo(at);
+    });
+  }
 }

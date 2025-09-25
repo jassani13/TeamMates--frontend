@@ -14,7 +14,9 @@ class SearchChatController extends GetxController {
   AutoScrollController controller = AutoScrollController();
   TextEditingController searchTeamController = TextEditingController();
   TextEditingController searchPlayerController = TextEditingController();
-  Rx<String> groupImagePath = "".obs;
+
+  RxList<String> selectedPlayersIDsForGroupChat = <String>[].obs;
+
 
   Future<void> getPlayerApiCall() async {
     isShimmer.value = true;
@@ -141,42 +143,5 @@ class SearchChatController extends GetxController {
     return null;
   }
 
-  Future<String?> createGroupChat(
-      List<String> selectedPlayers, String groupName) async {
-    try {
-      final Map<String, dynamic> payload = {
-        "owner_id": AppPref().userId,
-        "title": groupName,
-      };
-      for (int i = 0; i < selectedPlayers.length; i++) {
-        payload["member_ids[$i]"] = selectedPlayers[i];
-      }
-      final data = FormData.fromMap({
-        ...payload,
-        if (groupImagePath.value.isNotEmpty) // make sure it's a String path
-          'image': await MultipartFile.fromFile(
-            groupImagePath.value,
-            filename: basename(groupImagePath.value),
-          ),
-      });
-      var res = await callApi(
-        dio.post(
-          ApiEndPoint.createGroupChat,
-          data: data,
-        ),
-        true,
-      );
-      debugPrint("createGroupChat response: $res");
-      if (res?.statusCode == 200) {
-        socket.emit('getGroupChatList', AppPref().userId);
-        var jsonData = res?.data;
-        String conversationId = jsonData['data']['conversation_id'].toString();
-        return conversationId;
-      }
-    } catch (e) {
-      debugPrint(
-          "Exception - group_chat_controller.dart - createGroupChat(): $e");
-    }
-    return null;
-  }
+
 }

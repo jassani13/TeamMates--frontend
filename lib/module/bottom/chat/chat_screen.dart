@@ -4,6 +4,8 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../../../model/conversation_item.dart';
+
 late IO.Socket socket;
 
 class ChatScreen extends StatefulWidget {
@@ -16,33 +18,149 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
 
-  void connectSocket() {
-     //socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
-     socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
-    //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': false,
-      'forceNew': true,
-      'reconnection': true,
-      'reconnectionAttempts': 5,
-      'reconnectionDelay': 2000,
-    });
+  void initUnifiedSocket() {
+    //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
+    //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
+    //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+    socket = IO.io(
+      'http://127.0.0.1:3000',
+      {
+        'transports': ['websocket'],
+        'autoConnect': false,
+        'forceNew': true,
+        'reconnection': true,
+        'reconnectionAttempts': 5,
+        'reconnectionDelay': 2000,
+      },
+    );
 
     socket.connect();
 
     socket.onConnect((_) {
-      emitPersonalChatList();
-      emitTeamChatList();
-      if (kDebugMode) {
-        print('<------------ CONNECTED TO SERVER ------------>');
+      if (kDebugMode) print('[SOCKET] connected');
+      socket.emit('register', {'user_id': AppPref().userId});
+    });
+
+    socket.onDisconnect((_) {
+      if (kDebugMode) print('[SOCKET] disconnected');
+    });
+
+    // Main list
+    socket.on('conversation_list', (payload) {
+      // payload could be an array OR { success, data }
+      debugPrint("conversation_list: $payload");
+      final list =
+          payload is Map && payload['data'] != null ? payload['data'] : payload;
+      if (list is List) {
+        chatController.setConversations(list);
       }
     });
-    socket.onDisconnect((_) {
-      if (kDebugMode) {
-        print('<------------ DISCONNECTED TO SERVER ------------>');
+
+    socket.on('updateConversationList', (payload) {
+      final data = payload['resData'] ?? payload;
+      debugPrint("updateConversationList: $data");
+      if (data is Map) {
+        final convId = data['conversation_id']?.toString();
+        if (convId == null) return;
+        chatController.patchConversation(
+          convId: convId,
+          lastMessage: data['last_message']?.toString() ?? '',
+          msgType: data['msg_type']?.toString() ?? 'text',
+          fileUrl: data['last_message_file_url']?.toString() ?? '',
+          createdAt: data['created_at']?.toString(),
+        );
       }
+    });
+    // New incoming message (server should emit new_message; if not adjust to your emitted event)
+    socket.on('new_message', (msg) async {
+      if (kDebugMode) print('[SOCKET] new_message $msg');
+      final conversationId = msg['conversation_id']?.toString();
+      if (conversationId == null) return;
+
+      // Optionally optimistically update last message
+      final idx = chatController.conversations
+          .indexWhere((c) => c.conversationId == conversationId);
+      if (idx >= 0) {
+        final old = chatController.conversations[idx];
+        final updated = ConversationItem(
+          conversationId: old.conversationId,
+          type: old.type,
+          title: old.title,
+          image: old.image,
+          lastMessage: msg['msg_type'] == 'text'
+              ? (msg['msg'] ?? '')
+              : msg['msg_type'] ?? 'file',
+          lastMessageFileUrl: msg['file_url'] ?? '',
+          msgType: msg['msg_type'] ?? 'text',
+          createdAt: DateTime.now(),
+          unreadCount: old.unreadCount ??
+              0 +
+                  (msg['sender_id'].toString() == AppPref().userId.toString()
+                      ? 0
+                      : 1),
+        );
+        chatController.updateOrInsert(updated);
+      } else {
+        // Fallback: ask server for fresh list just for safety
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
+      }
+    });
+
+    // Read receipts reducing unread
+    socket.on('messages_read', (payload) {
+      final convId = payload['conversation_id']?.toString();
+      final userId = payload['user_id']?.toString();
+      if (userId == AppPref().userId.toString()) {
+        // our own read ack -> ensure local unread zero
+        if (convId != null) chatController.markConversationRead(convId);
+      }
+    });
+
+    // Reactions
+    socket.on('message_reaction', (payload) {
+      // update message-level UI in conversation screen (implement there)
+    });
+
+    // Typing
+    socket.on('typing', (payload) {
+      // optionally store typing state per conversation
+    });
+
+    // Presence (if you keep existing events)
+    socket.emit('userOnline', [AppPref().userId]);
+    socket.on('updateUserStatus', (data) {
+      chatController.onlineUsers.clear();
+      chatController.onlineUsers.addAll(data as Map);
     });
   }
+
+  // void connectSocket() {
+  //    //socket = IO.io('http://13.220.132.157:3000', <String, dynamic>{ // Production server
+  //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
+  //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+  //     'transports': ['websocket'],
+  //     'autoConnect': false,
+  //     'forceNew': true,
+  //     'reconnection': true,
+  //     'reconnectionAttempts': 5,
+  //     'reconnectionDelay': 2000,
+  //   });
+  //
+  //   socket.connect();
+  //
+  //   socket.onConnect((_) {
+  //     emitPersonalChatList();
+  //     emitTeamChatList();
+  //     if (kDebugMode) {
+  //       print('<------------ CONNECTED TO SERVER ------------>');
+  //     }
+  //   });
+  //   socket.onDisconnect((_) {
+  //     if (kDebugMode) {
+  //       print('<------------ DISCONNECTED TO SERVER ------------>');
+  //     }
+  //   });
+  // }
 
   void emitPersonalChatList() {
     if (kDebugMode) {
@@ -130,7 +248,6 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {});
         }
       }
-
     });
   }
 
@@ -157,14 +274,12 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {});
         }
       }
-
     });
   }
 
   @override
   void initState() {
-
-    connectSocket();
+    initUnifiedSocket();
 
     onPersonalChatList();
     onTeamChatList();
@@ -239,24 +354,126 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               Gap(24),
-              Obx(
-                () => Expanded(
-                  child: Column(
-                    children: [
-                      if (chatController.selectedChatMethod.value == 0) ...[
-                        _tamChatList(),
-                      ] else ...[
-                        _personalChatList(),
-                      ]
-                    ],
-                  ),
-                ),
-              )
+              Expanded(child: buildConversationList())
+              // Obx(
+              //   () => Expanded(
+              //     child: Column(
+              //       children: [
+              //         if (chatController.selectedChatMethod.value == 0) ...[
+              //           _tamChatList(),
+              //         ] else ...[
+              //           _personalChatList(),
+              //         ]
+              //       ],
+              //     ),
+              //   ),
+              // )
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget buildConversationList() {
+    return Obx(() {
+      final items = chatController.filtered;
+      if (items.isEmpty) {
+        return Center(child: Text('No Conversations Yet'));
+      }
+      return ListView.separated(
+        key:
+            ValueKey("conversation_${chatController.selectedChatMethod.value}"),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: items.length,
+        separatorBuilder: (_, __) =>
+            Divider(color: AppColor.greyF6Color, height: 1),
+        itemBuilder: (_, i) {
+          final c = items[i];
+          final subtitle = c.msgType == 'text'
+              ? c.lastMessage
+              : (c.msgType == 'null' ? 'File' : c.msgType);
+          final timeAgo = c.createdAt == null
+              ? ''
+              : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
+          return GestureDetector(
+            onTap: () {
+              Get.toNamed(
+                AppRouter.conversationDetailScreen,
+                arguments: {
+                  'conversation_id': c.conversationId,
+                  'type': c.type,
+                  'title': c.title,
+                  'image': c.image,
+                },
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                children: [
+                  ClipOval(
+                    child: getImageView(
+                        errorWidget: Icon(
+                          Icons.account_circle,
+                          size: 40,
+                        ),
+                        finalUrl: c.image ?? '',
+                        fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            c.title == ''
+                                ? '(Untitled ${c.type})'
+                                : c.title ?? '',
+                            style: TextStyle()
+                                .normal16w500
+                                .textColor(AppColor.black12Color)),
+                        Text(subtitle ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle()
+                                .normal14w500
+                                .textColor(AppColor.grey4EColor)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(timeAgo,
+                          style: TextStyle()
+                              .normal14w500
+                              .textColor(AppColor.grey4EColor)),
+                      if ((c.unreadCount ?? 0) > 0) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColor.greyF6Color,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('${c.unreadCount}',
+                              style: TextStyle()
+                                  .normal14w500
+                                  .textColor(AppColor.black)),
+                        )
+                      ]
+                    ],
+                  )
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _personalChatList() {

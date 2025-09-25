@@ -275,18 +275,18 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         allowedExtensions: ['pdf'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        final url = await groupChatController.setMediaChatApiCall(result: result.files[0]);
-        if (url.isNotEmpty) {
-          socket.emit('sendTeamMessage', [
-            url,
-            AppPref().userId.toString(),
-            chatData.teamId,
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
-            'pdf',
-          ]);
-        }
-      }
+      // if (result != null && result.files.single.path != null) {
+      //   final url = await groupChatController.setMediaChatApiCall(result: result.files[0]);
+      //   if (url.isNotEmpty) {
+      //     socket.emit('sendTeamMessage', [
+      //       url,
+      //       AppPref().userId.toString(),
+      //       chatData.teamId,
+      //       DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+      //       'pdf',
+      //     ]);
+      //   }
+      // }
       setState(() => isLoading = false);
     } catch (e) {
       setState(() => isLoading = false);
@@ -306,19 +306,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       );
 
       if (result != null) {
-        final url = await groupChatController.setMediaChatApiCall(result: result);
-        if (url.isNotEmpty) {
-          socket.emit(
-            'sendTeamMessage',
-            [
-              url,
-              AppPref().userId.toString(),
-              chatData.teamId,
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
-              'media',
-            ],
-          );
-        }
+        // final url = await groupChatController.setMediaChatApiCall(result: result);
+        // if (url.isNotEmpty) {
+        //   socket.emit(
+        //     'sendTeamMessage',
+        //     [
+        //       url,
+        //       AppPref().userId.toString(),
+        //       chatData.teamId,
+        //       DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toUtc()),
+        //       'media',
+        //     ],
+        //   );
+        // }
       }
       setState(() => isLoading = false);
     } catch (e) {
