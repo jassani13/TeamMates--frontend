@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:base_code/main.dart'; // for socket/AppPref if you centralize them
+import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -63,7 +64,8 @@ class ConversationMessageFactory {
   static types.Message applyReactions(types.Message original, List reactions) {
     final meta = {...?original.metadata, 'reactions': reactions};
     if (original is types.TextMessage) return original.copyWith(metadata: meta);
-    if (original is types.ImageMessage) return original.copyWith(metadata: meta);
+    if (original is types.ImageMessage)
+      return original.copyWith(metadata: meta);
     if (original is types.FileMessage) return original.copyWith(metadata: meta);
     return original;
   }
@@ -73,16 +75,13 @@ class ConversationDetailScreen extends StatefulWidget {
   const ConversationDetailScreen({super.key});
 
   @override
-  State<ConversationDetailScreen> createState() => _ConversationDetailScreenState();
+  State<ConversationDetailScreen> createState() =>
+      _ConversationDetailScreenState();
 }
 
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   // Route arguments
-  late final String conversationId;
-  late final String conversationType;
-  late final String conversationTitle;
-  late final String conversationImage;
-
+  ConversationItem? conversation;
   final user = types.User(id: AppPref().userId.toString());
   final List<types.Message> _messages = [];
 
@@ -106,10 +105,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void initState() {
     super.initState();
     final args = Get.arguments ?? {};
-    conversationId = args['conversation_id'].toString();
-    conversationType = args['type']?.toString() ?? 'personal';
-    conversationTitle = args['title']?.toString() ?? '';
-    conversationImage = args['image']?.toString() ?? '';
+    conversation = args['conversation'] as ConversationItem;
+    debugPrint(
+        "_ConversationDetailScreenState conv: ${conversation?.conversationId}: ${conversation?.title}");
     _registerSocketListeners();
     _loadInitial();
   }
@@ -133,14 +131,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void _loadInitial() {
     _loading = true;
     socket.emit(evGetMessages, {
-      'conversation_id': conversationId,
+      'conversation_id': conversation?.conversationId ?? '',
     });
     setState(() {});
   }
 
   void _onMessagesResult(dynamic payload) {
     if (payload == null) return;
-    if (payload['conversation_id']?.toString() != conversationId) return;
+    if (payload['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     final list = (payload['messages'] as List?) ?? [];
     _messages.clear();
     for (final raw in list) {
@@ -157,7 +156,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void _onNewMessage(dynamic data) {
     final raw = data['resData'] ?? data;
     if (raw == null) return;
-    if (raw['conversation_id']?.toString() != conversationId) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
 
     final msg = ConversationMessageFactory.fromSocket(raw);
     _messages.insert(0, msg);
@@ -171,13 +171,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onTyping(dynamic data) {
-    if (data['conversation_id']?.toString() != conversationId) return;
+    if (data['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     // data: {conversation_id, user_id, isTyping}
     // Implement optional UI indicator here.
   }
 
   void _onMessagesRead(dynamic data) {
-    if (data['conversation_id']?.toString() != conversationId) return;
+    if (data['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     // data: {conversation_id, user_id, last_read_message_id}
     // Optional: show per-user read status badges
   }
@@ -190,7 +192,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
     // Optional: if conversation_id is sent, ensure it matches current convo
     final cid = data['conversation_id']?.toString();
-    if (cid != null && cid != conversationId) return;
+    if (cid != null && cid != conversation?.conversationId) return;
 
     final idx = _messages.indexWhere((m) => m.id == mid);
     if (idx == -1) return;
@@ -199,16 +201,19 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     List reactions;
     if (data['reactions'] is List) {
       reactions = List.from(data['reactions'].map((r) => {
-        'user_id': r['user_id'].toString(),
-        'reaction': r['reaction'],
-      }));
+            'user_id': r['user_id'].toString(),
+            'reaction': r['reaction'],
+          }));
     } else {
       // Legacy fallback: append single reaction
       final existing = _messages[idx].metadata?['reactions'] as List? ?? [];
-      reactions = [...existing, {
-        'user_id': data['user_id'].toString(),
-        'reaction': data['reaction_type']
-      }];
+      reactions = [
+        ...existing,
+        {
+          'user_id': data['user_id'].toString(),
+          'reaction': data['reaction_type']
+        }
+      ];
     }
 
     // Deduplicate by user_id (keep last one)
@@ -227,14 +232,14 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void _markRead() {
     if (_lastMessageId == null) return;
     socket.emit(evMessageRead, {
-      'conversation_id': conversationId,
+      'conversation_id': conversation?.conversationId ?? '',
       'last_read_message_id': _lastMessageId,
     });
   }
 
   void _sendText(types.PartialText partial) {
     socket.emit(evSend, {
-      'conversation_id': conversationId,
+      'conversation_id': conversation?.conversationId ?? '',
       'msg': partial.text,
       'msg_type': 'text',
     });
@@ -244,7 +249,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     // Hook up your upload & get file_url
     final fileUrl = path; // placeholder
     socket.emit(evSend, {
-      'conversation_id': conversationId,
+      'conversation_id': conversation?.conversationId ?? '',
       'msg': fileUrl.split('/').last,
       'msg_type': msgType,
       'file_url': fileUrl,
@@ -255,14 +260,14 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     if (_typingDebounce?.isActive ?? false) _typingDebounce!.cancel();
     if (!_typingSent) {
       socket.emit(evTyping, {
-        'conversation_id': conversationId,
+        'conversation_id': conversation?.conversationId ?? '',
         'isTyping': true,
       });
       _typingSent = true;
     }
     _typingDebounce = Timer(const Duration(seconds: 2), () {
       socket.emit(evTyping, {
-        'conversation_id': conversationId,
+        'conversation_id': conversation?.conversationId ?? '',
         'isTyping': false,
       });
       _typingSent = false;
@@ -270,17 +275,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   Future<void> _pickImage() async {
-    final img = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70, maxWidth: 1440);
+    final img = await ImagePicker().pickImage(
+        source: ImageSource.gallery, imageQuality: 70, maxWidth: 1440);
     if (img == null) return;
     await _sendAttachment(img.path, msgType: 'media');
   }
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     final file = result?.files.single;
     if (file == null || file.path == null) return;
     await _sendAttachment(file.path!, msgType: 'pdf');
   }
+
   Widget _reactionBar(types.Message m) {
     final reactions = (m.metadata?['reactions'] as List?) ?? [];
     if (reactions.isEmpty) return const SizedBox.shrink();
@@ -302,7 +310,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text('${e.key} ${e.value > 1 ? e.value : ''}',
+            child: Text(
+              '${e.key} ${e.value > 1 ? e.value : ''}',
               style: const TextStyle(fontSize: 12),
             ),
           );
@@ -379,11 +388,22 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("Building ConversationDetailScreen:${conversation?.ownerId} :: ${AppPref().userId}");
     return GestureDetector(
       onTap: hideKeyboard,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(conversationTitle.isEmpty ? 'Conversation' : conversationTitle),
+          title: Text("${conversation?.title}"),
+          actions: [
+            if (conversation?.ownerId == "${AppPref().userId}")
+              IconButton(
+                  onPressed: () {
+                    Get.toNamed(AppRouter.editGroupChatScreen,
+                        arguments: {"conversation": conversation});
+                  },
+                  icon: Icon(CupertinoIcons.settings,)),
+            Gap(12)
+          ],
         ),
         body: Stack(
           children: [

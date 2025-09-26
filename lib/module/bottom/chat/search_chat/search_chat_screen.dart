@@ -1,4 +1,5 @@
 import 'package:base_code/main.dart';
+import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -23,11 +24,11 @@ class SearchChatScreen extends StatelessWidget {
                       controller.selectedPlayersIDsForGroupChat.isNotEmpty,
                   child: CommonIconButton(
                     image: AppImage.plus,
-                    onTap: () async{
-                      Get.toNamed(AppRouter.createGroupChat,arguments: {
-                        'selectedPlayers': controller.selectedPlayersIDsForGroupChat
+                    onTap: () async {
+                      Get.toNamed(AppRouter.createGroupChat, arguments: {
+                        'selectedPlayers':
+                            controller.selectedPlayersIDsForGroupChat
                       });
-
                     },
                   ),
                 );
@@ -173,12 +174,12 @@ class SearchChatScreen extends StatelessWidget {
   }
 
   void _onTeamChatTap(String teamId, String? teamName, context) async {
-    String? conversationId = await controller.createTeamChat(teamId);
-    if (conversationId == null) return;
+    ConversationItem? conversation = await controller.createTeamChat(teamId);
+    if (conversation == null) return;
     Get.toNamed(
-      AppRouter.grpChat,
+      AppRouter.conversationDetailScreen,
       arguments: {
-        'chatData': ChatListData(teamName: teamName, teamId: teamId),
+        'conversation': conversation,
       },
     );
   }
@@ -263,12 +264,15 @@ class SearchChatScreen extends StatelessWidget {
 
   void _onPlayerChatTap(
       String userId, String firstName, String lastName) async {
-    String? conversationId = await controller.createPersonalChat(userId);
-    if (conversationId == null) return;
-    Get.toNamed(AppRouter.personalChat, arguments: {
-      'chatData': ChatListData(
-          firstName: firstName, lastName: lastName, otherId: userId),
-    });
+    ConversationItem? conversation =
+        await controller.createPersonalChat(userId);
+    if (conversation == null) return;
+    Get.toNamed(
+      AppRouter.conversationDetailScreen,
+      arguments: {
+        'conversation': conversation,
+      },
+    );
   }
 }
 

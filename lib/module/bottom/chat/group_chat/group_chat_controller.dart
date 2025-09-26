@@ -1,3 +1,4 @@
+import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:path/path.dart';
@@ -78,7 +79,7 @@ class GroupChatController extends GetxController {
     );
   }
 
-  Future<String?> createGroupChat(
+  Future<void> createGroupChat(
       List<String> selectedPlayers, String groupName) async {
     try {
       final Map<String, dynamic> payload = {
@@ -105,16 +106,28 @@ class GroupChatController extends GetxController {
       );
       debugPrint("createGroupChat response: $res");
       if (res?.statusCode == 200) {
-        //socket.emit('getGroupChatList', AppPref().userId);
         var jsonData = res?.data;
-        String conversationId = jsonData['data']['conversation_id'].toString();
-        return conversationId;
+        debugPrint("createGroupChat jsonData: $jsonData");
+        ConversationItem conv =
+            ConversationItem.fromJson(jsonData['conversation']);
+        AppToast.showAppToast(
+            jsonData['message'] ?? 'Chat Group created successfully');
+        Get.put(SearchChatController()).selectedPlayersIDsForGroupChat.clear();
+        Get.back();
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
+        debugPrint(
+            "createGroupChat conv: ${conv.conversationId}: ${conv.title}");
+        Get.toNamed(
+          AppRouter.conversationDetailScreen,
+          arguments: {
+            'conversation': conv,
+          },
+        );
       }
     } catch (e) {
       debugPrint(
           "Exception - group_chat_controller.dart - createGroupChat(): $e");
     }
-    return null;
   }
 
   Future<void> fetchConversationMembers(String conversationId) async {
@@ -186,14 +199,13 @@ class GroupChatController extends GetxController {
     }
   }
 
-  Future<void> removeGroupMember(String groupId, String memberId) async {
+  Future<void> removeGroupMember(String conversationId, String memberId) async {
     try {
       final Map<String, dynamic> payload = {
-        "group_id": groupId,
+        "conversation_id": conversationId,
         "member_id": memberId,
         "owner_id": AppPref().userId,
       };
-
       var res = await callApi(
         dio.post(
           ApiEndPoint.removeGroupMember,
@@ -203,11 +215,32 @@ class GroupChatController extends GetxController {
       );
       if (res?.statusCode == 200) {
         AppToast.showAppToast('Member removed successfully');
-        await fetchConversationMembers(groupId);
+        await fetchConversationMembers(conversationId);
       }
     } catch (e) {
       debugPrint(
           "Exception - group_chat_controller.dart - removeGroupMember(): $e");
+    }
+  }
+
+  Future<void> addGroupMembers(dynamic payload) async {
+    try {
+      var res = await callApi(
+        dio.post(
+          ApiEndPoint.addGroupMembers,
+          data: payload,
+        ),
+        true,
+      );
+      debugPrint("payload: $payload");
+      debugPrint("addGroupMembers response: $res");
+      if (res?.statusCode == 200) {
+        AppToast.showAppToast('Member added successfully');
+        await fetchConversationMembers(payload['conversation_id'].toString());
+      }
+    } catch (e) {
+      debugPrint(
+          "Exception - group_chat_controller.dart - addGroupMember(): $e");
     }
   }
 }

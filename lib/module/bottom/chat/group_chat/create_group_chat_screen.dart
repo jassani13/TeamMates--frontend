@@ -90,8 +90,7 @@ class _CreateGroupChatScreenState extends State<CreateGroupChatScreen> {
                     return;
                   }
 
-                  String? conversationId = await controller.createGroupChat(selectedPlayers, groupName);
-                  debugPrint("conversationId-94: $conversationId");
+                  await controller.createGroupChat(selectedPlayers, groupName);
 
                 },
                 child: const Text(

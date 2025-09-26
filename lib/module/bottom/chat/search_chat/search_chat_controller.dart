@@ -1,6 +1,7 @@
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:path/path.dart';
+import '../../../../model/conversation_item.dart';
 import '../chat_screen.dart';
 
 class SearchChatController extends GetxController {
@@ -89,11 +90,11 @@ class SearchChatController extends GetxController {
     super.onInit();
   }
 
-  Future<String?> createPersonalChat(String playerId) async {
+  Future<ConversationItem?> createPersonalChat(String playerId) async {
     try {
       final Map<String, dynamic> payload = {
-        "user_a": AppPref().userId,
-        "user_b": playerId,
+        "user_id": AppPref().userId,
+        "user_id_2": playerId,
       };
 
       var res = await callApi(
@@ -105,10 +106,10 @@ class SearchChatController extends GetxController {
       );
       debugPrint("createPersonalChat response: $res");
       if (res?.statusCode == 200) {
-        //socket.emit('getChatList', AppPref().userId);
         var jsonData = res?.data;
-        String conversationId = jsonData['data']['conversation_id'].toString();
-        return conversationId;
+        ConversationItem conv = ConversationItem.fromJson(jsonData['conversation']);
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
+        return conv;
       }
     } catch (e) {
       debugPrint("Exception - chat_controller.dart - createPersonalChat(): $e");
@@ -116,7 +117,7 @@ class SearchChatController extends GetxController {
     return null;
   }
 
-  Future<String?> createTeamChat(String teamId) async {
+  Future<ConversationItem?> createTeamChat(String teamId) async {
     try {
       final Map<String, dynamic> payload = {
         "owner_id": AppPref().userId,
@@ -134,8 +135,9 @@ class SearchChatController extends GetxController {
       if (res?.statusCode == 200) {
         //socket.emit('getChatList', AppPref().userId);
         var jsonData = res?.data;
-        String conversationId = jsonData['data']['conversation_id'].toString();
-        return conversationId;
+        ConversationItem conv = ConversationItem.fromJson(jsonData['conversation']);
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
+        return conv;
       }
     } catch (e) {
       debugPrint("Exception - chat_controller.dart - createTeamChat(): $e");

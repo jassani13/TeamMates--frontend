@@ -400,12 +400,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onTap: () {
               Get.toNamed(
                 AppRouter.conversationDetailScreen,
-                arguments: {
-                  'conversation_id': c.conversationId,
-                  'type': c.type,
-                  'title': c.title,
-                  'image': c.image,
-                },
+                arguments: {'conversation': c},
               );
             },
             child: Padding(

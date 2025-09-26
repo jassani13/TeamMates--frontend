@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -15,23 +16,19 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
   final TextEditingController groupNameController = TextEditingController();
   final controller = Get.put<GroupChatController>(GroupChatController());
 
-  String? conversationId;
-  String? existingImageUrl;
-  String? initialName;
+  ConversationItem? conversation;
 
   @override
   void initState() {
     super.initState();
     final args = Get.arguments;
     if (args != null) {
-      initialName = args['title'];
-      existingImageUrl = args['imageUrl'];
-      conversationId = args['conversationId'];
-      if (initialName != null) {
-        groupNameController.text = initialName ?? '';
+      conversation = args['conversation'] as ConversationItem;
+      if (conversation?.title != null) {
+        groupNameController.text = conversation?.title ?? '';
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.fetchConversationMembers(conversationId ?? '');
+        controller.fetchConversationMembers(conversation?.conversationId ?? '');
       });
     }
     // Clear any previous selection
@@ -52,12 +49,19 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
         actions: [
           CommonIconButton(
             image: AppImage.plus,
-            onTap: () {
-              // Get.toNamed(AppRouter.addGroupMembersScreen, arguments: {
-              //   "group_id": conversationId ?? "",
-              //   "players": Get.put<SearchChatController>(SearchChatController())
-              //       .allPlayerModelList
-              // });
+            onTap: () async {
+              dynamic payload = await Get.toNamed(
+                  AppRouter.addMembersToGroupChat,
+                  arguments: {
+                    "conversation_id": conversation?.conversationId ?? "",
+                    "players":
+                        Get.put<SearchChatController>(SearchChatController())
+                            .allPlayerModelList
+                  });
+              debugPrint("AddGroupMembersScreen payload: $payload");
+              if (payload != null) {
+                controller.addGroupMembers(payload);
+              }
             },
           ),
           Gap(16)
@@ -82,10 +86,10 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                     child: pickedPath.isNotEmpty
                         ? Image.file(File(pickedPath),
                             fit: BoxFit.cover, width: 120, height: 120)
-                        : (existingImageUrl != null &&
-                                existingImageUrl!.isNotEmpty)
+                        : (conversation?.image != null &&
+                                conversation!.image!.isNotEmpty)
                             ? getImageView(
-                                finalUrl: existingImageUrl!,
+                                finalUrl: conversation?.image ?? '',
                                 height: 120,
                                 width: 120,
                                 fit: BoxFit.cover,
@@ -122,7 +126,8 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                 }
                 return RefreshIndicator(
                   onRefresh: () async {
-                    await controller.fetchConversationMembers(conversationId ?? '');
+                    await controller
+                        .fetchConversationMembers(conversation?.conversationId ?? '');
                   },
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -211,7 +216,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                                         fontSize: 12)),
                                 onPressed: () async {
                                   controller.removeGroupMember(
-                                      conversationId ?? "", "${m.userId}");
+                                      conversation?.conversationId ?? "", "${m.userId}");
                                 },
                               ),
                           ],
@@ -230,7 +235,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                 valueListenable: groupNameController,
                 builder: (_, __, ___) {
                   final nameChanged = groupNameController.text.trim() !=
-                      (initialName ?? '').trim();
+                      (conversation?.title ?? '').trim();
                   final show = nameChanged || imageChanged;
                   if (!show) return const SizedBox.shrink();
 
@@ -245,7 +250,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                       ),
                       onPressed: () async {
                         final name = groupNameController.text.trim();
-                        if ((conversationId ?? '').isEmpty) {
+                        if ((conversation?.conversationId ?? '').isEmpty) {
                           Get.snackbar("Error", "Invalid group");
                           return;
                         }
@@ -253,7 +258,8 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                           Get.snackbar("Error", "Please enter a group name");
                           return;
                         }
-                        controller.editGroupConversation(conversationId ?? '',name);
+                        controller.editGroupConversation(
+                            conversation?.conversationId ?? '', name);
                       },
                       child: const Text(
                         "Save changes",

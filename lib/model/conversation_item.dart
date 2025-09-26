@@ -1,5 +1,6 @@
 class ConversationItem {
   final String? conversationId;
+  final String? ownerId;
   final String? type; // 'personal','team','group'
   final String? title;
   final String? image;
@@ -11,6 +12,7 @@ class ConversationItem {
 
   ConversationItem({
     required this.conversationId,
+    this.ownerId,
     required this.type,
     required this.title,
     required this.image,
@@ -24,6 +26,7 @@ class ConversationItem {
   factory ConversationItem.fromJson(dynamic j) {
     return ConversationItem(
       conversationId: (j['conversation_id'] ?? '').toString(),
+      ownerId: (j['owner_id'] ?? '').toString(),
       type: (j['type'] ?? '').toString(),
       title: (j['title'] ?? '').toString(),
       image: (j['image'] ?? '').toString(),
