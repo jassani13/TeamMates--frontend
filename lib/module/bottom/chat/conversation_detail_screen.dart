@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'chat_controller.dart';
 import 'chat_screen.dart';
 
 /// Factory to convert socket payloads into flutter_chat_ui messages.
@@ -29,15 +30,16 @@ class ConversationMessageFactory {
       'reactions': raw['reactions'] ?? [],
     };
 
-    if (msgType == 'media') {
+    if (msgType == 'image') {
       return types.ImageMessage(
         id: id,
         author: types.User(id: senderId),
         createdAt: createdAt,
         uri: raw['file_url'] ?? raw['msg'] ?? '',
-        name: 'media',
+        name: 'image',
         size: 0,
-        height: 200,
+        type: types.MessageType.image,
+        height: 150,
         width: 200,
         metadata: metadata,
       );
@@ -80,7 +82,8 @@ class ConversationDetailScreen extends StatefulWidget {
 }
 
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
-  // Route arguments
+
+  final chatController = Get.put<ChatScreenController>(ChatScreenController());
   ConversationItem? conversation;
   final user = types.User(id: AppPref().userId.toString());
   final List<types.Message> _messages = [];
@@ -137,6 +140,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onMessagesResult(dynamic payload) {
+    debugPrint("_onMessagesResult payload: $payload");
     if (payload == null) return;
     if (payload['conversation_id']?.toString() != conversation?.conversationId)
       return;
@@ -245,15 +249,106 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     });
   }
 
-  Future<void> _sendAttachment(String path, {required String msgType}) async {
-    // Hook up your upload & get file_url
-    final fileUrl = path; // placeholder
-    socket.emit(evSend, {
-      'conversation_id': conversation?.conversationId ?? '',
-      'msg': fileUrl.split('/').last,
-      'msg_type': msgType,
-      'file_url': fileUrl,
-    });
+  void _handleAttachmentPressed() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) => SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Gap(4),
+            TextButton(
+              onPressed: () {
+                Get.back();
+                _handleImageSelection();
+              },
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  'Photo',
+                  style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                ),
+              ),
+            ),
+            Gap(4),
+            TextButton(
+              onPressed: () {
+                Get.back();
+                _handleFileSelection();
+              },
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  'File',
+                  style: TextStyle().normal14w500.textColor(AppColor.black12Color),
+                ),
+              ),
+            ),
+            Gap(4),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleFileSelection() async {
+    try {
+      setState(() => _loading = true);
+
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowMultiple: false,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final url = await chatController.setMediaChatApiCall(result: result.files[0]);
+        if (url.isNotEmpty) {
+          socket.emit(evSend, {
+            'conversation_id': conversation?.conversationId ?? '',
+            'msg': url.split('/').last,
+            'msg_type': "file",
+            'file_url': url,
+          });
+        }
+      }
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() => _loading = false);
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  void _handleImageSelection() async {
+    try {
+      setState(() => _loading = true);
+
+      final result = await ImagePicker().pickImage(
+        imageQuality: 70,
+        maxWidth: 1440,
+        source: ImageSource.gallery,
+      );
+
+      if (result != null) {
+        final url = await chatController.setMediaChatApiCall(result: result);
+        if (url.isNotEmpty) {
+          socket.emit(evSend, {
+            'conversation_id': conversation?.conversationId ?? '',
+            'msg': url.split('/').last,
+            'msg_type': "image",
+            'file_url': url,
+          });
+
+        }
+      }
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() => _loading = false);
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   void _onUserTyping(String currentText) {
@@ -274,78 +369,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     });
   }
 
-  Future<void> _pickImage() async {
-    final img = await ImagePicker().pickImage(
-        source: ImageSource.gallery, imageQuality: 70, maxWidth: 1440);
-    if (img == null) return;
-    await _sendAttachment(img.path, msgType: 'media');
-  }
-
-  Future<void> _pickPdf() async {
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    final file = result?.files.single;
-    if (file == null || file.path == null) return;
-    await _sendAttachment(file.path!, msgType: 'pdf');
-  }
-
-  Widget _reactionBar(types.Message m) {
-    final reactions = (m.metadata?['reactions'] as List?) ?? [];
-    if (reactions.isEmpty) return const SizedBox.shrink();
-    // Group by reaction emoji
-    final grouped = <String, int>{};
-    for (final r in reactions) {
-      final emoji = r['reaction'] ?? '';
-      if (emoji.isEmpty) continue;
-      grouped[emoji] = (grouped[emoji] ?? 0) + 1;
-    }
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
-      child: Wrap(
-        spacing: 4,
-        children: grouped.entries.map((e) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '${e.key} ${e.value > 1 ? e.value : ''}',
-              style: const TextStyle(fontSize: 12),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  void _showAttachmentSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Image'),
-              onTap: () {
-                Get.back();
-                _pickImage();
-              },
-            ),
-            ListTile(
-              title: const Text('PDF'),
-              onTap: () {
-                Get.back();
-                _pickPdf();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _onMessageTap(BuildContext ctx, types.Message message) {
     final meta = message.metadata ?? {};
@@ -388,7 +411,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("Building ConversationDetailScreen:${conversation?.ownerId} :: ${AppPref().userId}");
+    debugPrint(
+        "Building ConversationDetailScreen:${conversation?.ownerId} :: ${AppPref().userId}");
     return GestureDetector(
       onTap: hideKeyboard,
       child: Scaffold(
@@ -401,7 +425,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                     Get.toNamed(AppRouter.editGroupChatScreen,
                         arguments: {"conversation": conversation});
                   },
-                  icon: Icon(CupertinoIcons.settings,)),
+                  icon: Icon(
+                    CupertinoIcons.settings,
+                  )),
             Gap(12)
           ],
         ),
@@ -411,7 +437,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               user: user,
               messages: _messages,
               onSendPressed: _sendText,
-              onAttachmentPressed: _showAttachmentSheet,
+              onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
               onMessageLongPress: _onMessageLongPress,
               showUserAvatars: true,
@@ -423,6 +449,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             ),
             if (_loading && !_initialLoaded)
               const Center(child: CircularProgressIndicator()),
+
           ],
         ),
       ),

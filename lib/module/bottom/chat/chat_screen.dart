@@ -396,7 +396,6 @@ class _ChatScreenState extends State<ChatScreen> {
           final timeAgo = c.createdAt == null
               ? ''
               : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
-          debugPrint("image_399:=>${c.image}");
           return GestureDetector(
             onTap: () {
               Get.toNamed(

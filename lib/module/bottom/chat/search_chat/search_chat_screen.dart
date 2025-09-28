@@ -231,7 +231,7 @@ class SearchChatScreen extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: getImageView(
-                finalUrl: '${roster.profile ?? ''}',
+                finalUrl: roster.profile ?? '',
                 fit: BoxFit.cover,
                 height: 48,
                 width: 48,
