@@ -476,7 +476,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                   ),
                 );
               },
-              showUserAvatars: true,
+              //showUserAvatars: true,
               showUserNames: true,
               inputOptions: InputOptions(
                 onTextChanged: _onUserTyping,
@@ -549,6 +549,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 if (!isSentByMe)
                   Padding(
@@ -748,7 +749,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     required String messageId,
     required String oppositeUserName,
   }) {
-    debugPrint("_oppositeUserName: $oppositeUserName");
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(16),

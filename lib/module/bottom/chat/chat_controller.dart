@@ -71,6 +71,7 @@ class ChatScreenController extends GetxController {
     required String msgType,
     required String fileUrl,
     String? createdAt,
+    int? unreadCount,
   }) {
     final idx = conversations.indexWhere((c) => c.conversationId == convId);
     if (idx == -1) return;
@@ -87,7 +88,7 @@ class ChatScreenController extends GetxController {
       createdAt: createdAt != null && createdAt.isNotEmpty
           ? DateTime.tryParse(createdAt)
           : old.createdAt,
-      unreadCount: old.unreadCount, // let unread logic adjust elsewhere
+      unreadCount:unreadCount?? old.unreadCount, // let unread logic adjust elsewhere
     );
     conversations[idx] = updated;
     // Move to top
