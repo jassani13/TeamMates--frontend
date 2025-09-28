@@ -25,6 +25,7 @@ class ConversationMessageFactory {
         ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
         : DateTime.now().toUtc().millisecondsSinceEpoch;
 
+
     final metadata = <String, dynamic>{
       'msg_type': msgType,
       'raw_msg': raw['msg'],
@@ -207,9 +208,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     List reactions;
     if (data['reactions'] is List) {
       reactions = List.from(data['reactions'].map((r) => {
-            'user_id': r['user_id'].toString(),
-            'reaction': r['reaction'],
-          }));
+        'user_id': r['user_id'].toString(),
+        'reaction': r['reaction'],
+      }));
     } else {
       // Legacy fallback: append single reaction
       final existing = _messages[idx].metadata?['reactions'] as List? ?? [];
@@ -441,7 +442,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                         messageWidget: const SizedBox.shrink(),
                         onReactionTap: (reaction) {
                           _emitMessageReaction(message.id.toString(), reaction);
-                          },
+                        },
                         onContextMenuTap: (menuItem) {},
                       );
                     },
