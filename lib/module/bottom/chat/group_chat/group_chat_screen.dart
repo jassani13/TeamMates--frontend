@@ -384,7 +384,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               },
               bubbleBuilder: (Widget child, {required types.Message message, required bool nextMessageInGroup}) {
                 bool isSentByMe = message.author.id == user.id;
-
                 return _buildMessage(message, isSentByMe);
               },
             ),
