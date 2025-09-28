@@ -3,6 +3,8 @@ import 'package:base_code/main.dart'; // for socket/AppPref if you centralize th
 import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
+import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:intl/intl.dart';
@@ -231,6 +233,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     _messages[idx] =
         ConversationMessageFactory.applyReactions(_messages[idx], normalized);
     setState(() {});
+
+    debugPrint("_onReaction:$reactions");
   }
 
   void _markRead() {
@@ -247,6 +251,14 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       'msg': partial.text,
       'msg_type': 'text',
     });
+  }
+
+  void _emitMessageReaction(String messageId, String reaction) {
+    socket.emit(evReaction, {
+      'message_id': messageId,
+      'reaction_type': reaction,
+    });
+
   }
 
   void _handleAttachmentPressed() {
@@ -381,27 +393,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     }
   }
 
-  void _onMessageLongPress(BuildContext ctx, types.Message message) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => Wrap(
-        children: ['👍', '❤️', '😂', '😮', '😢', '👏'].map((e) {
-          return ListTile(
-            title: Text(e, style: const TextStyle(fontSize: 22)),
-            onTap: () {
-              debugPrint("Reacting with $e to message ${message.id}");
-              socket.emit('message_reaction', {
-                'message_id': message.id,
-                'reaction_type': e,
-              });
-              Get.back();
-            },
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _removeSocketListeners();
@@ -439,7 +430,24 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               onSendPressed: _sendText,
               onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
-              onMessageLongPress: _onMessageLongPress,
+              onMessageLongPress: (v, message) {
+                Navigator.of(context).push(
+                  HeroDialogRoute(
+                    builder: (context) {
+                      return ReactionsDialogWidget(
+                        reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                        menuItems: [],
+                        id: message.id,
+                        messageWidget: const SizedBox.shrink(),
+                        onReactionTap: (reaction) {
+                          _emitMessageReaction(message.id.toString(), reaction);
+                          },
+                        onContextMenuTap: (menuItem) {},
+                      );
+                    },
+                  ),
+                );
+              },
               showUserAvatars: true,
               showUserNames: true,
               inputOptions: InputOptions(
