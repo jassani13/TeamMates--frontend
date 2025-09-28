@@ -50,7 +50,7 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
           CommonIconButton(
             image: AppImage.plus,
             onTap: () async {
-              dynamic payload = await Get.toNamed(
+              List<String> playerIDs = await Get.toNamed(
                   AppRouter.addMembersToGroupChat,
                   arguments: {
                     "conversation_id": conversation?.conversationId ?? "",
@@ -58,9 +58,10 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                         Get.put<SearchChatController>(SearchChatController())
                             .allPlayerModelList
                   });
-              debugPrint("AddGroupMembersScreen payload: $payload");
-              if (payload != null) {
-                controller.addGroupMembers(payload);
+
+              if (playerIDs.isNotEmpty) {
+                controller.addGroupMembers(
+                    playerIDs, conversation?.conversationId ?? "");
               }
             },
           ),
@@ -126,8 +127,8 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                 }
                 return RefreshIndicator(
                   onRefresh: () async {
-                    await controller
-                        .fetchConversationMembers(conversation?.conversationId ?? '');
+                    await controller.fetchConversationMembers(
+                        conversation?.conversationId ?? '');
                   },
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -216,7 +217,8 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
                                         fontSize: 12)),
                                 onPressed: () async {
                                   controller.removeGroupMember(
-                                      conversation?.conversationId ?? "", "${m.userId}");
+                                      conversation?.conversationId ?? "",
+                                      "${m.userId}");
                                 },
                               ),
                           ],

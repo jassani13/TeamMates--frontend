@@ -223,16 +223,28 @@ class GroupChatController extends GetxController {
     }
   }
 
-  Future<void> addGroupMembers(dynamic payload) async {
+  Future<void> addGroupMembers(
+      List<String> playerIDs, String conversationID) async {
     try {
+      final Map<String, dynamic> payload = {
+        "conversation_id": conversationID,
+        "owner_id": AppPref().userId,
+      };
+      for (int i = 0; i < playerIDs.length; i++) {
+        payload["member_ids[$i]"] = playerIDs[i];
+      }
+      final data = FormData.fromMap({
+        ...payload,
+      });
+
       var res = await callApi(
         dio.post(
           ApiEndPoint.addGroupMembers,
-          data: payload,
+          data: data,
         ),
         true,
       );
-      debugPrint("payload: $payload");
+
       debugPrint("addGroupMembers response: $res");
       if (res?.statusCode == 200) {
         AppToast.showAppToast('Member added successfully');

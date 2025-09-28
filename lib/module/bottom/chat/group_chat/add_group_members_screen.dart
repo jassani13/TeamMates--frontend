@@ -14,8 +14,8 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
   final groupCtrl = Get.put<GroupChatController>(GroupChatController());
 
   String? conversationId;
-  List<dynamic> rawPlayers = [];
-  late final List<String> initialSelected;
+  RxList<dynamic> rawPlayers = [].obs;
+  RxList<String> initialSelected = <String>[].obs;
 
   // State
   final TextEditingController searchCtrl = TextEditingController();
@@ -27,8 +27,8 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
     super.initState();
     final args = Get.arguments ?? {};
     conversationId = args['conversation_id']?.toString();
-    rawPlayers = (args['players'] as List?) ?? [];
-    initialSelected = ((args['initialSelected'] as List?) ?? [])
+    rawPlayers.value = (args['players'] as List?) ?? [];
+    initialSelected.value = ((args['initialSelected'] as List?) ?? [])
         .map((e) => e.toString())
         .toList();
     selected.addAll(initialSelected);
@@ -109,12 +109,15 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
         final name = '${m['firstName'] ?? ''} ${m['lastName'] ?? ''}'.trim();
 
         return GestureDetector(
+          key: ValueKey<String>("$id-$i-$isSelected"),
           onTap: () {
-            if (isSelected) {
-              selected.remove(id);
-            } else {
-              selected.add(id);
-            }
+            setState(() {
+              if (isSelected) {
+                selected.remove(id);
+              } else {
+                selected.add(id);
+              }
+            });
           },
           child: Container(
             decoration: BoxDecoration(
@@ -200,16 +203,8 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                 ),
                 onPressed: disabled
                     ? null
-                    : () async {
-                        //selected.toList()
-                        dynamic payload = {
-                          "conversation_id": conversationId,
-                          "owner_id": AppPref().userId
-                        };
-                        for (int i = 0; i < selected.length; i++) {
-                          payload["member_ids[$i]"] = selected.elementAt(i);
-                        }
-                        Get.back(result: payload);
+                    : () {
+                        Get.back(result: selected.toList());
                       },
                 child: Text(
                   "Continue",
