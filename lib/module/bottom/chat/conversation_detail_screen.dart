@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../model/media_draft.dart';
 import 'chat_controller.dart';
 import 'chat_screen.dart';
 
@@ -305,7 +306,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void _onSendPressed(types.PartialText partial) {
     _typingDebounce?.cancel();
     if (_isTyping) {
-      socket.emit(evTyping, {'conversation_id': conversation?.conversationId ?? '', 'isTyping': false});
+      socket.emit(evTyping, {
+        'conversation_id': conversation?.conversationId ?? '',
+        'isTyping': false
+      });
       _isTyping = false;
     }
     socket.emit(evSend, {
@@ -371,23 +375,30 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     try {
       setState(() => _loading = true);
 
-      final result = await FilePicker.platform.pickFiles(
+      final res = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowMultiple: false,
         allowedExtensions: ['pdf'],
       );
+      setState(() => _loading = false);
+      if (res == null || res.files.isEmpty || res.files.single.path == null)
+        return;
+      final file = res.files.single;
+      final draft = MediaDraft.file(file);
+      final result =
+          await showMediaPreviewSheet(context: context, draft: draft);
+      if (result == null || !result.confirmed) return;
 
-      if (result != null && result.files.single.path != null) {
-        final url =
-            await chatController.setMediaChatApiCall(result: result.files[0]);
-        if (url.isNotEmpty) {
-          socket.emit(evSend, {
-            'conversation_id': conversation?.conversationId ?? '',
-            'msg': url.split('/').last,
-            'msg_type': "file",
-            'file_url': url,
-          });
-        }
+      setState(() => _loading = true);
+      final url = await chatController.setMediaChatApiCall(result: file);
+
+      if (url.isNotEmpty) {
+        socket.emit(evSend, {
+          'conversation_id': conversation?.conversationId ?? '',
+          'msg': result.caption ?? url.split('/').last,
+          'msg_type': "file",
+          'file_url': url,
+        });
       }
       setState(() => _loading = false);
     } catch (e) {
@@ -401,22 +412,28 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     try {
       setState(() => _loading = true);
 
-      final result = await ImagePicker().pickImage(
+      final picked = await ImagePicker().pickImage(
         imageQuality: 70,
         maxWidth: 1440,
         source: ImageSource.gallery,
       );
+      setState(() => _loading = false);
+      final draft = MediaDraft.image(picked);
+      final result =
+          await showMediaPreviewSheet(context: context, draft: draft);
+      if (result == null || !result.confirmed) return;
 
-      if (result != null) {
-        final url = await chatController.setMediaChatApiCall(result: result);
-        if (url.isNotEmpty) {
-          socket.emit(evSend, {
-            'conversation_id': conversation?.conversationId ?? '',
-            'msg': url.split('/').last,
-            'msg_type': "image",
-            'file_url': url,
-          });
-        }
+      setState(() => _loading = true);
+      final url = await chatController.setMediaChatApiCall(result: picked);
+      debugPrint("imageurl=>$url");
+      setState(() => _loading = false);
+      if (url.isNotEmpty) {
+        socket.emit("send_message", {
+          'conversation_id': conversation?.conversationId ?? '',
+          'msg': result.caption ?? url.split('/').last,
+          'msg_type': "image",
+          'file_url': url,
+        });
       }
       setState(() => _loading = false);
     } catch (e) {
@@ -424,6 +441,120 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     } finally {
       setState(() => _loading = false);
     }
+  }
+
+  Future<MediaPreviewResult?> showMediaPreviewSheet({
+    required BuildContext context,
+    required MediaDraft draft,
+  }) {
+    final captionController = TextEditingController();
+    return Get.bottomSheet<MediaPreviewResult>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text('Preview',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600,color: AppColor.appBarBlackColor)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () =>
+                        Get.back(result: MediaPreviewResult(confirmed: false)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Content preview
+              if (draft.kind == 'image' && draft.image != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(draft.image!.path),
+                    height: 220,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else if (draft.kind == 'file' && draft.file != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F6F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.picture_as_pdf, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          draft.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              // Optional caption
+              CommonTextField(
+                controller: captionController,
+                hintText: "Add a caption (optional)",
+                textInputAction: TextInputAction.done,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(
+                          result: MediaPreviewResult(confirmed: false)),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back(
+                          result: MediaPreviewResult(
+                            confirmed: true,
+                            caption: captionController.text.trim(),
+                          ),
+                        );
+                      },
+                      child: const Text('Send'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
   }
 
   void _onUserTyping(String currentText) {
@@ -568,7 +699,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 return _buildMessage(message, isSentByMe);
               },
             ),
-            if (_loading && !_initialLoaded)
+            if (_loading || !_initialLoaded)
               Container(
                 color: Colors.white10,
                 child: Center(
@@ -645,7 +776,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (message.metadata?['msg_type'] == 'pdf') ...[
+                    if (message.metadata?['msg_type'] == 'file') ...[
                       GestureDetector(
                         onTap: () => openPdf(
                           message.metadata?['file_url'],
@@ -661,23 +792,38 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                 color: AppColor.greyF6Color,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Row(
+                              child: Column(
                                 children: [
-                                  Icon(
-                                    Icons.picture_as_pdf,
-                                    color: Colors.red,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      "Document",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.bold,
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Colors.red,
+                                        size: 20,
                                       ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          "Document",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: AppColor.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  DefaultTextStyle(
+                                    style: TextStyle().normal16w400.textColor(
+                                      AppColor.black12Color,
+                                    ),
+                                    child: Text(
+                                      message.metadata?['raw_msg'] ?? "",
+                                      textAlign: TextAlign.start,
+                                      softWrap: true,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ),
                                 ],
