@@ -110,6 +110,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   Timer? _typingDebounce;
   bool _typingSent = false;
 
+  // Typing State fields
+  final Map<String, types.User> _knownUsers =
+      {}; // cache participants for names/avatars
+  final Map<String, types.User> _typingUsers =
+      {}; // currently typing users (except me)
+  final Map<String, Timer> _typingTimers = {}; // per-user expiry timers
+  static const _typingTTL = Duration(
+      seconds: 4); // how long one 'isTyping: true' lasts without refresh
+
+  // How often we re-send `isTyping:true` while typing
+  static const Duration _typingHeartbeat = Duration(seconds: 3);
+  DateTime? _lastTypingTrue;
+  bool _isTyping = false;
+
   // Event constants - adjust if server names change
   static const evGetMessages = 'get_messages';
   static const evMessagesResult = 'conversation_messages';
@@ -129,6 +143,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         "_ConversationDetailScreenState conv: ${conversation?.conversationId}: ${conversation?.title}");
     _registerSocketListeners();
     _loadInitial();
+    socket.on(evTyping, _onTyping);
   }
 
   void _registerSocketListeners() {
@@ -171,6 +186,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     _loading = false;
     setState(() {});
     _markRead();
+    for (final m in _messages) {
+      _knownUsers[m.author.id] = m.author;
+    }
   }
 
   void _onNewMessage(dynamic data) {
@@ -191,10 +209,35 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onTyping(dynamic data) {
-    if (data['conversation_id']?.toString() != conversation?.conversationId)
-      return;
-    // data: {conversation_id, user_id, isTyping}
-    // Implement optional UI indicator here.
+    if (data == null) return;
+
+    final cid = data['conversation_id']?.toString();
+    if (cid != conversation?.conversationId) return;
+
+    final uid = data['user_id']?.toString();
+    if (uid == null || uid == user.id) return; // ignore myself
+
+    final isTyping = data['isTyping'] == true;
+
+    if (isTyping) {
+      // Prefer a known user (with name/avatar) if we have one
+      final known = _knownUsers[uid] ?? types.User(id: uid);
+
+      _typingUsers[uid] = known;
+
+      // Refresh expiry timer
+      _typingTimers[uid]?.cancel();
+      _typingTimers[uid] = Timer(_typingTTL, () {
+        _typingUsers.remove(uid);
+        _typingTimers.remove(uid);
+        if (mounted) setState(() {});
+      });
+    } else {
+      _typingUsers.remove(uid);
+      _typingTimers.remove(uid)?.cancel();
+    }
+
+    if (mounted) setState(() {});
   }
 
   void _onMessagesRead(dynamic data) {
@@ -259,7 +302,12 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     });
   }
 
-  void _sendText(types.PartialText partial) {
+  void _onSendPressed(types.PartialText partial) {
+    _typingDebounce?.cancel();
+    if (_isTyping) {
+      socket.emit(evTyping, {'conversation_id': conversation?.conversationId ?? '', 'isTyping': false});
+      _isTyping = false;
+    }
     socket.emit(evSend, {
       'conversation_id': conversation?.conversationId ?? '',
       'msg': partial.text,
@@ -379,20 +427,33 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onUserTyping(String currentText) {
-    if (_typingDebounce?.isActive ?? false) _typingDebounce!.cancel();
-    if (!_typingSent) {
-      socket.emit(evTyping, {
-        'conversation_id': conversation?.conversationId ?? '',
-        'isTyping': true,
-      });
-      _typingSent = true;
+    final convId = conversation?.conversationId ?? '';
+    final now = DateTime.now();
+
+    // If input cleared, immediately stop typing
+    if (currentText.isEmpty) {
+      _typingDebounce?.cancel();
+      if (_isTyping) {
+        socket.emit(evTyping, {'conversation_id': convId, 'isTyping': false});
+        _isTyping = false;
+      }
+      return;
     }
+
+    // Start or refresh a “true” heartbeat every _typingHeartbeat
+    if (!_isTyping ||
+        _lastTypingTrue == null ||
+        now.difference(_lastTypingTrue!) >= _typingHeartbeat) {
+      socket.emit(evTyping, {'conversation_id': convId, 'isTyping': true});
+      _isTyping = true;
+      _lastTypingTrue = now;
+    }
+
+    // Debounce sending “false” after user stops typing for 2s
+    _typingDebounce?.cancel();
     _typingDebounce = Timer(const Duration(seconds: 2), () {
-      socket.emit(evTyping, {
-        'conversation_id': conversation?.conversationId ?? '',
-        'isTyping': false,
-      });
-      _typingSent = false;
+      socket.emit(evTyping, {'conversation_id': convId, 'isTyping': false});
+      _isTyping = false;
     });
   }
 
@@ -427,6 +488,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   void dispose() {
     _removeSocketListeners();
     _typingDebounce?.cancel();
+    // Stop all receiver-side timers
+    for (final t in _typingTimers.values) {
+      t.cancel();
+    }
+    _typingTimers.clear();
+    if (_isTyping) {
+      socket.emit(evTyping, {
+        'conversation_id': conversation?.conversationId ?? '',
+        'isTyping': false,
+      });
+      _isTyping = false;
+    }
+
+    socket.off(evTyping, _onTyping);
     super.dispose();
   }
 
@@ -455,7 +530,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             Chat(
               user: user,
               messages: _messages,
-              onSendPressed: _sendText,
+              onSendPressed: _onSendPressed,
               onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
               onMessageLongPress: (v, message) {
@@ -478,6 +553,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               },
               //showUserAvatars: true,
               showUserNames: true,
+              typingIndicatorOptions: TypingIndicatorOptions(
+                typingMode: TypingIndicatorMode.name,
+                typingUsers: _typingUsers.values.toList(),
+              ),
               inputOptions: InputOptions(
                 onTextChanged: _onUserTyping,
               ),

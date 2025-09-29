@@ -23,7 +23,7 @@ class _ChatScreenState extends State<ChatScreen> {
     //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
     //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
     socket = IO.io(
-      'http://10.0.2.2:3000',
+      'http://127.0.0.1:3000',
       {
         'transports': ['websocket'],
         'autoConnect': false,

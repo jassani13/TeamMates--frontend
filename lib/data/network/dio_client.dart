@@ -11,8 +11,8 @@ BaseOptions baseOptions = BaseOptions(
 const bool useLocalServer = true;
 
 const String productionBaseUrl = /*'http://13.220.132.157'*/ 'http://api.teammatesapp.org';
-//const String localBaseUrl = 'http://127.0.0.1:8000';
-const String localBaseUrl = 'http://10.0.2.2:8000';
+const String localBaseUrl = 'http://127.0.0.1:8000';
+//const String localBaseUrl = 'http://10.0.2.2:8000';
 
 const String baseUrl = useLocalServer ? localBaseUrl : productionBaseUrl;
 
