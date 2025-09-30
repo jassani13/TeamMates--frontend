@@ -15,7 +15,6 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
 
   String? conversationId;
   RxList<dynamic> rawPlayers = [].obs;
-  RxList<String> initialSelected = <String>[].obs;
 
   // State
   final TextEditingController searchCtrl = TextEditingController();
@@ -28,10 +27,6 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
     final args = Get.arguments ?? {};
     conversationId = args['conversation_id']?.toString();
     rawPlayers.value = (args['players'] as List?) ?? [];
-    initialSelected.value = ((args['initialSelected'] as List?) ?? [])
-        .map((e) => e.toString())
-        .toList();
-    selected.addAll(initialSelected);
   }
 
   @override

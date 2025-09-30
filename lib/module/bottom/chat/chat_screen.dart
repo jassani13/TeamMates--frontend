@@ -64,6 +64,10 @@ class _ChatScreenState extends State<ChatScreen> {
         if (convId == null) return;
         chatController.patchConversation(
           convId: convId,
+          type: data['type']?.toString(),
+          ownerId: data['owner_id']?.toString(),
+          title: data['title']?.toString(),
+          image: data['image']?.toString(),
           lastMessage: data['last_message']?.toString() ?? '',
           msgType: data['msg_type']?.toString() ?? 'text',
           fileUrl: data['last_message_file_url']?.toString() ?? '',
@@ -73,6 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
               : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
         );
       }
+
     });
     // New incoming message (server should emit new_message; if not adjust to your emitted event)
     socket.on('new_message', (msg) async {

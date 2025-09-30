@@ -140,8 +140,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     super.initState();
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem;
-    debugPrint(
-        "_ConversationDetailScreenState conv: ${conversation?.conversationId}: ${conversation?.title}");
     _registerSocketListeners();
     _loadInitial();
     socket.on(evTyping, _onTyping);
@@ -193,6 +191,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onNewMessage(dynamic data) {
+    debugPrint("_onNewMessage:$data");
     final raw = data['resData'] ?? data;
     if (raw == null) return;
     if (raw['conversation_id']?.toString() != conversation?.conversationId)
@@ -465,7 +464,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                   const Expanded(
                     child: Text('Preview',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600,color: AppColor.appBarBlackColor)),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.appBarBlackColor)),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -638,21 +639,24 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(
+        "conversation?.type=>${conversation?.type} :: ${conversation?.ownerId}");
     return GestureDetector(
       onTap: hideKeyboard,
       child: Scaffold(
         appBar: AppBar(
           title: Text("${conversation?.title}"),
           actions: [
-            if (conversation?.ownerId == "${AppPref().userId}")
-              IconButton(
-                  onPressed: () {
-                    Get.toNamed(AppRouter.editGroupChatScreen,
-                        arguments: {"conversation": conversation});
-                  },
-                  icon: Icon(
-                    CupertinoIcons.settings,
-                  )),
+            // if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
+            //     conversation?.type == "group")
+            IconButton(
+                onPressed: () {
+                  Get.toNamed(AppRouter.editGroupChatScreen,
+                      arguments: {"conversation": conversation});
+                },
+                icon: Icon(
+                  CupertinoIcons.settings,
+                )),
             Gap(12)
           ],
         ),
@@ -727,11 +731,11 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   Hero _buildMessage(types.Message message, bool isSentByMe) {
     return Hero(
       tag: message.id,
-      child: _buildReaction(isSentByMe, message),
+      child: _buildMessageList(isSentByMe, message),
     );
   }
 
-  Align _buildReaction(
+  Align _buildMessageList(
     bool isSentByMe,
     types.Message message,
   ) {
@@ -815,16 +819,13 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                       ),
                                     ],
                                   ),
-                                  DefaultTextStyle(
-                                    style: TextStyle().normal16w400.textColor(
-                                      AppColor.black12Color,
-                                    ),
-                                    child: Text(
-                                      message.metadata?['raw_msg'] ?? "",
-                                      textAlign: TextAlign.start,
-                                      softWrap: true,
-                                      overflow: TextOverflow.visible,
-                                    ),
+                                  Text(
+                                    message.metadata?['raw_msg'] ?? "",
+                                    textAlign: TextAlign.start,
+                                    softWrap: true,
+                                    overflow: TextOverflow.visible,
+                                    style:
+                                        TextStyle(color: AppColor.black12Color),
                                   ),
                                 ],
                               ),
@@ -837,18 +838,60 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       Stack(
                         alignment: Alignment.bottomRight,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: getImageView(
-                                finalUrl: message.metadata?['file_url'],
-                                height: 200,
-                                width: 200,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
+                          message.metadata?['raw_msg'] == ""
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: getImageView(
+                                      finalUrl: message.metadata?['file_url'],
+                                      height: 200,
+                                      width: 200,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 200,
+                                  padding: EdgeInsets.fromLTRB(0, 0, 0, 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColor.greyF6Color,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0),
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: getImageView(
+                                            finalUrl:
+                                                message.metadata?['file_url'],
+                                            height: 200,
+                                            width: 200,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8),
+                                        child: Text(
+                                          message.metadata?['raw_msg'] ?? "",
+                                          textAlign: TextAlign.start,
+                                          softWrap: true,
+                                          overflow: TextOverflow.visible,
+                                          style: TextStyle(
+                                              color: AppColor.black12Color),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                           _buildChatReaction(reactions, message)
                         ],
                       )

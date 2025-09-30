@@ -50,16 +50,28 @@ class _EditGroupChatScreenState extends State<EditGroupChatScreen> {
           CommonIconButton(
             image: AppImage.plus,
             onTap: () async {
-              List<String> playerIDs = await Get.toNamed(
+              final searchCtrl = Get.put<SearchChatController>(SearchChatController());
+
+              final excludeIds = <String>{
+                ...controller.members
+                    .map((m) => m.userId?.toString())
+                    .whereType<String>(),
+                AppPref().userId.toString(),
+              };
+
+              final filteredPlayers = searchCtrl.allPlayerModelList.where((p) {
+                final pid = (p.userId)?.toString() ?? '';
+                return pid.isNotEmpty && !excludeIds.contains(pid);
+              }).toList();
+
+              dynamic playerIDs = await Get.toNamed(
                   AppRouter.addMembersToGroupChat,
                   arguments: {
                     "conversation_id": conversation?.conversationId ?? "",
-                    "players":
-                        Get.put<SearchChatController>(SearchChatController())
-                            .allPlayerModelList
+                    "players":filteredPlayers,
                   });
 
-              if (playerIDs.isNotEmpty) {
+              if (playerIDs != null && playerIDs.isNotEmpty) {
                 controller.addGroupMembers(
                     playerIDs, conversation?.conversationId ?? "");
               }

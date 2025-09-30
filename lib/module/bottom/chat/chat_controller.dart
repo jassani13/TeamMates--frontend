@@ -70,27 +70,54 @@ class ChatScreenController extends GetxController {
     required String lastMessage,
     required String msgType,
     required String fileUrl,
+    String? type,
+    String? ownerId,
+    String? title,
+    String? image,
     String? createdAt,
     int? unreadCount,
   }) {
     final idx = conversations.indexWhere((c) => c.conversationId == convId);
-    if (idx == -1) return;
-    final old = conversations[idx];
-    final updated = ConversationItem(
-      conversationId: old.conversationId,
-      type: old.type,
-      title: old.title,
-      image: old.image,
-      lastMessage: msgType == 'text' ? lastMessage : msgType,
-      lastMessageFileUrl:
-          msgType == 'text' ? '' : (fileUrl.isNotEmpty ? fileUrl : ''),
-      msgType: msgType,
-      createdAt: createdAt != null && createdAt.isNotEmpty
-          ? DateTime.tryParse(createdAt)
-          : old.createdAt,
-      unreadCount:unreadCount?? old.unreadCount, // let unread logic adjust elsewhere
-    );
-    conversations[idx] = updated;
+    DateTime? parsedCreatedAt;
+    if (createdAt != null && createdAt.isNotEmpty) {
+      parsedCreatedAt = DateTime.tryParse(createdAt) ?? parsedCreatedAt;
+    }
+    final bool isText = (msgType == 'text');
+    final String normalizedLastMessage = isText ? (lastMessage) : msgType;
+    final String normalizedFileUrl = isText ? '' : (fileUrl.isNotEmpty ? fileUrl : '');
+
+    if (idx == -1){
+      final item = ConversationItem(
+        conversationId: convId,
+        type: type ?? 'personal',
+        title: title ?? '',
+        image: image ?? '',
+        lastMessage: normalizedLastMessage,
+        lastMessageFileUrl: normalizedFileUrl,
+        msgType: msgType,
+        createdAt: parsedCreatedAt ?? DateTime.now(),
+        unreadCount: unreadCount ?? 0,
+        ownerId: ownerId,
+      );
+      conversations.add(item);
+    }else{
+      final old = conversations[idx];
+      final updated = ConversationItem(
+        conversationId: old.conversationId,
+        type: old.type,
+        title:title?? old.title,
+        image:image?? old.image,
+        lastMessage: normalizedLastMessage,
+        lastMessageFileUrl: normalizedFileUrl,
+        msgType: msgType,
+        createdAt: parsedCreatedAt
+            ?? old.createdAt,
+        unreadCount:
+        unreadCount ?? old.unreadCount,
+      );
+      conversations[idx] = updated;
+    }
+
     // Move to top
     conversations.sort((a, b) {
       final at = a.createdAt?.millisecondsSinceEpoch ?? 0;
