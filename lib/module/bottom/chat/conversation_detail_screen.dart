@@ -4,6 +4,7 @@ import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
+import 'package:flutter_chat_reactions/model/menu_item.dart';
 import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -35,6 +36,11 @@ class ConversationMessageFactory {
       'raw_msg': raw['msg'],
       'file_url': raw['file_url'],
       'reactions': raw['reactions'] ?? [],
+      'edited': raw['edited'] == true ||
+          ((raw['updated_at']?.toString().isNotEmpty ?? false) &&
+              (raw['updated_at']?.toString() != raw['created_at']?.toString())),
+      'created_at': raw['created_at'],
+      'updated_at': raw['updated_at'],
     };
 
     if (msgType == 'image') {
@@ -126,6 +132,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   DateTime? _lastTypingTrue;
   bool _isTyping = false;
 
+  // Keep this in sync with backend EDIT_WINDOW_SECONDS (default 15 mins)
+  static const int _editWindowSeconds = 15 * 60;
+
   // Event constants - adjust if server names change
   static const evGetMessages = 'get_messages';
   static const evMessagesResult = 'conversation_messages';
@@ -135,6 +144,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   static const evMessageRead = 'message_read';
   static const evMessagesReadBroadcast = 'messages_read';
   static const evReaction = 'message_reaction';
+  static const evMessageEdited = 'message_edited';
 
   @override
   void initState() {
@@ -152,6 +162,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     socket.on(evTyping, _onTyping);
     socket.on(evMessagesReadBroadcast, _onMessagesRead);
     socket.on(evReaction, _onReaction);
+    socket.on(evMessageEdited, _onMessageEdited);
   }
 
   void _removeSocketListeners() {
@@ -160,6 +171,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     socket.off(evTyping, _onTyping);
     socket.off(evMessagesReadBroadcast, _onMessagesRead);
     socket.off(evReaction, _onReaction);
+    socket.off(evMessageEdited, _onMessageEdited);
   }
 
   void _loadInitial() {
@@ -324,6 +336,40 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       'message_id': messageId,
       'reaction_type': reaction,
     });
+  }
+
+  void _onMessageEdited(dynamic data) {
+    debugPrint("_onMessageEdited data: $data");
+    final raw = data['resData'] ?? data;
+    if (raw == null) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
+
+    final id = raw['message_id']?.toString();
+    if (id == null) return;
+
+    final idx = _messages.indexWhere((m) => m.id == id);
+    if (idx == -1) return;
+
+    final old = _messages[idx];
+    final newText = (raw['msg'] ?? '').toString();
+
+    final newMeta = {
+      ...?old.metadata,
+      'raw_msg': newText,
+      'edited': true,
+      'updated_at': raw['updated_at'],
+    };
+
+    if (old is types.TextMessage) {
+      _messages[idx] = old.copyWith(text: newText, metadata: newMeta);
+    } else if (old is types.ImageMessage) {
+      _messages[idx] = old.copyWith(metadata: newMeta);
+    } else if (old is types.FileMessage) {
+      _messages[idx] = old.copyWith(metadata: newMeta);
+    }
+
+    setState(() {});
   }
 
   void _handleAttachmentPressed() {
@@ -505,7 +551,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                           draft.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColor.black12Color),
                         ),
                       ),
                     ],
@@ -657,6 +705,111 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return codePoints.isEmpty ? reaction : String.fromCharCodes(codePoints);
   }
 
+  Future<void> _beginEditMessage(types.Message message) async {
+    // Do not allow editing non-authored messages
+    if (message.author.id != user.id) return;
+
+    // Prefill with text or caption
+    final initial = message.metadata?['raw_msg']?.toString() ??
+        (message is types.TextMessage ? message.text : '');
+    if (initial.isEmpty) return;
+
+    final newText = await _showEditMessageSheet(initialText: initial);
+    if (newText == null) return;
+    final trimmed = newText.trim();
+    if (trimmed == initial.trim()) return;
+
+    debugPrint("_beginEditMessage:$trimmed");
+    socket.emit('edit_message', {
+      'message_id': message.id,
+      'new_text': trimmed,
+    });
+  }
+
+  bool _withinEditWindow(types.Message m) {
+    final isMine = m.author.id == user.id;
+    if (!isMine) return false;
+
+    DateTime? created;
+    if (m.createdAt != null) {
+      created = DateTime.fromMillisecondsSinceEpoch(m.createdAt!, isUtc: true);
+    } else {
+      final s = m.metadata?['created_at']?.toString();
+      if (s != null && s.isNotEmpty) {
+        created = DateTime.tryParse(s)?.toUtc();
+      }
+    }
+    if (created == null) return false;
+
+    final now = DateTime.now().toUtc();
+    final elapsed = now.difference(created);
+    return elapsed.inSeconds <= _editWindowSeconds;
+  }
+
+  bool _isEditedMessage(types.Message m) => (m.metadata?['edited'] == true);
+
+  Future<String?> _showEditMessageSheet({required String initialText}) {
+    final controller = TextEditingController(text: initialText);
+    return Get.bottomSheet<String>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text('Edit message',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.black12Color)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Get.back<String?>(result: null),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              CommonTextField(
+                controller: controller,
+                hintText: 'Update your message',
+                textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonAppButton(
+                      text: "Cancel",
+                      color: AppColor.redColor,
+                      onTap: () => Get.back<String?>(result: null),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: CommonAppButton(
+                    text: "Save",
+                    onTap: () {
+                      Get.back<String>(result: controller.text);
+                    },
+                  )),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
   @override
   void dispose() {
     _removeSocketListeners();
@@ -710,19 +863,48 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
               onMessageLongPress: (v, message) {
+                final isMine = message.author.id == user.id;
+                final canEdit = _withinEditWindow(message);
+
                 Navigator.of(context).push(
                   HeroDialogRoute(
                     builder: (context) {
-                      return ReactionsDialogWidget(
-                        reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
-                        menuItems: [],
-                        id: message.id,
-                        messageWidget: const SizedBox.shrink(),
-                        onReactionTap: (reaction) {
-                          _emitMessageReaction(message.id.toString(), reaction);
-                        },
-                        onContextMenuTap: (menuItem) {},
-                      );
+                      return IconTheme(
+                          data: IconThemeData(color: AppColor.black12Color),
+                          child: DefaultTextStyle.merge(
+                            style: TextStyle(
+                              color: AppColor.black12Color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            child: ReactionsDialogWidget(
+                              reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                              menuItems: isMine
+                                  ? [
+                                      if (canEdit)
+                                        MenuItem(
+                                            label: 'Edit', icon: Icons.edit),
+                                      MenuItem(
+                                          label: 'Delete',
+                                          icon: CupertinoIcons.delete,
+                                          isDestuctive: true),
+                                    ]
+                                  : [],
+                              id: message.id,
+                              messageWidget: const SizedBox.shrink(),
+                              onReactionTap: (reaction) {
+                                _emitMessageReaction(
+                                    message.id.toString(), reaction);
+                              },
+                              onContextMenuTap: (menuItem) async {
+                                if (menuItem.label == 'Edit') {
+                                  await _beginEditMessage(message);
+                                } else if (menuItem.label == 'Delete') {
+                                  // Placeholder for future delete
+                                  //_confirmDelete(message); // implement later
+                                }
+                              },
+                            ),
+                          ));
                     },
                   ),
                 );
@@ -838,6 +1020,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
@@ -861,15 +1044,19 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                     ],
                                   ),
                                   buildLinkifyMessage(
-                                      message.metadata?['raw_msg'] ?? "")
-                                  // Text(
-                                  //   message.metadata?['raw_msg'] ?? "",
-                                  //   textAlign: TextAlign.start,
-                                  //   softWrap: true,
-                                  //   overflow: TextOverflow.visible,
-                                  //   style:
-                                  //       TextStyle(color: AppColor.black12Color),
-                                  // ),
+                                      message.metadata?['raw_msg'] ?? ""),
+                                  if (_isEditedMessage(message))
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: const Padding(
+                                        padding:
+                                            EdgeInsets.only(left: 6, top: 2),
+                                        child: Text('Edited',
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.black38)),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -925,15 +1112,19 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                         padding: const EdgeInsets.only(left: 8),
                                         child: buildLinkifyMessage(
                                             message.metadata?['raw_msg'] ?? ""),
-                                        // child: Text(
-                                        //   message.metadata?['raw_msg'] ?? "",
-                                        //   textAlign: TextAlign.start,
-                                        //   softWrap: true,
-                                        //   overflow: TextOverflow.visible,
-                                        //   style: TextStyle(
-                                        //       color: AppColor.black12Color),
-                                        // ),
                                       ),
+                                      if (_isEditedMessage(message))
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: const Padding(
+                                            padding: EdgeInsets.only(
+                                                left: 6, top: 2),
+                                            child: Text('Edited',
+                                                style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.black38)),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -967,17 +1158,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                   children: [
                                     buildLinkifyMessage(
                                         message.metadata?['raw_msg'] ?? ""),
-                                    // DefaultTextStyle(
-                                    //   style: TextStyle().normal16w400.textColor(
-                                    //         AppColor.black12Color,
-                                    //       ),
-                                    //   child: Text(
-                                    //     message.metadata?['raw_msg'] ?? "",
-                                    //     textAlign: TextAlign.start,
-                                    //     softWrap: true,
-                                    //     overflow: TextOverflow.visible,
-                                    //   ),
-                                    // ),
+                                    if (_isEditedMessage(message))
+                                      const Padding(
+                                        padding:
+                                            EdgeInsets.only(left: 6, top: 2),
+                                        child: Text('Edited',
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.black38)),
+                                      ),
                                   ],
                                 ),
                               ),
