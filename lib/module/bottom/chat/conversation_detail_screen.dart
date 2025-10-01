@@ -7,6 +7,7 @@ import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
 import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -590,14 +591,54 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   void _onMessageTap(BuildContext ctx, types.Message message) {
+    return;
+    debugPrint("_onMessageTap message: $message");
     final meta = message.metadata ?? {};
     final msgType = meta['msg_type'];
+    final rawMsg = meta['raw_msg'] as String?;
     if (msgType == 'pdf') {
       final url = meta['file_url'] ?? meta['raw_msg'];
       if (url != null) {
         // openPdf(url);
       }
     }
+    if (msgType == 'text' && _isValidUrl(rawMsg)) {
+      //Get.toNamed(AppRouter.webViewScreen, arguments: {"url": rawMsg});
+    }
+  }
+
+  Widget buildLinkifyMessage(String text) {
+    return Linkify(
+      text: text,
+      linkifiers: const [UrlLinkifier()],
+      options: const LinkifyOptions(looseUrl: true, defaultToHttps: true),
+      style: TextStyle(color: Colors.black),
+      linkStyle: TextStyle(
+        color: Colors.blue,
+        decoration: TextDecoration.underline,
+      ),
+      onOpen: (link) async {
+        final uri = Uri.parse(
+            link.url.startsWith('http') ? link.url : 'https://${link.url}');
+        Get.toNamed(AppRouter.webViewScreen,
+            arguments: {"url": uri.toString()});
+      },
+    );
+  }
+
+  bool _isValidUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return false;
+    String raw = url.trim();
+    if (raw.startsWith('www.')) {
+      raw = 'https://$raw';
+    } else if (!raw.contains('://') && raw.contains('.')) {
+      raw = 'https://$raw';
+    }
+
+    final uri = Uri.tryParse(raw);
+    return uri != null &&
+        uri.hasAbsolutePath &&
+        (uri.isScheme('http') || uri.isScheme('https'));
   }
 
   String _reactionToEmoji(String reaction) {
@@ -819,14 +860,16 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                       ),
                                     ],
                                   ),
-                                  Text(
-                                    message.metadata?['raw_msg'] ?? "",
-                                    textAlign: TextAlign.start,
-                                    softWrap: true,
-                                    overflow: TextOverflow.visible,
-                                    style:
-                                        TextStyle(color: AppColor.black12Color),
-                                  ),
+                                  buildLinkifyMessage(
+                                      message.metadata?['raw_msg'] ?? "")
+                                  // Text(
+                                  //   message.metadata?['raw_msg'] ?? "",
+                                  //   textAlign: TextAlign.start,
+                                  //   softWrap: true,
+                                  //   overflow: TextOverflow.visible,
+                                  //   style:
+                                  //       TextStyle(color: AppColor.black12Color),
+                                  // ),
                                 ],
                               ),
                             ),
@@ -880,14 +923,16 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
-                                        child: Text(
-                                          message.metadata?['raw_msg'] ?? "",
-                                          textAlign: TextAlign.start,
-                                          softWrap: true,
-                                          overflow: TextOverflow.visible,
-                                          style: TextStyle(
-                                              color: AppColor.black12Color),
-                                        ),
+                                        child: buildLinkifyMessage(
+                                            message.metadata?['raw_msg'] ?? ""),
+                                        // child: Text(
+                                        //   message.metadata?['raw_msg'] ?? "",
+                                        //   textAlign: TextAlign.start,
+                                        //   softWrap: true,
+                                        //   overflow: TextOverflow.visible,
+                                        //   style: TextStyle(
+                                        //       color: AppColor.black12Color),
+                                        // ),
                                       ),
                                     ],
                                   ),
@@ -920,17 +965,19 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                       ? CrossAxisAlignment.end
                                       : CrossAxisAlignment.end,
                                   children: [
-                                    DefaultTextStyle(
-                                      style: TextStyle().normal16w400.textColor(
-                                            AppColor.black12Color,
-                                          ),
-                                      child: Text(
-                                        message.metadata?['raw_msg'] ?? "",
-                                        textAlign: TextAlign.start,
-                                        softWrap: true,
-                                        overflow: TextOverflow.visible,
-                                      ),
-                                    ),
+                                    buildLinkifyMessage(
+                                        message.metadata?['raw_msg'] ?? ""),
+                                    // DefaultTextStyle(
+                                    //   style: TextStyle().normal16w400.textColor(
+                                    //         AppColor.black12Color,
+                                    //       ),
+                                    //   child: Text(
+                                    //     message.metadata?['raw_msg'] ?? "",
+                                    //     textAlign: TextAlign.start,
+                                    //     softWrap: true,
+                                    //     overflow: TextOverflow.visible,
+                                    //   ),
+                                    // ),
                                   ],
                                 ),
                               ),

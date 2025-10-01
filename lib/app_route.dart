@@ -8,6 +8,7 @@ import 'package:base_code/module/bottom/chat/personalChat/personal_chat_screen.d
 import 'package:base_code/module/bottom/chat/search_chat/search_chat_screen.dart';
 import 'package:base_code/module/bottom/schedule/calendar/calendar_screen.dart';
 import 'package:base_code/module/bottom/schedule/schedule_screen.dart';
+import 'package:base_code/module/webview/web_view_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
@@ -55,6 +56,7 @@ class AppRouter {
   static const forgotPassword = '/forgot_password';
   static const calendar = '/calendar';
   static const searchChatScreen = '/searchChatScreen';
+  static const webViewScreen = '/webViewScreen';
 
   static List<GetPage> getPages = [
     GetPage(name: addNonPlayer, page: () => AddNonPlayerScreen()),
@@ -96,5 +98,6 @@ class AppRouter {
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),
     GetPage(name: searchChatScreen, page: () => SearchChatScreen()),
+    GetPage(name: webViewScreen, page: () => WebViewScreen()),
   ];
 }
