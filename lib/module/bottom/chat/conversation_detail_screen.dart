@@ -41,6 +41,8 @@ class ConversationMessageFactory {
               (raw['updated_at']?.toString() != raw['created_at']?.toString())),
       'created_at': raw['created_at'],
       'updated_at': raw['updated_at'],
+      'deleted_by': raw['deleted_by']?.toString(),
+      'deleted_at': raw['deleted_at'],
     };
 
     if (msgType == 'image') {
@@ -145,6 +147,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   static const evMessagesReadBroadcast = 'messages_read';
   static const evReaction = 'message_reaction';
   static const evMessageEdited = 'message_edited';
+  static const evMessageDeleted = 'message_deleted';
 
   @override
   void initState() {
@@ -163,6 +166,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     socket.on(evMessagesReadBroadcast, _onMessagesRead);
     socket.on(evReaction, _onReaction);
     socket.on(evMessageEdited, _onMessageEdited);
+    socket.on(evMessageDeleted, _onMessageDeleted);
   }
 
   void _removeSocketListeners() {
@@ -172,6 +176,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     socket.off(evMessagesReadBroadcast, _onMessagesRead);
     socket.off(evReaction, _onReaction);
     socket.off(evMessageEdited, _onMessageEdited);
+    socket.off(evMessageDeleted, _onMessageDeleted);
   }
 
   void _loadInitial() {
@@ -372,6 +377,48 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     setState(() {});
   }
 
+  Future<void> _deleteMessage(types.Message message) async {
+    if (!_canDelete(message)) {
+      AppToast.showAppToast('You can only delete your own messages.');
+      return;
+    }
+    socket.emit('delete_message', {
+      'message_id': message.id,
+    });
+  }
+
+  void _onMessageDeleted(dynamic data) {
+    final raw = data['resData'] ?? data;
+    if (raw == null) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
+
+    final id = raw['message_id']?.toString();
+    if (id == null) return;
+
+    final idx = _messages.indexWhere((m) => m.id == id);
+    if (idx == -1) return;
+
+    final old = _messages[idx];
+    final newMeta = {
+      ...?old.metadata,
+      'deleted': true,
+      'deleted_at': raw['deleted_at'],
+      'deleted_by': raw['deleted_by'],
+      'reactions': <dynamic>[], // hide reactions
+    };
+
+    if (old is types.TextMessage) {
+      _messages[idx] = old.copyWith(text: '', metadata: newMeta);
+    } else if (old is types.ImageMessage) {
+      _messages[idx] = old.copyWith(metadata: newMeta);
+    } else if (old is types.FileMessage) {
+      _messages[idx] = old.copyWith(metadata: newMeta);
+    }
+
+    setState(() {});
+  }
+
   void _handleAttachmentPressed() {
     showModalBottomSheet<void>(
       context: context,
@@ -471,7 +518,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
       setState(() => _loading = true);
       final url = await chatController.setMediaChatApiCall(result: picked);
-      debugPrint("imageurl=>$url");
       setState(() => _loading = false);
       if (url.isNotEmpty) {
         socket.emit("send_message", {
@@ -726,6 +772,13 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     });
   }
 
+  bool _canDelete(types.Message m) {
+    final me = user.id;
+    if (m.author.id == me) return true; // self
+    final ownerId = conversation?.ownerId?.toString();
+    return ownerId != null && ownerId == me; // conversation owner (admin)
+  }
+
   bool _withinEditWindow(types.Message m) {
     final isMine = m.author.id == user.id;
     if (!isMine) return false;
@@ -747,6 +800,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   bool _isEditedMessage(types.Message m) => (m.metadata?['edited'] == true);
+
+  bool _isDeleted(types.Message m) => (m.metadata?['deleted_at'] != null);
 
   Future<String?> _showEditMessageSheet({required String initialText}) {
     final controller = TextEditingController(text: initialText);
@@ -810,6 +865,26 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     );
   }
 
+  Widget _deletedMessageBubble(bool isSentByMe) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColor.greyF6Color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(Get.context!).size.width * 0.7,
+      ),
+      child: const Text(
+        'This message was deleted.',
+        style: TextStyle(
+          color: Colors.black45,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _removeSocketListeners();
@@ -865,46 +940,39 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               onMessageLongPress: (v, message) {
                 final isMine = message.author.id == user.id;
                 final canEdit = _withinEditWindow(message);
+                final canDelete = _canDelete(message);
+                bool deleted = _isDeleted(message);
+                if (deleted) return;
 
                 Navigator.of(context).push(
                   HeroDialogRoute(
                     builder: (context) {
-                      return IconTheme(
-                          data: IconThemeData(color: AppColor.black12Color),
-                          child: DefaultTextStyle.merge(
-                            style: TextStyle(
-                              color: AppColor.black12Color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            child: ReactionsDialogWidget(
-                              reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
-                              menuItems: isMine
-                                  ? [
-                                      if (canEdit)
-                                        MenuItem(
-                                            label: 'Edit', icon: Icons.edit),
-                                      MenuItem(
-                                          label: 'Delete',
-                                          icon: CupertinoIcons.delete,
-                                          isDestuctive: true),
-                                    ]
-                                  : [],
-                              id: message.id,
-                              messageWidget: const SizedBox.shrink(),
-                              onReactionTap: (reaction) {
-                                _emitMessageReaction(
-                                    message.id.toString(), reaction);
-                              },
-                              onContextMenuTap: (menuItem) async {
-                                if (menuItem.label == 'Edit') {
-                                  await _beginEditMessage(message);
-                                } else if (menuItem.label == 'Delete') {
-                                  // Placeholder for future delete
-                                  //_confirmDelete(message); // implement later
-                                }
-                              },
-                            ),
-                          ));
+                      return ReactionsDialogWidget(
+                        reactions: ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                        menuItems: isMine
+                            ? [
+                                if (canEdit)
+                                  MenuItem(label: 'Edit', icon: Icons.edit),
+                                if (canDelete)
+                                  MenuItem(
+                                      label: 'Delete',
+                                      icon: CupertinoIcons.delete,
+                                      isDestuctive: true),
+                              ]
+                            : [],
+                        id: message.id,
+                        messageWidget: const SizedBox.shrink(),
+                        onReactionTap: (reaction) {
+                          _emitMessageReaction(message.id.toString(), reaction);
+                        },
+                        onContextMenuTap: (menuItem) async {
+                          if (menuItem.label == 'Edit') {
+                            await _beginEditMessage(message);
+                          } else if (menuItem.label == 'Delete') {
+                            _deleteMessage(message);
+                          }
+                        },
+                      );
                     },
                   ),
                 );
@@ -962,138 +1030,119 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     bool isSentByMe,
     types.Message message,
   ) {
+    final deleted = _isDeleted(message);
     List reactions = message.metadata?['reactions'] ?? [];
     return Align(
       alignment: isSentByMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!isSentByMe)
-            ClipOval(
-              child: getImageView(
-                height: 30,
-                width: 30,
-                finalUrl: message.author.imageUrl ?? "",
-                fit: BoxFit.cover,
-                errorWidget: Icon(
-                  Icons.account_circle,
-                  size: 30,
-                ),
-              ),
-            ),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
+      child: deleted
+          ? _deletedMessageBubble(isSentByMe)
+          : Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 if (!isSentByMe)
-                  Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: 4, right: 6, left: 6),
-                    child: Text(
-                      message.author.firstName ?? "",
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black54),
+                  ClipOval(
+                    child: getImageView(
+                      height: 30,
+                      width: 30,
+                      finalUrl: message.author.imageUrl ?? "",
+                      fit: BoxFit.cover,
+                      errorWidget: Icon(
+                        Icons.account_circle,
+                        size: 30,
+                      ),
                     ),
                   ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (message.metadata?['msg_type'] == 'file') ...[
-                      GestureDetector(
-                        onTap: () => openPdf(
-                          message.metadata?['file_url'],
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      if (!isSentByMe)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              bottom: 4, right: 6, left: 6),
+                          child: Text(
+                            message.author.firstName ?? "",
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54),
+                          ),
                         ),
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              width: 200,
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 16, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: AppColor.greyF6Color,
-                                borderRadius: BorderRadius.circular(10),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (message.metadata?['msg_type'] == 'file') ...[
+                            GestureDetector(
+                              onTap: () => openPdf(
+                                message.metadata?['file_url'],
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Stack(
+                                alignment: Alignment.bottomRight,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.picture_as_pdf,
-                                        color: Colors.red,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          "Document",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: AppColor.black,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  buildLinkifyMessage(
-                                      message.metadata?['raw_msg'] ?? ""),
-                                  if (_isEditedMessage(message))
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: const Padding(
-                                        padding:
-                                            EdgeInsets.only(left: 6, top: 2),
-                                        child: Text('Edited',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.black38)),
-                                      ),
+                                  Container(
+                                    width: 200,
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 16, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.greyF6Color,
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.picture_as_pdf,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(
+                                                "Document",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: AppColor.black,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        buildLinkifyMessage(
+                                            message.metadata?['raw_msg'] ?? ""),
+                                        if (_isEditedMessage(message))
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: const Padding(
+                                              padding: EdgeInsets.only(
+                                                  left: 6, top: 2),
+                                              child: Text('Edited',
+                                                  style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: Colors.black38)),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildChatReaction(reactions, message)
                                 ],
                               ),
                             ),
-                            _buildChatReaction(reactions, message)
-                          ],
-                        ),
-                      ),
-                    ] else if (message.metadata?['msg_type'] == 'image') ...[
-                      Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          message.metadata?['raw_msg'] == ""
-                              ? Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: getImageView(
-                                      finalUrl: message.metadata?['file_url'],
-                                      height: 200,
-                                      width: 200,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  width: 200,
-                                  padding: EdgeInsets.fromLTRB(0, 0, 0, 16),
-                                  decoration: BoxDecoration(
-                                    color: AppColor.greyF6Color,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
+                          ] else if (message.metadata?['msg_type'] ==
+                              'image') ...[
+                            Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                message.metadata?['raw_msg'] == ""
+                                    ? Padding(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 8.0),
                                         child: ClipRRect(
@@ -1107,82 +1156,117 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                             fit: BoxFit.cover,
                                           ),
                                         ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 8),
-                                        child: buildLinkifyMessage(
-                                            message.metadata?['raw_msg'] ?? ""),
-                                      ),
-                                      if (_isEditedMessage(message))
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: const Padding(
-                                            padding: EdgeInsets.only(
-                                                left: 6, top: 2),
-                                            child: Text('Edited',
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.black38)),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                          _buildChatReaction(reactions, message)
-                        ],
-                      )
-                    ] else ...[
-                      Flexible(
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: 16, horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: AppColor.greyF6Color,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(Get.context!).size.width *
-                                          0.7,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: isSentByMe
-                                      ? CrossAxisAlignment.end
-                                      : CrossAxisAlignment.end,
-                                  children: [
-                                    buildLinkifyMessage(
-                                        message.metadata?['raw_msg'] ?? ""),
-                                    if (_isEditedMessage(message))
-                                      const Padding(
+                                      )
+                                    : Container(
+                                        width: 200,
                                         padding:
-                                            EdgeInsets.only(left: 6, top: 2),
-                                        child: Text('Edited',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.black38)),
+                                            EdgeInsets.fromLTRB(0, 0, 0, 16),
+                                        decoration: BoxDecoration(
+                                          color: AppColor.greyF6Color,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8.0),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: getImageView(
+                                                  finalUrl: message
+                                                      .metadata?['file_url'],
+                                                  height: 200,
+                                                  width: 200,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8),
+                                              child: buildLinkifyMessage(message
+                                                      .metadata?['raw_msg'] ??
+                                                  ""),
+                                            ),
+                                            if (_isEditedMessage(message))
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: const Padding(
+                                                  padding: EdgeInsets.only(
+                                                      left: 6, top: 2),
+                                                  child: Text('Edited',
+                                                      style: TextStyle(
+                                                          fontSize: 10,
+                                                          color:
+                                                              Colors.black38)),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                  ],
-                                ),
+                                _buildChatReaction(reactions, message)
+                              ],
+                            )
+                          ] else ...[
+                            Flexible(
+                              child: Stack(
+                                alignment: Alignment.bottomRight,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 16, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        color: AppColor.greyF6Color,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(Get.context!)
+                                                .size
+                                                .width *
+                                            0.7,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: isSentByMe
+                                            ? CrossAxisAlignment.end
+                                            : CrossAxisAlignment.end,
+                                        children: [
+                                          buildLinkifyMessage(
+                                              message.metadata?['raw_msg'] ??
+                                                  ""),
+                                          if (_isEditedMessage(message))
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                  left: 6, top: 2),
+                                              child: Text('Edited',
+                                                  style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: Colors.black38)),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  _buildChatReaction(reactions, message)
+                                ],
                               ),
                             ),
-                            _buildChatReaction(reactions, message)
-                          ],
-                        ),
+                          ]
+                        ],
                       ),
-                    ]
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
