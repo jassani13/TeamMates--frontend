@@ -6,6 +6,7 @@ class ConversationItem {
   final String? image;
   final String? lastMessage;
   final String? lastMessageFileUrl;
+  final String? lastReadMessageId;
   final String? msgType;
   final DateTime? createdAt;
   final int? unreadCount;
@@ -18,6 +19,7 @@ class ConversationItem {
     required this.image,
     required this.lastMessage,
     required this.lastMessageFileUrl,
+    required this.lastReadMessageId,
     required this.msgType,
     required this.createdAt,
     required this.unreadCount,
@@ -32,6 +34,7 @@ class ConversationItem {
       image: (j['image'] ?? '').toString(),
       lastMessage: (j['last_message'] ?? '').toString(),
       lastMessageFileUrl: (j['last_message_file_url'] ?? '').toString(),
+      lastReadMessageId: (j['last_read_message_id'] ?? '').toString(),
       msgType: (j['msg_type'] ?? 'text').toString(),
       createdAt: (j['created_at'] ?? '').toString().isEmpty
           ? null

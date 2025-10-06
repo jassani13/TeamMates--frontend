@@ -27,6 +27,7 @@ class ConversationMessageFactory {
     final senderProfile = raw['sender_profile']?.toString();
     final id = raw['message_id'].toString();
     final createdAtStr = raw['created_at']?.toString();
+    final lastReadMessageID = raw?['last_read_message_id']?.toString();
     final createdAt = createdAtStr != null
         ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
         : DateTime.now().toUtc().millisecondsSinceEpoch;
@@ -43,6 +44,7 @@ class ConversationMessageFactory {
       'updated_at': raw['updated_at'],
       'deleted_by': raw['deleted_by']?.toString(),
       'deleted_at': raw['deleted_at'],
+      'last_read_message_id': lastReadMessageID,
     };
 
     if (msgType == 'image') {
@@ -937,6 +939,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               onSendPressed: _onSendPressed,
               onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
+              isAttachmentUploading: _loading,
+              scrollToUnreadOptions: ScrollToUnreadOptions(
+                  lastReadMessageId: conversation?.lastReadMessageId ?? '',
+                  scrollOnOpen: true),
               onMessageLongPress: (v, message) {
                 final isMine = message.author.id == user.id;
                 final canEdit = _withinEditWindow(message);

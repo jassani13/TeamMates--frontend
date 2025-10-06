@@ -52,16 +52,16 @@ class ChatScreenController extends GetxController {
     if (idx >= 0) {
       final c = conversations[idx];
       conversations[idx] = ConversationItem(
-        conversationId: c.conversationId,
-        type: c.type,
-        title: c.title,
-        image: c.image,
-        lastMessage: c.lastMessage,
-        lastMessageFileUrl: c.lastMessageFileUrl,
-        msgType: c.msgType,
-        createdAt: c.createdAt,
-        unreadCount: 0,
-      );
+          conversationId: c.conversationId,
+          type: c.type,
+          title: c.title,
+          image: c.image,
+          lastMessage: c.lastMessage,
+          lastMessageFileUrl: c.lastMessageFileUrl,
+          msgType: c.msgType,
+          createdAt: c.createdAt,
+          unreadCount: 0,
+          lastReadMessageId: null);
     }
   }
 
@@ -75,6 +75,7 @@ class ChatScreenController extends GetxController {
     String? title,
     String? image,
     String? createdAt,
+    String? lastReadMessageId,
     int? unreadCount,
   }) {
     final idx = conversations.indexWhere((c) => c.conversationId == convId);
@@ -84,9 +85,10 @@ class ChatScreenController extends GetxController {
     }
     final bool isText = (msgType == 'text');
     final String normalizedLastMessage = isText ? (lastMessage) : msgType;
-    final String normalizedFileUrl = isText ? '' : (fileUrl.isNotEmpty ? fileUrl : '');
+    final String normalizedFileUrl =
+        isText ? '' : (fileUrl.isNotEmpty ? fileUrl : '');
 
-    if (idx == -1){
+    if (idx == -1) {
       final item = ConversationItem(
         conversationId: convId,
         type: type ?? 'personal',
@@ -98,22 +100,22 @@ class ChatScreenController extends GetxController {
         createdAt: parsedCreatedAt ?? DateTime.now(),
         unreadCount: unreadCount ?? 0,
         ownerId: ownerId,
+        lastReadMessageId: lastReadMessageId
       );
       conversations.add(item);
-    }else{
+    } else {
       final old = conversations[idx];
       final updated = ConversationItem(
         conversationId: old.conversationId,
         type: old.type,
-        title:title?? old.title,
-        image:image?? old.image,
+        title: title ?? old.title,
+        image: image ?? old.image,
         lastMessage: normalizedLastMessage,
         lastMessageFileUrl: normalizedFileUrl,
         msgType: msgType,
-        createdAt: parsedCreatedAt
-            ?? old.createdAt,
-        unreadCount:
-        unreadCount ?? old.unreadCount,
+        createdAt: parsedCreatedAt ?? old.createdAt,
+        unreadCount: unreadCount ?? old.unreadCount,
+        lastReadMessageId: lastReadMessageId??old.lastReadMessageId
       );
       conversations[idx] = updated;
     }

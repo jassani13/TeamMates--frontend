@@ -52,6 +52,8 @@ class _ChatScreenState extends State<ChatScreen> {
       final list =
           payload is Map && payload['data'] != null ? payload['data'] : payload;
       if (list is List) {
+
+
         chatController.setConversations(list);
       }
     });
@@ -75,9 +77,9 @@ class _ChatScreenState extends State<ChatScreen> {
           unreadCount: data['unread_count'] is int
               ? data['unread_count'] as int
               : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
+          lastReadMessageId: data?['last_read_message_id']
         );
       }
-
     });
     // New incoming message (server should emit new_message; if not adjust to your emitted event)
     socket.on('new_message', (msg) async {
@@ -91,22 +93,22 @@ class _ChatScreenState extends State<ChatScreen> {
       if (idx >= 0) {
         final old = chatController.conversations[idx];
         final updated = ConversationItem(
-          conversationId: old.conversationId,
-          type: old.type,
-          title: old.title,
-          image: old.image,
-          lastMessage: msg['msg_type'] == 'text'
-              ? (msg['msg'] ?? '')
-              : msg['msg_type'] ?? 'file',
-          lastMessageFileUrl: msg['file_url'] ?? '',
-          msgType: msg['msg_type'] ?? 'text',
-          createdAt: DateTime.now(),
-          unreadCount: old.unreadCount ??
-              0 +
-                  (msg['sender_id'].toString() == AppPref().userId.toString()
-                      ? 0
-                      : 1),
-        );
+            conversationId: old.conversationId,
+            type: old.type,
+            title: old.title,
+            image: old.image,
+            lastMessage: msg['msg_type'] == 'text'
+                ? (msg['msg'] ?? '')
+                : msg['msg_type'] ?? 'file',
+            lastMessageFileUrl: msg['file_url'] ?? '',
+            msgType: msg['msg_type'] ?? 'text',
+            createdAt: DateTime.now(),
+            unreadCount: old.unreadCount ??
+                0 +
+                    (msg['sender_id'].toString() == AppPref().userId.toString()
+                        ? 0
+                        : 1),
+            lastReadMessageId: "${msg?['last_read_message_id']}");
         chatController.updateOrInsert(updated);
       } else {
         // Fallback: ask server for fresh list just for safety
