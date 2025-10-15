@@ -156,6 +156,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     super.initState();
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem;
+    debugPrint("ownerId: ${conversation?.ownerId}");
     _registerSocketListeners();
     _loadInitial();
     socket.on(evTyping, _onTyping);
@@ -910,24 +911,22 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-        "conversation?.type=>${conversation?.type} :: ${conversation?.ownerId}");
     return GestureDetector(
       onTap: hideKeyboard,
       child: Scaffold(
         appBar: AppBar(
           title: Text("${conversation?.title}"),
           actions: [
-            // if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
-            //     conversation?.type == "group")
-            IconButton(
-                onPressed: () {
-                  Get.toNamed(AppRouter.editGroupChatScreen,
-                      arguments: {"conversation": conversation});
-                },
-                icon: Icon(
-                  CupertinoIcons.settings,
-                )),
+            if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
+                conversation?.type == "group")
+              IconButton(
+                  onPressed: () {
+                    Get.toNamed(AppRouter.editGroupChatScreen,
+                        arguments: {"conversation": conversation});
+                  },
+                  icon: Icon(
+                    CupertinoIcons.settings,
+                  )),
             Gap(12)
           ],
         ),

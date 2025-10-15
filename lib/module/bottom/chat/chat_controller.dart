@@ -90,33 +90,32 @@ class ChatScreenController extends GetxController {
 
     if (idx == -1) {
       final item = ConversationItem(
-        conversationId: convId,
-        type: type ?? 'personal',
-        title: title ?? '',
-        image: image ?? '',
-        lastMessage: normalizedLastMessage,
-        lastMessageFileUrl: normalizedFileUrl,
-        msgType: msgType,
-        createdAt: parsedCreatedAt ?? DateTime.now(),
-        unreadCount: unreadCount ?? 0,
-        ownerId: ownerId,
-        lastReadMessageId: lastReadMessageId
-      );
+          conversationId: convId,
+          type: type ?? 'personal',
+          title: title ?? '',
+          image: image ?? '',
+          lastMessage: normalizedLastMessage,
+          lastMessageFileUrl: normalizedFileUrl,
+          msgType: msgType,
+          createdAt: parsedCreatedAt ?? DateTime.now(),
+          unreadCount: unreadCount ?? 0,
+          ownerId: ownerId,
+          lastReadMessageId: lastReadMessageId);
       conversations.add(item);
     } else {
       final old = conversations[idx];
       final updated = ConversationItem(
-        conversationId: old.conversationId,
-        type: old.type,
-        title: title ?? old.title,
-        image: image ?? old.image,
-        lastMessage: normalizedLastMessage,
-        lastMessageFileUrl: normalizedFileUrl,
-        msgType: msgType,
-        createdAt: parsedCreatedAt ?? old.createdAt,
-        unreadCount: unreadCount ?? old.unreadCount,
-        lastReadMessageId: lastReadMessageId??old.lastReadMessageId
-      );
+          conversationId: old.conversationId,
+          type: old.type,
+          title: title ?? old.title,
+          image: image ?? old.image,
+          ownerId: ownerId,
+          lastMessage: normalizedLastMessage,
+          lastMessageFileUrl: normalizedFileUrl,
+          msgType: msgType,
+          createdAt: parsedCreatedAt ?? old.createdAt,
+          unreadCount: unreadCount ?? old.unreadCount,
+          lastReadMessageId: lastReadMessageId ?? old.lastReadMessageId);
       conversations[idx] = updated;
     }
 
