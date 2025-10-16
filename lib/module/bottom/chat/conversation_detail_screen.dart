@@ -917,16 +917,31 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         appBar: AppBar(
           title: Text("${conversation?.title}"),
           actions: [
-            if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
-                conversation?.type == "group")
-              IconButton(
-                  onPressed: () {
+            PopupMenuButton(
+                icon: Icon(Icons.more_vert_rounded),
+                onSelected: (String val) {
+                  if (val == "search") {
+                  } else if (val == "settings") {
                     Get.toNamed(AppRouter.editGroupChatScreen,
                         arguments: {"conversation": conversation});
-                  },
-                  icon: Icon(
-                    CupertinoIcons.settings,
-                  )),
+                  }
+                },
+                itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                          value: "search",
+                          child: Text(
+                            "Search",
+                            style: TextStyle(color: AppColor.black12Color),
+                          )),
+                      if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
+                          conversation?.type == "group")
+                        PopupMenuItem<String>(
+                            value: "settings",
+                            child: Text(
+                              "Settings",
+                              style: TextStyle(color: AppColor.black12Color),
+                            )),
+                    ]),
             Gap(12)
           ],
         ),
