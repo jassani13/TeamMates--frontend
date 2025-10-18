@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:base_code/main.dart'; // for socket/AppPref if you centralize them
 import 'package:base_code/model/conversation_item.dart';
+import 'package:base_code/module/bottom/chat/utils/chat_app_bar.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
@@ -909,41 +910,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     super.dispose();
   }
 
+  void _onSearchChanged(String q) {
+    debugPrint("_onSearchChanged: $q");
+    // Your existing search/filter/jump logic here
+    // e.g., chatController.filterByQuery(q); or recompute _matchIds and scroll
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: hideKeyboard,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text("${conversation?.title}"),
-          actions: [
-            PopupMenuButton(
-                icon: Icon(Icons.more_vert_rounded),
-                onSelected: (String val) {
-                  if (val == "search") {
-                  } else if (val == "settings") {
-                    Get.toNamed(AppRouter.editGroupChatScreen,
-                        arguments: {"conversation": conversation});
-                  }
-                },
-                itemBuilder: (context) => [
-                      PopupMenuItem<String>(
-                          value: "search",
-                          child: Text(
-                            "Search",
-                            style: TextStyle(color: AppColor.black12Color),
-                          )),
-                      if ("${conversation?.ownerId}" == "${AppPref().userId}" &&
-                          conversation?.type == "group")
-                        PopupMenuItem<String>(
-                            value: "settings",
-                            child: Text(
-                              "Settings",
-                              style: TextStyle(color: AppColor.black12Color),
-                            )),
-                    ]),
-            Gap(12)
-          ],
+        appBar: ChatAppBar(
+          conversation: conversation!,
+          onSearchQuery: _onSearchChanged,
         ),
         body: Stack(
           children: [
