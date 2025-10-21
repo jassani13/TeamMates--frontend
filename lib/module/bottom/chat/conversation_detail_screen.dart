@@ -140,6 +140,13 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   // Keep this in sync with backend EDIT_WINDOW_SECONDS (default 15 mins)
   static const int _editWindowSeconds = 15 * 60;
 
+  // Search state
+  String _searchQuery = '';
+  final Map<String, List<TextRange>> _matchRangesById =
+      {}; // messageId -> matches
+  final List<String> _matchIds = []; // ordered ids of messages that match
+  int _currentMatchIndex = -1;
+
   // Event constants - adjust if server names change
   static const evGetMessages = 'get_messages';
   static const evMessagesResult = 'conversation_messages';
@@ -910,10 +917,127 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     super.dispose();
   }
 
+  // Search handling
+  /// Finds all case-insensitive occurrences of `needleLower` in `haystack`,
+  /// returning TextRanges [start, end) for highlight.
+  List<TextRange> _findAllOccurrences(String haystack, String needleLower) {
+    final result = <TextRange>[];
+    if (needleLower.isEmpty) return result;
+
+    final lower = haystack.toLowerCase();
+    int start = 0;
+    while (true) {
+      final idx = lower.indexOf(needleLower, start);
+      if (idx == -1) break;
+      result.add(TextRange(start: idx, end: idx + needleLower.length));
+      start = idx + needleLower.length;
+    }
+    return result;
+  }
+
+  Widget buildSearchAwareMessage(String text) {
+    if (_searchQuery.isEmpty) {
+      return buildLinkifyMessage(text);
+    }
+    return _buildHighlightedText(text, matchColor: const Color(0xFFFFF59D));
+  }
+
+  /// Builds RichText with background highlight for all occurrences of `_searchQuery`.
+  Widget _buildHighlightedText(
+    String text, {
+    Color matchColor = const Color(0xFFFFF59D), // soft yellow
+  }) {
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    final query = _searchQuery;
+    final spans = <TextSpan>[];
+
+    if (query.isEmpty) {
+      return Text(
+        text,
+        style: const TextStyle(color: Colors.black),
+      );
+    }
+
+    final lower = text.toLowerCase();
+    final needle = query.toLowerCase();
+
+    int index = 0;
+    while (true) {
+      final matchIndex = lower.indexOf(needle, index);
+      if (matchIndex < 0) {
+        // tail
+        if (index < text.length) {
+          spans.add(TextSpan(
+            text: text.substring(index),
+            style: const TextStyle(color: Colors.black),
+          ));
+        }
+        break;
+      }
+
+      // non-match head
+      if (matchIndex > index) {
+        spans.add(TextSpan(
+          text: text.substring(index, matchIndex),
+          style: const TextStyle(color: Colors.black),
+        ));
+      }
+
+      // match span
+      final matchText = text.substring(matchIndex, matchIndex + needle.length);
+      spans.add(TextSpan(
+        text: matchText,
+        style: const TextStyle(
+          color: Colors.black,
+          backgroundColor: Color(0xFFFFF59D), // same as _matchColor
+          fontWeight: FontWeight.w600,
+        ),
+      ));
+
+      index = matchIndex + needle.length;
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+
   void _onSearchChanged(String q) {
     debugPrint("_onSearchChanged: $q");
-    // Your existing search/filter/jump logic here
-    // e.g., chatController.filterByQuery(q); or recompute _matchIds and scroll
+
+    final query = q.trim();
+    _searchQuery = query;
+    _matchRangesById.clear();
+    _matchIds.clear();
+    _currentMatchIndex = -1;
+
+    if (query.isEmpty) {
+      setState(() {}); // re-render to remove highlights
+      return;
+    }
+
+    // Case-insensitive scan across messages; store ranges for highlight
+    final lowerQ = query.toLowerCase();
+    for (final m in _messages) {
+      // We only highlight textual content (raw_msg or message.text)
+      final meta = m.metadata ?? {};
+      final raw = (meta['raw_msg']?.toString() ?? '').trim();
+      final source = raw.isNotEmpty ? raw : (m is types.TextMessage ? m.text : '');
+
+      if (source.isEmpty) continue;
+
+      final ranges = _findAllOccurrences(source, lowerQ);
+      if (ranges.isNotEmpty) {
+        _matchRangesById[m.id] = ranges;
+        _matchIds.add(m.id);
+      }
+    }
+
+    // Optional: set current index to first match
+    if (_matchIds.isNotEmpty) _currentMatchIndex = 0;
+
+    setState(() {}); // re-render bubbles with highlights
   }
 
   @override
@@ -1115,7 +1239,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                             ),
                                           ],
                                         ),
-                                        buildLinkifyMessage(
+                                        buildSearchAwareMessage(
                                             message.metadata?['raw_msg'] ?? ""),
                                         if (_isEditedMessage(message))
                                           Align(
@@ -1189,9 +1313,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                             Padding(
                                               padding: const EdgeInsets.only(
                                                   left: 8),
-                                              child: buildLinkifyMessage(message
-                                                      .metadata?['raw_msg'] ??
-                                                  ""),
+                                              child: buildSearchAwareMessage(
+                                                  message.metadata?[
+                                                          'raw_msg'] ??
+                                                      ""),
                                             ),
                                             if (_isEditedMessage(message))
                                               Align(
@@ -1239,7 +1364,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                                             ? CrossAxisAlignment.end
                                             : CrossAxisAlignment.end,
                                         children: [
-                                          buildLinkifyMessage(
+                                          buildSearchAwareMessage(
                                               message.metadata?['raw_msg'] ??
                                                   ""),
                                           if (_isEditedMessage(message))
