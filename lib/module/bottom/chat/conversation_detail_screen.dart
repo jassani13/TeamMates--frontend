@@ -147,6 +147,60 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   final List<String> _matchIds = []; // ordered ids of messages that match
   int _currentMatchIndex = -1;
 
+  // Keys to scroll to specific messages
+  final Map<String, GlobalKey> _bubbleKeys = {};
+
+  GlobalKey _keyFor(String messageId) =>
+      _bubbleKeys.putIfAbsent(messageId, () => GlobalKey());
+
+  void _pruneBubbleKeys(Iterable<String> liveIds) {
+    _bubbleKeys.removeWhere((id, _) => !liveIds.contains(id));
+  }
+
+// Move through matches
+  Future<void> _gotoMatch(int delta) async {
+    if (_matchIds.isEmpty) return;
+
+    setState(() {
+      _currentMatchIndex =
+          ((_currentMatchIndex + delta) % _matchIds.length + _matchIds.length) %
+              _matchIds.length;
+    });
+    await _jumpToMatchIndex(_currentMatchIndex);
+  }
+
+  Future<void> _jumpToMatchIndex(int idx) async {
+    if (idx < 0 || idx >= _matchIds.length) return;
+    if (_isJumping) return;
+    _isJumping = true;
+
+    try {
+      final id = _matchIds[idx];
+      final listIndex = _messages.indexWhere((m) => m.id == id);
+      if (listIndex == -1) return;
+      final builderIndex =
+          _messages.length - 1 - listIndex; // account for reverse:true
+      await _chatScrollController.scrollToIndex(
+        builderIndex,
+        preferPosition: AutoScrollPosition.middle,
+        duration: const Duration(milliseconds: 250),
+      );
+
+      await _nudgeOffScrollEdge(amount: 120);
+
+      // 2) Let the frame build, then ensureVisible for precise alignment
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      final key = _bubbleKeys[id];
+      if (key?.currentContext != null) {
+        await _ensureVisibleWithRetry(key!, attempts: 2);
+      }
+    } finally {
+      _isJumping = false;
+    }
+  }
+
+  late final AutoScrollController _chatScrollController;
+
   // Event constants - adjust if server names change
   static const evGetMessages = 'get_messages';
   static const evMessagesResult = 'conversation_messages';
@@ -168,6 +222,13 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     _registerSocketListeners();
     _loadInitial();
     socket.on(evTyping, _onTyping);
+    _chatScrollController = AutoScrollController(
+      axis: Axis.vertical,
+      // Optional tuning:
+      // suggestedRowHeight: 72,
+      // viewportBoundaryGetter: () =>
+      //   Rect.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom),
+    );
   }
 
   void _registerSocketListeners() {
@@ -217,6 +278,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     for (final m in _messages) {
       _knownUsers[m.author.id] = m.author;
     }
+    _syncBubbleKeys();
+    _pruneBubbleKeys(_messages.map((m) => m.id));
   }
 
   void _onNewMessage(dynamic data) {
@@ -235,6 +298,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       Future.delayed(const Duration(milliseconds: 250), _markRead);
     }
     setState(() {});
+    _syncBubbleKeys();
   }
 
   void _onTyping(dynamic data) {
@@ -935,6 +999,24 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return result;
   }
 
+  Widget _buildMessageItem(BuildContext context, int index) {
+    final msg = _messages[index];
+
+    // Ensure a stable key exists for EVERY message id
+    final bubbleKey = _bubbleKeys.putIfAbsent(msg.id, () => GlobalKey());
+
+    return AutoScrollTag(
+      key: ValueKey(index),
+      controller: _chatScrollController, // AutoScrollController
+      index: index,
+      child: KeyedSubtree(
+        key: bubbleKey,
+        child: buildSearchAwareMessage(
+            msg.metadata?['raw_msg']), // your bubble widget
+      ),
+    );
+  }
+
   Widget buildSearchAwareMessage(String text) {
     if (_searchQuery.isEmpty) {
       return buildLinkifyMessage(text);
@@ -1003,6 +1085,12 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     );
   }
 
+  void _syncBubbleKeys() {
+    for (final m in _messages) {
+      _bubbleKeys.putIfAbsent(m.id, () => GlobalKey());
+    }
+  }
+
   void _onSearchChanged(String q) {
     debugPrint("_onSearchChanged: $q");
 
@@ -1023,7 +1111,8 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       // We only highlight textual content (raw_msg or message.text)
       final meta = m.metadata ?? {};
       final raw = (meta['raw_msg']?.toString() ?? '').trim();
-      final source = raw.isNotEmpty ? raw : (m is types.TextMessage ? m.text : '');
+      final source =
+          raw.isNotEmpty ? raw : (m is types.TextMessage ? m.text : '');
 
       if (source.isEmpty) continue;
 
@@ -1038,6 +1127,124 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     if (_matchIds.isNotEmpty) _currentMatchIndex = 0;
 
     setState(() {}); // re-render bubbles with highlights
+  }
+
+  Future<void> _nudgeOffScrollEdge({
+    required double amount,
+    Duration duration = const Duration(milliseconds: 1),
+  }) async {
+    debugPrint("_nudgeOffScrollEdge called with amount: $amount");
+    if (!mounted || !_chatScrollController.hasClients) return;
+    debugPrint("_nudgeOffScrollEdge: has clients");
+
+    final p = _chatScrollController.position;
+    final min = p.minScrollExtent, max = p.maxScrollExtent, px = p.pixels;
+    const eps = 0.5;
+    final atTop = (px - min).abs() <= eps;
+    final atBottom = (max - px).abs() <= eps;
+    if (!atTop && !atBottom) return;
+
+    final target =
+        (atTop ? px + amount : px - amount).clamp(min, max).toDouble();
+    try {
+      await _chatScrollController.animateTo(target,
+          duration: duration, curve: Curves.easeOut);
+    } catch (e) {
+      debugPrint("exception in _nudgeOffScrollEdge:-> $e");
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 16));
+  }
+
+  Future<void> _nudgeOffScrollEdge123({
+    required double amount,
+    Duration duration = const Duration(milliseconds: 1),
+  }) async {
+    if (!mounted) return;
+
+    // Prefer the primary controller, fallback to the nearest Scrollable
+    ScrollPosition? position;
+    final controller = PrimaryScrollController.of(context);
+    if (controller != null && controller.hasClients) {
+      position = controller.position;
+    } else {
+      final scrollable = Scrollable.of(context);
+      position = scrollable?.position;
+    }
+    if (position == null) return;
+
+    final min = position.minScrollExtent;
+    final max = position.maxScrollExtent;
+    final pixels = position.pixels;
+
+    const epsilon = 0.5;
+    final atTop = (pixels - min).abs() <= epsilon;
+    final atBottom = (max - pixels).abs() <= epsilon;
+
+    if (!atTop && !atBottom) return;
+
+    final double target =
+        (atTop ? pixels + amount : pixels - amount).clamp(min, max).toDouble();
+
+    try {
+      await position.animateTo(
+        target,
+        duration: duration,
+        curve: Curves.easeOut,
+      );
+    } catch (_) {
+      // Best-effort: some positions may not support animateTo early in build
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 16));
+  }
+
+  Future<void> _ensureVisibleWithRetry(
+    GlobalKey key, {
+    int attempts = 3,
+    Duration delayBetween = const Duration(milliseconds: 32),
+    Duration duration = const Duration(milliseconds: 300),
+    Curve curve = Curves.easeInOut,
+    double alignment = 0.05, // slight offset from edge
+    ScrollPositionAlignmentPolicy alignmentPolicy =
+        ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (!mounted) return;
+      final ctx = key.currentContext;
+      if (ctx != null) {
+        try {
+          await Scrollable.ensureVisible(
+            ctx,
+            duration: duration,
+            curve: curve,
+            alignment: alignment,
+            alignmentPolicy: alignmentPolicy,
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 16));
+          return;
+        } catch (_) {
+          // retry
+        }
+      }
+      await Future<void>.delayed(delayBetween);
+    }
+  }
+
+  /*  Move up or down in chat search */
+  bool _isJumping = false;
+
+  Future<void> _onNextMatch() async {
+    if (_isJumping || _matchIds.isEmpty) return;
+    final next = (_currentMatchIndex + 1) % _matchIds.length;
+    setState(() => _currentMatchIndex = next);
+    await _jumpToMatchIndex(next);
+  }
+
+  Future<void> _onPrevMatch() async {
+    if (_isJumping || _matchIds.isEmpty) return;
+    final prev = (_currentMatchIndex - 1 + _matchIds.length) % _matchIds.length;
+    setState(() => _currentMatchIndex = prev);
+    await _jumpToMatchIndex(prev);
   }
 
   @override
@@ -1055,6 +1262,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               user: user,
               messages: _messages,
               onSendPressed: _onSendPressed,
+              scrollController: _chatScrollController,
               onAttachmentPressed: _handleAttachmentPressed,
               onMessageTap: _onMessageTap,
               isAttachmentUploading: _loading,
@@ -1115,9 +1323,62 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                   {required types.Message message,
                   required bool nextMessageInGroup}) {
                 bool isSentByMe = message.author.id == user.id;
+                return KeyedSubtree(
+                  key: _keyFor(message.id),
+                  child: _buildMessage(message, isSentByMe),
+                );
                 return _buildMessage(message, isSentByMe);
               },
             ),
+            // Inside the Stack children (after Chat, before the loading overlay):
+            if (_searchQuery.isNotEmpty && _matchIds.isNotEmpty)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Material(
+                  color: Colors.black.withOpacity(0.01),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Counter: current/total
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            '${_currentMatchIndex >= 0 ? (_currentMatchIndex + 1) : 0}/${_matchIds.length}',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.keyboard_arrow_up,
+                              color: Colors.white),
+                          onPressed: () => _gotoMatch(-1),
+                          tooltip: 'Previous match',
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              color: Colors.white),
+                          onPressed: () => _gotoMatch(1),
+                          tooltip: 'Next match',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             if (_loading || !_initialLoaded)
               Container(
                 color: Colors.white10,
