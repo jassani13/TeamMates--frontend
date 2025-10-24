@@ -12,6 +12,7 @@ import 'package:base_code/module/webview/web_view_screen.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
+import 'module/bottom/chat/chat_detail/chat_detail_screen.dart';
 import 'module/bottom/chat/group_chat/group_chat_edit_screen.dart';
 import 'module/roster/add_staff_form.dart';
 import 'module/bottom/roster/addNonPlayer/add_non_player_screen.dart';
@@ -93,7 +94,7 @@ class AppRouter {
     GetPage(name: createGroupChat, page: () => CreateGroupChatScreen()),
     GetPage(name: editGroupChatScreen, page: () => EditGroupChatScreen()),
     GetPage(name: addMembersToGroupChat, page: () => AddGroupMembersScreen()),
-    GetPage(name: conversationDetailScreen, page: () => ConversationDetailScreen()),
+    GetPage(name: conversationDetailScreen, page: () => ChatDetailScreen()),
     GetPage(name: otp, page: () => OtpScreen()),
     GetPage(name: forgotPassword, page: () => ForgotPasswordScreen()),
     GetPage(name: calendar, page: () => CalendarScreen()),
