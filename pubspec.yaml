@@ -79,6 +79,7 @@ dependencies:
   csv: ^6.0.0
   flutter_inappwebview: ^6.1.5
   flutter_linkify: ^6.0.0
+  scrollable_positioned_list: ^0.3.8
 
 dependency_overrides:
   freezed_annotation: ^3.0.0

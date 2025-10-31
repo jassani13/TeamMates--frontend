@@ -7,6 +7,7 @@ import 'chat_detail_controller.dart';
 import 'message_bubble.dart';
 import 'chat_input.dart';
 import 'package:get/get.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   const ChatDetailScreen({Key? key}) : super(key: key);
@@ -17,7 +18,31 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final controller = Get.put(ChatDetailController());
-  final scrollController = ScrollController();
+  final ItemScrollController scrollController = ItemScrollController();
+  final Map<String, int> _msgIdsToIndex = {};
+
+  void _jumpToMessage(String messageId) async {
+    if (messageId.isEmpty) return;
+
+    var idx = _msgIdsToIndex[messageId];
+    if (idx == null) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      idx = _msgIdsToIndex[messageId];
+    }
+    if (idx == null) return;
+
+    final unreadIndex = idx - 1 >= 0 ? idx - 1 : 0;
+    _scrollToIndex(unreadIndex);
+  }
+
+  void _scrollToIndex(int unreadIndex) async {
+    await scrollController.scrollTo(
+      index: unreadIndex,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      alignment: 0.0,
+    );
+  }
 
   @override
   void initState() {
@@ -33,19 +58,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
-    scrollController.dispose();
     super.dispose();
   }
 
   Widget _buildList() {
     return Obx(() {
       final msgs = controller.messages;
-      final query = controller.searchQuery.value; // make Obx depend on searchQuery so it rebuilds highlight
+      final query = controller.searchQuery
+          .value; // make Obx depend on searchQuery so it rebuilds highlight
       if (controller.loading.value && msgs.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
-      return ListView.separated(
-        controller: scrollController,
+      return ScrollablePositionedList.separated(
+        itemScrollController: scrollController,
+        //itemPositionsListener: itemPositionsListener,
         reverse: true,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         itemCount: msgs.length,
@@ -53,6 +79,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         itemBuilder: (context, idx) {
           final msg = msgs[idx];
           final isMe = msg.author.id == AppPref().userId.toString();
+          debugPrint(
+              "msg->id:${msg.id} :: idx:$idx :: msg->${msg.metadata?['raw_msg']}");
+          _msgIdsToIndex.putIfAbsent(msg.id, () => idx);
+
           return MessageBubble(
             message: msg,
             isMe: isMe,
@@ -172,7 +202,32 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           onSearchQuery: _onSearchChanged),
       body: Column(
         children: [
-          Expanded(child: _buildList()),
+          Expanded(
+              child: Stack(
+            children: [
+              _buildList(),
+              Positioned(
+                bottom: 0,
+                right: 12,
+                child: SafeArea(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // _jumpToMessage(
+                      //     controller.conversation?.lastReadMessageId ?? '');
+                      _jumpToMessage('46');
+                    },
+                    icon: const Icon(Icons.keyboard_double_arrow_up, size: 18),
+                    label: const Text('Jump to first unread'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          )),
           Obx(() {
             final typing = controller.typingUsers.values.toList();
             if (typing.isNotEmpty) {
@@ -194,13 +249,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ChatInput(
             onSend: (t) {
               controller.sendText(t);
-              // scroll to top (newest)
-              Future.delayed(const Duration(milliseconds: 150), () {
-                if (scrollController.hasClients)
-                  scrollController.animateTo(0.0,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOut);
-              });
             },
             onAttachImage: () async {
               await controller.sendImage();
