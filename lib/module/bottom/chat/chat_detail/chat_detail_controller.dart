@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/module/bottom/chat/chat_controller.dart';
+import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:get/get.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../chat_screen.dart';
 
@@ -24,6 +26,12 @@ class ChatDetailController extends GetxController {
 
   // Reuse existing chat controller for media upload helper
   final ChatScreenController chatController = Get.put(ChatScreenController());
+
+  // Scroll helpers (moved from UI for readability)
+  final ItemScrollController itemScrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
+  final Map<String, int> msgIdToIndex = {};
 
   // Socket event constants (kept consistent with the rest of the app)
   static const evGetMessages = 'get_messages';
@@ -97,7 +105,8 @@ class ChatDetailController extends GetxController {
 
   void _onMessagesResult(dynamic payload) {
     if (payload == null) return;
-    if (payload['conversation_id']?.toString() != conversation?.conversationId) return;
+    if (payload['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     final list = (payload['messages'] as List?) ?? [];
     messages.clear();
     for (final raw in list) {
@@ -110,7 +119,8 @@ class ChatDetailController extends GetxController {
   void _onNewMessage(dynamic data) {
     final raw = data['resData'] ?? data;
     if (raw == null) return;
-    if (raw['conversation_id']?.toString() != conversation?.conversationId) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     final msg = _fromSocket(raw);
     messages.insert(0, msg);
     // if received from others, mark read shortly after to allow UI to update
@@ -190,7 +200,8 @@ class ChatDetailController extends GetxController {
   void _onMessageEdited(dynamic data) {
     final raw = data['resData'] ?? data;
     if (raw == null) return;
-    if (raw['conversation_id']?.toString() != conversation?.conversationId) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     final id = raw['message_id']?.toString();
     if (id == null) return;
     final idx = messages.indexWhere((m) => m.id == id);
@@ -216,7 +227,8 @@ class ChatDetailController extends GetxController {
   void _onMessageDeleted(dynamic data) {
     final raw = data['resData'] ?? data;
     if (raw == null) return;
-    if (raw['conversation_id']?.toString() != conversation?.conversationId) return;
+    if (raw['conversation_id']?.toString() != conversation?.conversationId)
+      return;
     final id = raw['message_id']?.toString();
     if (id == null) return;
     final idx = messages.indexWhere((m) => m.id == id);
@@ -310,7 +322,8 @@ class ChatDetailController extends GetxController {
         allowMultiple: false,
         allowedExtensions: ['pdf'],
       );
-      if (res == null || res.files.isEmpty || res.files.single.path == null) return;
+      if (res == null || res.files.isEmpty || res.files.single.path == null)
+        return;
       final file = res.files.single;
       loading.value = true;
       final url = await chatController.setMediaChatApiCall(result: file);
@@ -329,7 +342,8 @@ class ChatDetailController extends GetxController {
   }
 
   void sendReaction(String messageId, String reaction) {
-    socket.emit(evReaction, {'message_id': messageId, 'reaction_type': reaction});
+    socket
+        .emit(evReaction, {'message_id': messageId, 'reaction_type': reaction});
   }
 
   void editMessage(String messageId, String newText) {
@@ -360,7 +374,9 @@ class ChatDetailController extends GetxController {
       }
       return;
     }
-    if (!_isTyping || _lastTypingTrue == null || now.difference(_lastTypingTrue!) >= _typingHeartbeat) {
+    if (!_isTyping ||
+        _lastTypingTrue == null ||
+        now.difference(_lastTypingTrue!) >= _typingHeartbeat) {
       socket.emit(evTyping, {'conversation_id': convId, 'isTyping': true});
       _isTyping = true;
       _lastTypingTrue = now;
@@ -370,6 +386,67 @@ class ChatDetailController extends GetxController {
       socket.emit(evTyping, {'conversation_id': convId, 'isTyping': false});
       _isTyping = false;
     });
+  }
+
+  /// Public method UI can call to jump to the message with [messageId].
+  /// If possible, it scrolls so that one message before the target is visible
+  /// to provide context.
+  Future<void> jumpToMessage(String messageId) async {
+    if (messageId.isEmpty) return;
+
+    int? idx = msgIdToIndex[messageId];
+
+    if (idx == null) {
+      idx = messages.indexWhere((m) => m.id == messageId);
+      if (idx == -1) idx = null;
+    }
+
+    if (idx == null) {
+      // Give UI a short time to build items and try again
+      await Future.delayed(const Duration(milliseconds: 200));
+      idx = msgIdToIndex[messageId];
+      if (idx == null) {
+        final found = messages.indexWhere((m) => m.id == messageId);
+        if (found != -1) idx = found;
+      }
+    }
+
+    if (idx == null) return;
+
+    final unreadIndex = idx - 1 >= 0 ? idx - 1 : 0;
+    await tryScrollToIndex(unreadIndex);
+  }
+
+  /// Internal helper which retries scrolling until the item becomes visible
+  /// or a max attempts threshold is reached.
+  Future<void> tryScrollToIndex(int index) async {
+    const int maxAttempts = 6;
+    const Duration attemptDelay = Duration(milliseconds: 150);
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        await itemScrollController.scrollTo(
+          index: index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.0,
+        );
+      } catch (e) {
+        debugPrint('Scroll attempt $attempt failed -> $e');
+      }
+
+      await Future.delayed(attemptDelay);
+
+      final positions = itemPositionsListener.itemPositions.value;
+      final visible = positions.any((p) => p.index == index);
+      if (visible) return;
+
+      if (attempt == maxAttempts - 1) {
+        try {
+          itemScrollController.jumpTo(index: index);
+        } catch (_) {}
+      }
+    }
   }
 
   // ----- Small helper to convert raw socket message into types.Message -----
@@ -390,7 +467,9 @@ class ChatDetailController extends GetxController {
       'raw_msg': raw['msg'],
       'file_url': raw['file_url'],
       'reactions': raw['reactions'] ?? [],
-      'edited': raw['edited'] == true || ((raw['updated_at']?.toString().isNotEmpty ?? false) && (raw['updated_at']?.toString() != raw['created_at']?.toString())),
+      'edited': raw['edited'] == true ||
+          ((raw['updated_at']?.toString().isNotEmpty ?? false) &&
+              (raw['updated_at']?.toString() != raw['created_at']?.toString())),
       'created_at': raw['created_at'],
       'updated_at': raw['updated_at'],
       'deleted_by': raw['deleted_by']?.toString(),

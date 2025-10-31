@@ -18,78 +18,10 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final controller = Get.put(ChatDetailController());
-  final ItemScrollController scrollController = ItemScrollController();
-  final ItemPositionsListener itemPositionsListener =
-      ItemPositionsListener.create();
-  final Map<String, int> _msgIdsToIndex = {};
-
-  void _jumpToMessage(String messageId) async {
-    if (messageId.isEmpty) return;
-
-    // Try to obtain index from the map first (filled by itemBuilder)
-    int? idx = _msgIdsToIndex[messageId];
-
-    // If index not available yet (item not built), try to find it in the messages list
-    if (idx == null) {
-      final msgs = controller.messages;
-      idx = msgs.indexWhere((m) => m.id == messageId);
-      if (idx == -1) idx = null;
-    }
-
-    // If still not found, wait a short moment and try again (gives the list a chance to build items)
-    if (idx == null) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      idx = _msgIdsToIndex[messageId];
-      if (idx == null) {
-        final msgs = controller.messages;
-        final found = msgs.indexWhere((m) => m.id == messageId);
-        if (found != -1) idx = found;
-      }
-    }
-
-    if (idx == null) return;
-
-    final unreadIndex = idx - 1 >= 0 ? idx - 1 : 0;
-    await _tryScrollToIndex(unreadIndex);
-  }
-
-  /// Try to scroll to [index] multiple times until the item becomes visible
-  /// or until max attempts reached. This helps when the list hasn't built
-  /// the target item yet (lazy building). Uses [itemPositionsListener] to
-  /// detect visibility.
-  Future<void> _tryScrollToIndex(int index) async {
-    const int maxAttempts = 6;
-    const Duration attemptDelay = Duration(milliseconds: 150);
-
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        await scrollController.scrollTo(
-          index: index,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          alignment: 0.0,
-        );
-      } catch (e) {
-        debugPrint("Scroll attempt $attempt failed->$e");
-      }
-
-      await Future.delayed(attemptDelay);
-
-      final positions = itemPositionsListener.itemPositions.value;
-      final visible = positions.any((p) => p.index == index);
-      if (visible) return;
-
-      if (attempt == maxAttempts - 1) {
-        try {
-          scrollController.jumpTo(index: index);
-        } catch (_) {}
-      }
-    }
-  }
-
-  void _scrollToIndex(int unreadIndex) async {
-    await _tryScrollToIndex(unreadIndex);
-  }
+  // Scrolling is handled in the controller for readability.
+  // controller.itemScrollController
+  // controller.itemPositionsListener
+  // controller.msgIdToIndex
 
   @override
   void initState() {
@@ -117,8 +49,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         return const Center(child: CircularProgressIndicator());
       }
       return ScrollablePositionedList.separated(
-        itemScrollController: scrollController,
-        itemPositionsListener: itemPositionsListener,
+        itemScrollController: controller.itemScrollController,
+        itemPositionsListener: controller.itemPositionsListener,
         //itemPositionsListener: itemPositionsListener,
         reverse: true,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -129,7 +61,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           final isMe = msg.author.id == AppPref().userId.toString();
           debugPrint(
               "msg->id:${msg.id} :: idx:$idx :: msg->${msg.metadata?['raw_msg']}");
-          _msgIdsToIndex.putIfAbsent(msg.id, () => idx);
+          controller.msgIdToIndex.putIfAbsent(msg.id, () => idx);
 
           return MessageBubble(
             message: msg,
@@ -281,7 +213,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   child: SafeArea(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        _jumpToMessage(
+                        controller.jumpToMessage(
                             controller.conversation?.lastReadMessageId ?? '');
                       },
                       icon:
