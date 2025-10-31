@@ -19,29 +19,76 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final controller = Get.put(ChatDetailController());
   final ItemScrollController scrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
   final Map<String, int> _msgIdsToIndex = {};
 
   void _jumpToMessage(String messageId) async {
     if (messageId.isEmpty) return;
 
-    var idx = _msgIdsToIndex[messageId];
+    // Try to obtain index from the map first (filled by itemBuilder)
+    int? idx = _msgIdsToIndex[messageId];
+
+    // If index not available yet (item not built), try to find it in the messages list
+    if (idx == null) {
+      final msgs = controller.messages;
+      idx = msgs.indexWhere((m) => m.id == messageId);
+      if (idx == -1) idx = null;
+    }
+
+    // If still not found, wait a short moment and try again (gives the list a chance to build items)
     if (idx == null) {
       await Future.delayed(const Duration(milliseconds: 200));
       idx = _msgIdsToIndex[messageId];
+      if (idx == null) {
+        final msgs = controller.messages;
+        final found = msgs.indexWhere((m) => m.id == messageId);
+        if (found != -1) idx = found;
+      }
     }
+
     if (idx == null) return;
 
     final unreadIndex = idx - 1 >= 0 ? idx - 1 : 0;
-    _scrollToIndex(unreadIndex);
+    await _tryScrollToIndex(unreadIndex);
+  }
+
+  /// Try to scroll to [index] multiple times until the item becomes visible
+  /// or until max attempts reached. This helps when the list hasn't built
+  /// the target item yet (lazy building). Uses [itemPositionsListener] to
+  /// detect visibility.
+  Future<void> _tryScrollToIndex(int index) async {
+    const int maxAttempts = 6;
+    const Duration attemptDelay = Duration(milliseconds: 150);
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        await scrollController.scrollTo(
+          index: index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.0,
+        );
+      } catch (e) {
+        debugPrint("Scroll attempt $attempt failed->$e");
+      }
+
+      await Future.delayed(attemptDelay);
+
+      final positions = itemPositionsListener.itemPositions.value;
+      final visible = positions.any((p) => p.index == index);
+      if (visible) return;
+
+      if (attempt == maxAttempts - 1) {
+        try {
+          scrollController.jumpTo(index: index);
+        } catch (_) {}
+      }
+    }
   }
 
   void _scrollToIndex(int unreadIndex) async {
-    await scrollController.scrollTo(
-      index: unreadIndex,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      alignment: 0.0,
-    );
+    await _tryScrollToIndex(unreadIndex);
   }
 
   @override
@@ -71,6 +118,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       }
       return ScrollablePositionedList.separated(
         itemScrollController: scrollController,
+        itemPositionsListener: itemPositionsListener,
         //itemPositionsListener: itemPositionsListener,
         reverse: true,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -206,26 +254,48 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               child: Stack(
             children: [
               _buildList(),
-              Positioned(
-                bottom: 0,
-                right: 12,
-                child: SafeArea(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // _jumpToMessage(
-                      //     controller.conversation?.lastReadMessageId ?? '');
-                      _jumpToMessage('46');
-                    },
-                    icon: const Icon(Icons.keyboard_double_arrow_up, size: 18),
-                    label: const Text('Jump to first unread'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 13),
+              // Show the jump button only when meaningful. Use Obx so it reacts to conversation/messages changes.
+              Obx(() {
+                final msgs = controller.messages;
+                final lastReadId =
+                    controller.conversation?.lastReadMessageId ?? '';
+                if (lastReadId.isEmpty) return const SizedBox.shrink();
+
+                // If we have messages and the newest message's id equals lastReadId, no need to show.
+                if (msgs.isNotEmpty && msgs.first.id == lastReadId) {
+                  return const SizedBox.shrink();
+                }
+
+                // If we can find the lastRead message and it was sent by current user, hide the button for sender.
+                final foundIdx = msgs.indexWhere((m) => m.id == lastReadId);
+                if (foundIdx != -1) {
+                  final lastReadMsg = msgs[foundIdx];
+                  if (lastReadMsg.author.id == AppPref().userId.toString()) {
+                    return const SizedBox.shrink();
+                  }
+                }
+
+                return Positioned(
+                  bottom: 0,
+                  right: 12,
+                  child: SafeArea(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _jumpToMessage(
+                            controller.conversation?.lastReadMessageId ?? '');
+                      },
+                      icon:
+                          const Icon(Icons.keyboard_double_arrow_up, size: 18),
+                      label: const Text('Jump to first unread'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
                     ),
                   ),
-                ),
-              )
+                );
+              }),
             ],
           )),
           Obx(() {
