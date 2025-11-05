@@ -32,6 +32,8 @@ class ChatDetailController extends GetxController {
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
   final Map<String, int> msgIdToIndex = {};
+  // Controls visibility of the "Jump to first unread" button
+  final RxBool showJumpToUnreadButton = false.obs;
 
   // Socket event constants (kept consistent with the rest of the app)
   static const evGetMessages = 'get_messages';
@@ -61,6 +63,8 @@ class ChatDetailController extends GetxController {
     conversation = args['conversation'] as ConversationItem?;
     me = types.User(id: AppPref().userId.toString());
     _registerSocketListeners();
+    // Track viewport to decide when to show/hide the jump button
+    itemPositionsListener.itemPositions.addListener(_onViewportChanged);
     loadInitial();
   }
 
@@ -114,6 +118,8 @@ class ChatDetailController extends GetxController {
       messages.insert(0, msg);
     }
     loading.value = false;
+    // After messages load, update jump button visibility
+    updateJumpToUnreadVisibility();
   }
 
   void _onNewMessage(dynamic data) {
@@ -123,9 +129,15 @@ class ChatDetailController extends GetxController {
       return;
     final msg = _fromSocket(raw);
     messages.insert(0, msg);
-    // if received from others, mark read shortly after to allow UI to update
+    // Update visibility as list changed
+    updateJumpToUnreadVisibility();
+    // If received from others, mark read shortly after to allow UI to update
     if (msg.author.id != me.id) {
       Future.delayed(const Duration(milliseconds: 250), () => markRead());
+    } else {
+      // If the message is authored by me, update last-read to this message id
+      // so unread boundary moves with my own messages and the jump button hides.
+      _setLastReadToMessage(msg.id);
     }
   }
 
@@ -270,6 +282,10 @@ class ChatDetailController extends GetxController {
       });
       _isTyping = false;
     }
+    // Remove viewport listener to avoid leaks
+    try {
+      itemPositionsListener.itemPositions.removeListener(_onViewportChanged);
+    } catch (_) {}
     super.onClose();
   }
 
@@ -361,6 +377,9 @@ class ChatDetailController extends GetxController {
       'conversation_id': conversation?.conversationId ?? '',
       'last_read_message_id': lastMessageId,
     });
+    // Update local conversation model
+    _updateConversationLastRead(lastMessageId);
+    updateJumpToUnreadVisibility();
   }
 
   void onUserTyping(String currentText) {
@@ -415,6 +434,108 @@ class ChatDetailController extends GetxController {
 
     final unreadIndex = idx - 1 >= 0 ? idx - 1 : 0;
     await tryScrollToIndex(unreadIndex);
+    // Hide the button once we've jumped to unread
+    showJumpToUnreadButton.value = false;
+    // Optionally mark as read up to newest after jumping
+    markRead();
+  }
+
+  /// Compute the index of the first unread message based on
+  /// conversation.lastReadMessageId and current message list
+  int? getFirstUnreadIndex() {
+    final lastReadId = conversation?.lastReadMessageId ?? '';
+    if (lastReadId.isEmpty || messages.isEmpty) return null;
+
+    final idx = messages.indexWhere((m) => m.id == lastReadId);
+    if (idx == -1) {
+      // lastRead not in current window; consider everything unread
+      // so the first unread is the newest message (index 0)
+      // but jumping to 0 is usually unnecessary; prefer showing button that
+      // scrolls close to the boundary. We'll scroll to the last item to show oldest loaded.
+      return messages.length - 1;
+    }
+    // List is reversed (0 = newest). First unread is just newer than lastRead.
+    final firstUnread = idx - 1;
+    if (firstUnread < 0) return null; // nothing unread
+    return firstUnread;
+  }
+
+  /// Recalculate whether the jump button should be visible, based on
+  /// unread index and current viewport.
+  void updateJumpToUnreadVisibility() {
+    // If newest message is mine, no need to show the button
+    if (messages.isNotEmpty && messages.first.author.id == me.id) {
+      showJumpToUnreadButton.value = false;
+      return;
+    }
+    final firstUnread = getFirstUnreadIndex();
+    if (firstUnread == null) {
+      showJumpToUnreadButton.value = false;
+      return;
+    }
+
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) {
+      // If we haven't laid out yet, keep the button visible when there's unread
+      showJumpToUnreadButton.value = true;
+      return;
+    }
+
+    // Determine visible index range
+    int minIndex = 1 << 30;
+    int maxIndex = -1;
+    for (final p in positions) {
+      if (p.index < minIndex) minIndex = p.index;
+      if (p.index > maxIndex) maxIndex = p.index;
+    }
+
+    final isVisible = firstUnread >= minIndex && firstUnread <= maxIndex;
+    showJumpToUnreadButton.value = !isVisible;
+  }
+
+  void _onViewportChanged() {
+    updateJumpToUnreadVisibility();
+  }
+
+  /// Jump using derived first-unread logic with fallbacks
+  Future<void> jumpToFirstUnread() async {
+    final target = getFirstUnreadIndex();
+    if (target != null) {
+      await tryScrollToIndex(target);
+      showJumpToUnreadButton.value = false;
+      markRead();
+      return;
+    }
+    // Fallback to lastRead id based jump (no-op if empty)
+    final id = conversation?.lastReadMessageId ?? '';
+    if (id.isNotEmpty) await jumpToMessage(id);
+  }
+
+  void _setLastReadToMessage(String messageId) {
+    if (messageId.isEmpty) return;
+    socket.emit(evMessageRead, {
+      'conversation_id': conversation?.conversationId ?? '',
+      'last_read_message_id': messageId,
+    });
+    _updateConversationLastRead(messageId);
+    updateJumpToUnreadVisibility();
+  }
+
+  void _updateConversationLastRead(String messageId) {
+    if (conversation == null) return;
+    conversation = ConversationItem(
+      conversationId: conversation!.conversationId,
+      ownerId: conversation!.ownerId,
+      type: conversation!.type,
+      title: conversation!.title,
+      image: conversation!.image,
+      lastMessage: conversation!.lastMessage,
+      lastMessageFileUrl: conversation!.lastMessageFileUrl,
+      lastReadMessageId: messageId,
+      msgType: conversation!.msgType,
+      createdAt: conversation!.createdAt,
+      unreadCount: 0,
+    );
   }
 
   /// Internal helper which retries scrolling until the item becomes visible

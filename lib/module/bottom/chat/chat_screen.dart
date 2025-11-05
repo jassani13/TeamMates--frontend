@@ -22,8 +22,13 @@ class _ChatScreenState extends State<ChatScreen> {
     //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
     //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
     //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+    String url = "http://10.0.2.2:3000";
+    if (Platform.isIOS) {
+      url = "http://127.0.0.1:3000";
+    }
+
     socket = IO.io(
-      'http://127.0.0.1:3000',
+      url,
       {
         'transports': ['websocket'],
         'autoConnect': false,
@@ -61,20 +66,19 @@ class _ChatScreenState extends State<ChatScreen> {
         final convId = data['conversation_id']?.toString();
         if (convId == null) return;
         chatController.patchConversation(
-          convId: convId,
-          type: data['type']?.toString(),
-          ownerId: data['owner_id']?.toString(),
-          title: data['title']?.toString(),
-          image: data['image']?.toString(),
-          lastMessage: data['last_message']?.toString() ?? '',
-          msgType: data['msg_type']?.toString() ?? 'text',
-          fileUrl: data['last_message_file_url']?.toString() ?? '',
-          createdAt: data['created_at']?.toString(),
-          unreadCount: data['unread_count'] is int
-              ? data['unread_count'] as int
-              : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
-          lastReadMessageId: data?['last_read_message_id']
-        );
+            convId: convId,
+            type: data['type']?.toString(),
+            ownerId: data['owner_id']?.toString(),
+            title: data['title']?.toString(),
+            image: data['image']?.toString(),
+            lastMessage: data['last_message']?.toString() ?? '',
+            msgType: data['msg_type']?.toString() ?? 'text',
+            fileUrl: data['last_message_file_url']?.toString() ?? '',
+            createdAt: data['created_at']?.toString(),
+            unreadCount: data['unread_count'] is int
+                ? data['unread_count'] as int
+                : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
+            lastReadMessageId: data?['last_read_message_id']);
       }
     });
     // New incoming message (server should emit new_message; if not adjust to your emitted event)
@@ -263,7 +267,8 @@ class _ChatScreenState extends State<ChatScreen> {
             Divider(color: AppColor.greyF6Color, height: 1),
         itemBuilder: (_, i) {
           ConversationItem c = items[i];
-          debugPrint("Rendering conversation: ${c.conversationId}::${c.ownerId}");
+          debugPrint(
+              "Rendering conversation: ${c.conversationId}::${c.ownerId}");
           final subtitle = c.msgType == 'text'
               ? c.lastMessage
               : (c.msgType == 'null' ? 'File' : c.msgType);
@@ -345,6 +350,4 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     });
   }
-
-
 }

@@ -188,34 +188,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               _buildList(),
               // Show the jump button only when meaningful. Use Obx so it reacts to conversation/messages changes.
               Obx(() {
-                final msgs = controller.messages;
-                final lastReadId =
-                    controller.conversation?.lastReadMessageId ?? '';
-                if (lastReadId.isEmpty) return const SizedBox.shrink();
-
-                // If we have messages and the newest message's id equals lastReadId, no need to show.
-                if (msgs.isNotEmpty && msgs.first.id == lastReadId) {
+                if (!controller.showJumpToUnreadButton.value) {
                   return const SizedBox.shrink();
                 }
-
-                // If we can find the lastRead message and it was sent by current user, hide the button for sender.
-                final foundIdx = msgs.indexWhere((m) => m.id == lastReadId);
-                if (foundIdx != -1) {
-                  final lastReadMsg = msgs[foundIdx];
-                  if (lastReadMsg.author.id == AppPref().userId.toString()) {
-                    return const SizedBox.shrink();
-                  }
-                }
-
                 return Positioned(
                   bottom: 0,
                   right: 12,
                   child: SafeArea(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        controller.jumpToMessage(
-                            controller.conversation?.lastReadMessageId ?? '');
-                      },
+                      onPressed: controller.jumpToFirstUnread,
                       icon:
                           const Icon(Icons.keyboard_double_arrow_up, size: 18),
                       label: const Text('Jump to first unread'),
