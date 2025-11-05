@@ -37,6 +37,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
+    // Mark messages as read when leaving the screen if the latest message
+    // is from someone else (i.e., there are potential unreads).
+    try {
+      final msgs = controller.messages;
+      if (msgs.isNotEmpty &&
+          msgs.first.author.id != AppPref().userId.toString()) {
+        controller.markRead();
+      }
+    } catch (_) {}
     super.dispose();
   }
 
