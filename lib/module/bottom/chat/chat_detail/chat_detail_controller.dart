@@ -20,6 +20,11 @@ class ChatDetailController extends GetxController {
 
   // New: search query observable used for keyword-based highlighting
   final RxString searchQuery = ''.obs;
+  // Search navigation state
+  final RxList<String> _matchIds = <String>[].obs;
+  final RxInt _matchIndex = (-1).obs; // -1 when none selected
+  final RxInt currentMatchNumber = 0.obs; // 1-based for UI
+  final RxInt totalMatches = 0.obs;
 
   ConversationItem? conversation;
   late final types.User me;
@@ -74,11 +79,74 @@ class ChatDetailController extends GetxController {
   /// Set the current search query; UI should call this when user types in search.
   void setSearchQuery(String q) {
     searchQuery.value = q;
+    _recomputeMatches();
   }
 
   /// Clear the current search query.
   void clearSearch() {
     searchQuery.value = '';
+    _recomputeMatches();
+  }
+
+  void _recomputeMatches() {
+    final q = searchQuery.value.trim().toLowerCase();
+    _matchIds.clear();
+    _matchIndex.value = -1;
+    if (q.isEmpty) {
+      totalMatches.value = 0;
+      currentMatchNumber.value = 0;
+      return;
+    }
+    for (final m in messages) {
+      final text = _extractSearchableText(m).toLowerCase();
+      if (text.contains(q)) {
+        _matchIds.add(m.id);
+      }
+    }
+    totalMatches.value = _matchIds.length;
+    currentMatchNumber.value = _matchIds.isEmpty ? 0 : 1;
+    _matchIndex.value = _matchIds.isEmpty ? -1 : 0;
+  }
+
+  String _extractSearchableText(types.Message m) {
+    final meta = m.metadata;
+    final raw = (meta != null ? (meta['raw_msg']?.toString() ?? '') : '');
+    if (raw.isNotEmpty) return raw;
+    if (m is types.TextMessage) return m.text;
+    return '';
+  }
+
+  // Navigation helpers for search matches
+  void goToNextMatch() {
+    if (_matchIds.isEmpty) return;
+    if (_matchIndex.value < 0) {
+      _matchIndex.value = 0;
+    } else {
+      // Next = newer message in our reversed list -> move towards index 0
+      _matchIndex.value = (_matchIndex.value - 1) < 0
+          ? (_matchIds.length - 1)
+          : (_matchIndex.value - 1);
+    }
+    currentMatchNumber.value = _matchIndex.value + 1;
+    _scrollToMatchAtIndex(_matchIndex.value);
+  }
+
+  void goToPrevMatch() {
+    if (_matchIds.isEmpty) return;
+    if (_matchIndex.value < 0) {
+      _matchIndex.value = 0;
+    } else {
+      // Prev = older message -> increase index, wrap
+      _matchIndex.value = (_matchIndex.value + 1) % _matchIds.length;
+    }
+    currentMatchNumber.value = _matchIndex.value + 1;
+    _scrollToMatchAtIndex(_matchIndex.value);
+  }
+
+  Future<void> _scrollToMatchAtIndex(int index) async {
+    if (index < 0 || index >= _matchIds.length) return;
+    final id = _matchIds[index];
+    await scrollToMessageNoSideEffects(id);
   }
 
   void _registerSocketListeners() {
@@ -445,6 +513,28 @@ class ChatDetailController extends GetxController {
     showJumpToUnreadButton.value = false;
     // Optionally mark as read up to newest after jumping
     markRead();
+  }
+
+  /// Scroll to a message without altering unread state or jump button.
+  Future<void> scrollToMessageNoSideEffects(String messageId) async {
+    if (messageId.isEmpty) return;
+
+    int? idx = msgIdToIndex[messageId];
+    if (idx == null) {
+      idx = messages.indexWhere((m) => m.id == messageId);
+      if (idx == -1) idx = null;
+    }
+    if (idx == null) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      idx = msgIdToIndex[messageId];
+      if (idx == null) {
+        final found = messages.indexWhere((m) => m.id == messageId);
+        if (found != -1) idx = found;
+      }
+    }
+    if (idx == null) return;
+    final target = idx - 1 >= 0 ? idx - 1 : 0;
+    await tryScrollToIndex(target);
   }
 
   /// Compute the index of the first unread message based on

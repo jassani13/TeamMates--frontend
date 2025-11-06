@@ -234,7 +234,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   createdAt: null,
                   unreadCount: null,
                   lastMessageFileUrl: ''),
-          onSearchQuery: _onSearchChanged),
+          onSearchQuery: _onSearchChanged,
+          onSearchPrev: controller.goToPrevMatch,
+          onSearchNext: controller.goToNextMatch,
+          searchCurrent: controller.currentMatchNumber,
+          searchTotal: controller.totalMatches),
       body: Column(
         children: [
           Expanded(

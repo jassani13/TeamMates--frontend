@@ -1,10 +1,8 @@
-import 'package:base_code/main.dart'; // AppPref
 import 'package:base_code/package/screen_packages.dart'; // AppColor, AppRouter, Gap, etc.
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gap/gap.dart';
 import '../../../../model/conversation_item.dart';
-
 
 class ChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   const ChatAppBar({
@@ -12,11 +10,19 @@ class ChatAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.conversation,
     required this.onSearchQuery,
     this.searchHint = 'Search messages',
+    this.onSearchPrev,
+    this.onSearchNext,
+    this.searchCurrent,
+    this.searchTotal,
   });
 
   final ConversationItem conversation;
   final ValueChanged<String> onSearchQuery;
   final String searchHint;
+  final VoidCallback? onSearchPrev;
+  final VoidCallback? onSearchNext;
+  final RxInt? searchCurrent; // 1-based current index
+  final RxInt? searchTotal; // total matches
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -49,43 +55,50 @@ class _ChatAppBarState extends State<ChatAppBar> {
   Widget build(BuildContext context) {
     return Obx(() {
       return _c.isSearching.value
-          ? _SearchAppBar(c: _c, hintText: widget.searchHint)
+          ? _SearchAppBar(
+              c: _c,
+              hintText: widget.searchHint,
+              onPrev: widget.onSearchPrev,
+              onNext: widget.onSearchNext,
+              current: widget.searchCurrent,
+              total: widget.searchTotal,
+            )
           : AppBar(
-        title: Text(widget.conversation.title ?? ''),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (val) {
-              if (val == "search") {
-                _c.enter();
-              } else if (val == "settings") {
-                Get.toNamed(
-                  AppRouter.editGroupChatScreen,
-                  arguments: {"conversation": widget.conversation},
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                value: "search",
-                child: Text(
-                  "Search Chat",
-                  style: TextStyle(color: AppColor.black12Color),
+              title: Text(widget.conversation.title ?? ''),
+              actions: [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (val) {
+                    if (val == "search") {
+                      _c.enter();
+                    } else if (val == "settings") {
+                      Get.toNamed(
+                        AppRouter.editGroupChatScreen,
+                        arguments: {"conversation": widget.conversation},
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      value: "search",
+                      child: Text(
+                        "Search Chat",
+                        style: TextStyle(color: AppColor.black12Color),
+                      ),
+                    ),
+                    if (_canShowSettings)
+                      PopupMenuItem<String>(
+                        value: "settings",
+                        child: Text(
+                          "Settings",
+                          style: TextStyle(color: AppColor.black12Color),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              if (_canShowSettings)
-                PopupMenuItem<String>(
-                  value: "settings",
-                  child: Text(
-                    "Settings",
-                    style: TextStyle(color: AppColor.black12Color),
-                  ),
-                ),
-            ],
-          ),
-          const Gap(12),
-        ],
-      );
+                const Gap(12),
+              ],
+            );
     });
   }
 }
@@ -93,10 +106,21 @@ class _ChatAppBarState extends State<ChatAppBar> {
 /// Internal search AppBar used by ChatAppBar.
 /// Kept private to this file; fully controlled by SearchAppBarController.
 class _SearchAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _SearchAppBar({required this.c, this.hintText = 'Search messages'});
+  const _SearchAppBar({
+    required this.c,
+    this.hintText = 'Search messages',
+    this.onPrev,
+    this.onNext,
+    this.current,
+    this.total,
+  });
 
   final SearchAppBarController c;
   final String hintText;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  final RxInt? current;
+  final RxInt? total;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -124,19 +148,51 @@ class _SearchAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        // Search navigation controls + count
+        if (onPrev != null &&
+            onNext != null &&
+            current != null &&
+            total != null)
+          Obx(() {
+            final cur = current!.value;
+            final tot = total!.value;
+            final enabled = (c.controller.text.isNotEmpty && tot > 0);
+            return Row(
+              children: [
+                if (tot > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      '${cur}/${tot}',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                IconButton(
+                  tooltip: 'Previous match',
+                  onPressed: enabled ? onPrev : null,
+                  icon: const Icon(Icons.keyboard_arrow_up),
+                ),
+                IconButton(
+                  tooltip: 'Next match',
+                  onPressed: enabled ? onNext : null,
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                ),
+              ],
+            );
+          }),
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: c.controller,
           builder: (_, val, __) {
             final hasText = val.text.isNotEmpty;
             return hasText
                 ? IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                c.controller.clear();
-                c.onChanged('');
-                c.focusNode.requestFocus();
-              },
-            )
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      c.controller.clear();
+                      c.onChanged('');
+                      c.focusNode.requestFocus();
+                    },
+                  )
                 : const SizedBox.shrink();
           },
         ),
