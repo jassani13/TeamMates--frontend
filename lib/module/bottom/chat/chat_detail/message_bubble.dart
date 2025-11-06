@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 
@@ -78,14 +79,76 @@ class MessageBubble extends StatelessWidget {
     final baseStyle = const TextStyle(color: Colors.black);
     final highlightStyle =
         baseStyle.copyWith(backgroundColor: Colors.yellow.withOpacity(0.6));
-    if (query.trim().isEmpty) {
-      return Text(text, style: baseStyle);
-    }
-    return RichText(
-      text: TextSpan(
-        children: [_highlightSpan(text, query, baseStyle, highlightStyle)],
-      ),
+    final linkStyle = baseStyle.copyWith(
+      color: Colors.blue,
+      decoration: TextDecoration.underline,
     );
+
+    InlineSpan span = _linkifiedHighlightedSpan(
+      text,
+      query,
+      baseStyle,
+      highlightStyle,
+      linkStyle,
+    );
+
+    return RichText(text: TextSpan(children: [span]));
+  }
+
+  // Build a TextSpan that detects links (http, https, www) and applies
+  // clickable recognizers that open in-app. Also highlights the search query
+  // within non-link segments.
+  InlineSpan _linkifiedHighlightedSpan(
+    String source,
+    String query,
+    TextStyle base,
+    TextStyle highlight,
+    TextStyle link,
+  ) {
+    final urlRegex =
+        RegExp(r'((https?:\/\/|www\.)[^\s]+)', caseSensitive: false);
+    final List<InlineSpan> children = [];
+    int cursor = 0;
+    for (final match in urlRegex.allMatches(source)) {
+      if (match.start > cursor) {
+        final before = source.substring(cursor, match.start);
+        children.add(_highlightSpan(before, query, base, highlight));
+      }
+      final urlText = match.group(0) ?? '';
+      final normalized = _normalizeUrl(urlText);
+      children.add(TextSpan(
+        text: urlText,
+        style: link,
+        recognizer: TapGestureRecognizer()
+          ..onTap = () {
+            launchURL(normalized);
+          },
+      ));
+      cursor = match.end;
+    }
+    if (cursor < source.length) {
+      final trailing = source.substring(cursor);
+      children.add(_highlightSpan(trailing, query, base, highlight));
+    }
+
+    return TextSpan(children: children, style: base);
+  }
+
+  String _normalizeUrl(String raw) {
+    String t = raw.trim();
+    // Strip common trailing punctuation that often follows links in prose
+    while (t.isNotEmpty && '.,);:!?'.contains(t[t.length - 1])) {
+      t = t.substring(0, t.length - 1);
+    }
+    if (t.toLowerCase().startsWith('http://') ||
+        t.toLowerCase().startsWith('https://')) {
+      return t;
+    }
+    if (t.toLowerCase().startsWith('www.')) {
+      return 'https://$t';
+    }
+    // Fallback: treat as https
+    return 'https://$t';
   }
 
   @override
