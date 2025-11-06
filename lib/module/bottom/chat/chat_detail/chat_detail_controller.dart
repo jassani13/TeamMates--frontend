@@ -45,6 +45,9 @@ class ChatDetailController extends GetxController {
   final RxBool showJumpToUnreadButton = false.obs;
   // Observable last-read id to allow UI to rebuild separators when it changes
   final RxString lastReadMessageId = ''.obs;
+  // Track manual unread boundary set during this session. When non-empty,
+  // we should not auto-mark read (including on dispose) to preserve the user's intent.
+  final RxString manualUnreadMessageId = ''.obs;
 
   // Socket event constants (kept consistent with the rest of the app)
   static const evGetMessages = 'get_messages';
@@ -202,11 +205,18 @@ class ChatDetailController extends GetxController {
       messages.insert(0, msg);
     }
     loading.value = false;
+    // Update last read from server (honors manual_unread on backend)
+    final fromServerLastRead = payload['last_read_message_id']?.toString();
+    if (fromServerLastRead != null && fromServerLastRead.isNotEmpty) {
+      _updateConversationLastRead(fromServerLastRead);
+      lastReadMessageId.value = fromServerLastRead;
+    } else {
+      // Ensure lastRead observable is in sync with conversation state
+      lastReadMessageId.value =
+          conversation?.lastReadMessageId ?? lastReadMessageId.value;
+    }
     // After messages load, update jump button visibility
     updateJumpToUnreadVisibility();
-    // Ensure lastRead observable is in sync with conversation state
-    lastReadMessageId.value =
-        conversation?.lastReadMessageId ?? lastReadMessageId.value;
   }
 
   void _onNewMessage(dynamic data) {
@@ -219,12 +229,17 @@ class ChatDetailController extends GetxController {
     // Update visibility as list changed
     updateJumpToUnreadVisibility();
     // If received from others, mark read shortly after to allow UI to update
+    // BUT do not auto-mark if user explicitly set a manual unread boundary.
     if (msg.author.id != me.id) {
-      Future.delayed(const Duration(milliseconds: 250), () => markRead());
+      if (manualUnreadMessageId.value.isEmpty) {
+        Future.delayed(const Duration(milliseconds: 250), () => markRead());
+      }
     } else {
-      // If the message is authored by me, update last-read to this message id
-      // so unread boundary moves with my own messages and the jump button hides.
-      _setLastReadToMessage(msg.id);
+      // If the message is authored by me, normally we'd update last-read to this message id.
+      // But if the user explicitly set a manual unread boundary, do NOT override it.
+      if (manualUnreadMessageId.value.isEmpty) {
+        _setLastReadToMessage(msg.id);
+      }
     }
   }
 
@@ -532,6 +547,7 @@ class ChatDetailController extends GetxController {
     // Optimistically update local unread boundary so UI reflects immediately
     _updateConversationLastRead(messageId);
     lastReadMessageId.value = messageId;
+    manualUnreadMessageId.value = messageId;
     updateJumpToUnreadVisibility();
   }
 
@@ -553,6 +569,8 @@ class ChatDetailController extends GetxController {
     // Update local conversation model
     _updateConversationLastRead(lastMessageId);
     lastReadMessageId.value = lastMessageId;
+    // Clear manual override locally; server will clear it too
+    manualUnreadMessageId.value = '';
     updateJumpToUnreadVisibility();
   }
 
@@ -611,7 +629,10 @@ class ChatDetailController extends GetxController {
     // Hide the button once we've jumped to unread
     showJumpToUnreadButton.value = false;
     // Optionally mark as read up to newest after jumping
-    markRead();
+    // But respect manual unread if user set it; do not auto-clear.
+    if (manualUnreadMessageId.value.isEmpty) {
+      markRead();
+    }
   }
 
   /// Scroll to a message without altering unread state or jump button.

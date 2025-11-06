@@ -42,7 +42,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     // is from someone else (i.e., there are potential unreads).
     try {
       final msgs = controller.messages;
-      if (msgs.isNotEmpty &&
+      final hasManualUnread = controller.manualUnreadMessageId.value.isNotEmpty;
+      if (!hasManualUnread &&
+          msgs.isNotEmpty &&
           msgs.first.author.id != AppPref().userId.toString()) {
         controller.markRead();
       }
@@ -106,7 +108,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               final isPinned = (msg.metadata?['pinned'] == true);
               options.add(isFlagged ? 'Unflag' : 'Flag');
               options.add(isPinned ? 'Unpin' : 'Pin');
-              options.add('Mark as unread');
+              if (!isMine) {
+                options.add('Mark as unread');
+              }
               if (canEdit) options.add('Edit');
               if (controller.conversation?.ownerId?.toString() ==
                       AppPref().userId.toString() ||
