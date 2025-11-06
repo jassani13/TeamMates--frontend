@@ -13,7 +13,6 @@ class MessageBubble extends StatelessWidget {
   final ReactionTap onReact;
   final VoidCallback? onLongPress;
   final VoidCallback? onTap;
-  // New: optional query used to highlight matched terms in text messages
   final String? highlightQuery;
 
   const MessageBubble({
@@ -96,20 +95,44 @@ class MessageBubble extends StatelessWidget {
     final isPinned = meta['pinned'] == true;
 
     if (_isDeleted) {
-      return Align(
-        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColor.greyF6Color,
-            borderRadius: BorderRadius.circular(10),
+      // Keep deleted bubbles left-aligned and maintain consistent leading spacing
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isMe)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ClipOval(
+                child: getImageView(
+                    height: 30,
+                    width: 30,
+                    finalUrl: message.author.imageUrl ?? '',
+                    fit: BoxFit.cover,
+                    errorWidget: const Icon(Icons.account_circle, size: 30)),
+              ),
+            )
+          else
+            const SizedBox(width: 38), // 30 avatar + 8 spacing
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColor.greyF6Color,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'This message was deleted.',
+                  style: TextStyle(
+                      color: Colors.black45, fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
           ),
-          child: const Text(
-            'This message was deleted.',
-            style:
-                TextStyle(color: Colors.black45, fontStyle: FontStyle.italic),
-          ),
-        ),
+        ],
       );
     }
 
@@ -199,7 +222,9 @@ class MessageBubble extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorWidget: const Icon(Icons.account_circle, size: 30)),
               ),
-            ),
+            )
+          else
+            const SizedBox(width: 38),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,59 +239,62 @@ class MessageBubble extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.black54)),
                   ),
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    content,
-                    // Small badges for pinned/flagged
-                    if (isFlagged || isPinned)
-                      Positioned(
-                        top: 4,
-                        right: 6,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isPinned)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(Icons.push_pin,
-                                    size: 14, color: Colors.amber),
-                              ),
-                            if (isFlagged)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Icon(Icons.flag,
-                                    size: 14, color: Colors.redAccent),
-                              ),
-                          ],
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      content,
+                      // Small badges for pinned/flagged
+                      if (isFlagged || isPinned)
+                        Positioned(
+                          top: 4,
+                          right: 6,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isPinned)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Icon(Icons.push_pin,
+                                      size: 14, color: Colors.amber),
+                                ),
+                              if (isFlagged)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Icon(Icons.flag,
+                                      size: 14, color: Colors.redAccent),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    if (reactions.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6.0),
-                        child: Wrap(
-                          spacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            ...reactions.take(2).map((r) {
-                              final reactionString =
-                                  (r['reaction'] ?? '').toString();
-                              final emoji = _reactionToEmoji(reactionString);
-                              final toShow =
-                                  emoji.isNotEmpty ? emoji : reactionString;
-                              return Text(toShow,
-                                  style: const TextStyle(fontSize: 12));
-                            }),
-                            if (reactions.length > 2)
-                              Text('+${reactions.length - 2}',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColor.black12Color)),
-                          ],
-                        ),
-                      )
-                  ],
+                      if (reactions.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6.0),
+                          child: Wrap(
+                            spacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              ...reactions.take(2).map((r) {
+                                final reactionString =
+                                    (r['reaction'] ?? '').toString();
+                                final emoji = _reactionToEmoji(reactionString);
+                                final toShow =
+                                    emoji.isNotEmpty ? emoji : reactionString;
+                                return Text(toShow,
+                                    style: const TextStyle(fontSize: 12));
+                              }),
+                              if (reactions.length > 2)
+                                Text('+${reactions.length - 2}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColor.black12Color)),
+                            ],
+                          ),
+                        )
+                    ],
+                  ),
                 )
               ],
             ),

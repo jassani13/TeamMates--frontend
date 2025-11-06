@@ -52,6 +52,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.dispose();
   }
 
+  // Only allow editing within a short time window after message creation.
+  // Backend enforces the real rule; this is a best-effort UI gate.
+  bool _canEditMessage(types.Message msg) {
+    final isMine = msg.author.id == AppPref().userId.toString();
+    if (!isMine) return false;
+    final createdAt = msg.createdAt; // millisecondsSinceEpoch (UTC)
+    if (createdAt == null) return false;
+    const window = Duration(minutes: 15);
+    final nowMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final within = nowMs - createdAt <= window.inMilliseconds;
+    return within;
+  }
+
   Widget _buildList() {
     return Obx(() {
       final showFlaggedOnly = controller.showFlaggedOnly.value;
@@ -96,13 +109,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             onLongPress: () async {
               // show reaction sheet + edit/delete for own messages
               final isMine = msg.author.id == AppPref().userId.toString();
-              final canEdit = isMine;
+              final canEdit = _canEditMessage(msg);
               final options = <String>[];
               // Reactions
-              //options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
-              options.addAll([
-                '👍',
-              ]);
+              options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
               // Message actions
               final isFlagged = (msg.metadata?['flagged'] == true);
               final isPinned = (msg.metadata?['pinned'] == true);
@@ -112,9 +122,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 options.add('Mark as unread');
               }
               if (canEdit) options.add('Edit');
-              if (controller.conversation?.ownerId?.toString() ==
-                      AppPref().userId.toString() ||
-                  isMine) options.add('Delete');
+              // Show Delete option to the sender of the message
+              if (isMine) options.add('Delete');
 
               final res = await showModalBottomSheet<String>(
                 context: context,
@@ -165,11 +174,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               children: [
                 _UnreadSeparator(),
                 const SizedBox(height: 6),
-                bubble,
+                Align(
+                    alignment:
+                        isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: bubble),
               ],
             );
           }
-          return bubble;
+          return Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: bubble);
         },
       );
     });
