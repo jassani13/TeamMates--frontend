@@ -127,17 +127,26 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
               final res = await showModalBottomSheet<String>(
                 context: context,
-                builder: (_) {
+                isScrollControlled: true,
+                builder: (sheetCtx) {
+                  final maxH = MediaQuery.of(sheetCtx).size.height * 0.6;
                   return SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: options
-                          .map((o) => ListTile(
-                                title: Text(o),
-                                textColor: AppColor.black12Color,
-                                onTap: () => Navigator.of(context).pop(o),
-                              ))
-                          .toList(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxH),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemBuilder: (c, i) {
+                          final o = options[i];
+                          return ListTile(
+                            title: Text(o),
+                            textColor: AppColor.black12Color,
+                            onTap: () => Navigator.of(sheetCtx).pop(o),
+                          );
+                        },
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemCount: options.length,
+                      ),
                     ),
                   );
                 },
