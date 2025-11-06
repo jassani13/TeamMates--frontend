@@ -34,6 +34,8 @@ class ChatDetailController extends GetxController {
   final Map<String, int> msgIdToIndex = {};
   // Controls visibility of the "Jump to first unread" button
   final RxBool showJumpToUnreadButton = false.obs;
+  // Observable last-read id to allow UI to rebuild separators when it changes
+  final RxString lastReadMessageId = ''.obs;
 
   // Socket event constants (kept consistent with the rest of the app)
   static const evGetMessages = 'get_messages';
@@ -62,6 +64,7 @@ class ChatDetailController extends GetxController {
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem?;
     me = types.User(id: AppPref().userId.toString());
+    lastReadMessageId.value = conversation?.lastReadMessageId ?? '';
     _registerSocketListeners();
     // Track viewport to decide when to show/hide the jump button
     itemPositionsListener.itemPositions.addListener(_onViewportChanged);
@@ -120,6 +123,9 @@ class ChatDetailController extends GetxController {
     loading.value = false;
     // After messages load, update jump button visibility
     updateJumpToUnreadVisibility();
+    // Ensure lastRead observable is in sync with conversation state
+    lastReadMessageId.value =
+        conversation?.lastReadMessageId ?? lastReadMessageId.value;
   }
 
   void _onNewMessage(dynamic data) {
@@ -379,6 +385,7 @@ class ChatDetailController extends GetxController {
     });
     // Update local conversation model
     _updateConversationLastRead(lastMessageId);
+    lastReadMessageId.value = lastMessageId;
     updateJumpToUnreadVisibility();
   }
 
@@ -518,6 +525,7 @@ class ChatDetailController extends GetxController {
       'last_read_message_id': messageId,
     });
     _updateConversationLastRead(messageId);
+    lastReadMessageId.value = messageId;
     updateJumpToUnreadVisibility();
   }
 

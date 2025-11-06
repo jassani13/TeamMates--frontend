@@ -18,6 +18,7 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final controller = Get.put(ChatDetailController());
+
   // Scrolling is handled in the controller for readability.
   // controller.itemScrollController
   // controller.itemPositionsListener
@@ -52,11 +53,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Widget _buildList() {
     return Obx(() {
       final msgs = controller.messages;
-      final query = controller.searchQuery
-          .value; // make Obx depend on searchQuery so it rebuilds highlight
+      final query = controller.searchQuery.value; // for highlight
+      // Make Obx depend on last-read to show unread separator
+      // (read the value without storing to avoid unused local warnings)
+      controller.lastReadMessageId.value;
       if (controller.loading.value && msgs.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
+      // Compute first unread once for this build
+      final firstUnreadIndex = controller.getFirstUnreadIndex();
       return ScrollablePositionedList.separated(
         itemScrollController: controller.itemScrollController,
         itemPositionsListener: controller.itemPositionsListener,
@@ -71,18 +76,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           debugPrint(
               "msg->id:${msg.id} :: idx:$idx :: msg->${msg.metadata?['raw_msg']}");
           controller.msgIdToIndex.putIfAbsent(msg.id, () => idx);
-
-          return MessageBubble(
+          final bubble = MessageBubble(
             message: msg,
             isMe: isMe,
             highlightQuery: query,
-            onTap: () {
-              // open attachments or links
-            },
+            onTap: () {},
             onLongPress: () async {
               // show reaction sheet + edit/delete for own messages
               final isMine = msg.author.id == AppPref().userId.toString();
-              final canEdit = isMine; // keep simple; original had window check
+              final canEdit = isMine;
               final options = <String>[];
               options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
               if (canEdit) options.add('Edit');
@@ -123,9 +125,53 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               controller.sendReaction(messageId, reaction);
             },
           );
+
+          if (firstUnreadIndex != null && idx == firstUnreadIndex) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _UnreadSeparator(),
+                const SizedBox(height: 6),
+                bubble,
+              ],
+            );
+          }
+          return bubble;
         },
       );
     });
+  }
+
+  Widget _UnreadSeparator() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(right: 8),
+            height: 1,
+            color: Colors.grey.shade300,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Text(
+            'New messages',
+            style: TextStyle(fontSize: 12, color: Colors.black87),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(left: 8),
+            height: 1,
+            color: Colors.grey.shade300,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<String?> _showEditSheet(types.Message message) {
@@ -228,8 +274,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child:
-                      Text('${typing.first.firstName ?? 'User'} is typing...'),
+                  child: Text(
+                    '${typing.first.firstName ?? 'User'} is typing...',
+                    style: TextStyle(color: AppColor.black12Color),
+                  ),
                 ),
               );
             }
