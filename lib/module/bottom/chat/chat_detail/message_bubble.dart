@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:get/get.dart';
 
 import '../../../../utils/catched_network_image.dart';
 import '../../../../utils/common_function.dart';
@@ -121,7 +122,8 @@ class MessageBubble extends StatelessWidget {
         style: link,
         recognizer: TapGestureRecognizer()
           ..onTap = () {
-            launchURL(normalized);
+            Get.toNamed(AppRouter.webViewScreen,
+                arguments: {"url": normalized});
           },
       ));
       cursor = match.end;
