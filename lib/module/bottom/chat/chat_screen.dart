@@ -1,4 +1,3 @@
-import 'package:base_code/main.dart';
 import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
@@ -56,6 +55,13 @@ class _ChatScreenState extends State<ChatScreen> {
           payload is Map && payload['data'] != null ? payload['data'] : payload;
       if (list is List) {
         chatController.setConversations(list);
+        // Join all conversation rooms so we can receive typing events for list view
+        try {
+          for (final c in chatController.conversations) {
+            final id = c.conversationId ?? '';
+            if (id.isNotEmpty) socket.emit('joinConversation', id);
+          }
+        } catch (_) {}
       }
     });
 
@@ -78,7 +84,9 @@ class _ChatScreenState extends State<ChatScreen> {
             unreadCount: data['unread_count'] is int
                 ? data['unread_count'] as int
                 : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
-            lastReadMessageId: data?['last_read_message_id']);
+            lastReadMessageId: data['last_read_message_id']);
+        // Ensure we joined this conversation room to get typing events
+        socket.emit('joinConversation', convId);
       }
     });
     // New incoming message (server should emit new_message; if not adjust to your emitted event)
@@ -133,9 +141,29 @@ class _ChatScreenState extends State<ChatScreen> {
       // update message-level UI in conversation screen (implement there)
     });
 
-    // Typing
+    // Typing for list view (requires being in conv_* rooms)
     socket.on('typing', (payload) {
-      // optionally store typing state per conversation
+      try {
+        final convId = payload['conversation_id']?.toString() ?? '';
+        final isTyping = payload['isTyping'] == true;
+        final uid = payload['user_id']?.toString();
+        final first = (payload['sender_first_name']?.toString() ?? '').trim();
+        final last = (payload['sender_last_name']?.toString() ?? '').trim();
+        final full = ((first.isNotEmpty || last.isNotEmpty)
+                ? (first + (last.isNotEmpty ? ' ' + last : ''))
+                : '')
+            .trim();
+        if (convId.isNotEmpty && uid != AppPref().userId.toString()) {
+          chatController.setTypingForConversation(
+            conversationId: convId,
+            isTyping: isTyping,
+            typingUserId: uid,
+            displayName: full.isNotEmpty ? full : null,
+          );
+        }
+      } catch (e) {
+        debugPrint('typing handler error: $e');
+      }
     });
 
     // Presence (if you keep existing events)
@@ -269,9 +297,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ConversationItem c = items[i];
           debugPrint(
               "Rendering conversation: ${c.conversationId}::${c.ownerId}");
-          final subtitle = c.msgType == 'text'
-              ? c.lastMessage
-              : (c.msgType == 'null' ? 'File' : c.msgType);
           final timeAgo = c.createdAt == null
               ? ''
               : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
@@ -308,12 +333,27 @@ class _ChatScreenState extends State<ChatScreen> {
                             style: TextStyle()
                                 .normal16w500
                                 .textColor(AppColor.black12Color)),
-                        Text(subtitle ?? '',
+                        Obx(() {
+                          final typingText = chatController
+                                  .typingDisplay[c.conversationId ?? ''] ??
+                              '';
+                          final showTyping = typingText.isNotEmpty;
+                          final subtitleText = showTyping
+                              ? typingText
+                              : (c.msgType == 'text'
+                                  ? (c.lastMessage ?? '')
+                                  : (c.msgType == 'null'
+                                      ? 'File'
+                                      : (c.msgType ?? 'file')));
+                          return Text(
+                            subtitleText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle()
-                                .normal14w500
-                                .textColor(AppColor.grey4EColor)),
+                            style: TextStyle().normal14w500.textColor(showTyping
+                                ? Colors.green
+                                : AppColor.grey4EColor),
+                          );
+                        }),
                       ],
                     ),
                   ),

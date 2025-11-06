@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:base_code/model/chat_list_model.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:path/path.dart';
@@ -18,6 +19,10 @@ class ChatScreenController extends GetxController {
   List<ChatListData> chatListData = <ChatListData>[];
   List<ChatListData> grpChatListData = <ChatListData>[];
   final RxList<ConversationItem> conversations = <ConversationItem>[].obs;
+  // Map of conversation_id -> display text like "Alice is typing…"
+  final RxMap<String, String> typingDisplay = <String, String>{}.obs;
+  // Internal TTL timers to auto-clear typing states
+  final Map<String, Timer> _typingTimers = {};
 
   //final RxInt selectedTab = 0.obs; // 0 = all/team, 1 = personal maybe adapt
   final Map<String, int> unreadByConversation = {};
@@ -156,5 +161,62 @@ class ChatScreenController extends GetxController {
       }
       return "";
     } finally {}
+  }
+
+  /// Update typing state for a conversation.
+  /// For personal chats, resolves name from the conversation title.
+  /// For group/team chats, falls back to a generic 'typing…' when a name
+  /// isn't readily available.
+  void setTypingForConversation({
+    required String conversationId,
+    required bool isTyping,
+    String? typingUserId,
+    String? displayName,
+  }) {
+    if (conversationId.isEmpty) return;
+
+    if (isTyping) {
+      // Determine display text
+      String display = 'typing…';
+      if ((displayName ?? '').trim().isNotEmpty) {
+        display = '${displayName!.trim()} is typing…';
+      } else {
+        try {
+          final idx = conversations
+              .indexWhere((c) => c.conversationId == conversationId);
+          if (idx != -1) {
+            final c = conversations[idx];
+            if ((c.type ?? '').toLowerCase() == 'personal') {
+              final other = (c.title ?? '').trim();
+              if (other.isNotEmpty) display = '$other is typing…';
+            }
+          }
+        } catch (_) {}
+      }
+
+      typingDisplay[conversationId] = display;
+      typingDisplay.refresh();
+
+      // Reset TTL timer
+      _typingTimers[conversationId]?.cancel();
+      _typingTimers[conversationId] = Timer(const Duration(seconds: 4), () {
+        typingDisplay.remove(conversationId);
+        _typingTimers.remove(conversationId)?.cancel();
+        typingDisplay.refresh();
+      });
+    } else {
+      typingDisplay.remove(conversationId);
+      _typingTimers.remove(conversationId)?.cancel();
+      typingDisplay.refresh();
+    }
+  }
+
+  @override
+  void onClose() {
+    for (final t in _typingTimers.values) {
+      t.cancel();
+    }
+    _typingTimers.clear();
+    super.onClose();
   }
 }
