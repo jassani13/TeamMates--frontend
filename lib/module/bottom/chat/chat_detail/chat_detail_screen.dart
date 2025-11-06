@@ -2,6 +2,9 @@ import 'package:base_code/module/bottom/chat/utils/chat_app_bar.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter/material.dart';
+import 'package:flutter_chat_reactions/flutter_chat_reactions.dart';
+import 'package:flutter_chat_reactions/model/menu_item.dart';
+import 'package:flutter_chat_reactions/utilities/hero_dialog_route.dart';
 import '../../../../model/conversation_item.dart';
 import 'chat_detail_controller.dart';
 import 'message_bubble.dart';
@@ -107,73 +110,83 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             highlightQuery: query,
             onTap: () {},
             onLongPress: () async {
-              // show reaction sheet + edit/delete for own messages
+              // Show a lightweight overlay with reactions and a small menu (not a bottom sheet)
               final isMine = msg.author.id == AppPref().userId.toString();
               final canEdit = _canEditMessage(msg);
-              final options = <String>[];
-              // Reactions
-              options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
-              // Message actions
               final isFlagged = (msg.metadata?['flagged'] == true);
               final isPinned = (msg.metadata?['pinned'] == true);
-              options.add(isFlagged ? 'Unflag' : 'Flag');
-              options.add(isPinned ? 'Unpin' : 'Pin');
-              if (!isMine) {
-                options.add('Mark as unread');
-              }
-              if (canEdit) options.add('Edit');
-              // Show Delete option to the sender of the message
-              if (isMine) options.add('Delete');
 
-              final res = await showModalBottomSheet<String>(
-                context: context,
-                isScrollControlled: true,
-                builder: (sheetCtx) {
-                  final maxH = MediaQuery.of(sheetCtx).size.height * 0.6;
-                  return SafeArea(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: maxH),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemBuilder: (c, i) {
-                          final o = options[i];
-                          return ListTile(
-                            title: Text(o),
-                            textColor: AppColor.black12Color,
-                            onTap: () => Navigator.of(sheetCtx).pop(o),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemCount: options.length,
-                      ),
-                    ),
-                  );
-                },
+              Navigator.of(context).push(
+                HeroDialogRoute(
+                  builder: (context) {
+                    return ReactionsDialogWidget(
+                      reactions: const ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                      menuItems: [
+                        if (isMine && canEdit)
+                          MenuItem(label: 'Edit', icon: Icons.edit),
+                        if (isMine)
+                          MenuItem(
+                            label: 'Delete',
+                            icon: Icons.delete_outline,
+                            isDestuctive: true,
+                          ),
+                        MenuItem(
+                          label: isFlagged ? 'Unflag' : 'Flag',
+                          icon: isFlagged ? Icons.flag : Icons.flag_outlined,
+                        ),
+                        MenuItem(
+                          label: isPinned ? 'Unpin' : 'Pin',
+                          icon: isPinned
+                              ? Icons.push_pin
+                              : Icons.push_pin_outlined,
+                        ),
+                        if (!isMine)
+                          MenuItem(
+                            label: 'Mark as unread',
+                            icon: Icons.mark_email_unread_outlined,
+                          ),
+                      ],
+                      id: msg.id,
+                      messageWidget: const SizedBox.shrink(),
+                      onReactionTap: (reaction) {
+                        controller.sendReaction(msg.id, reaction);
+                      },
+                      onContextMenuTap: (menuItem) async {
+                        switch (menuItem.label) {
+                          case 'Edit':
+                            final newText = await _showEditSheet(msg);
+                            if (newText != null && newText.trim().isNotEmpty) {
+                              controller.editMessage(msg.id, newText.trim());
+                            }
+                            break;
+                          case 'Delete':
+                            controller.deleteMessage(msg.id);
+                            break;
+                          case 'Flag':
+                          case 'Unflag':
+                            controller.toggleFlag(
+                                msg.id, (msg.metadata?['flagged'] == true));
+                            break;
+                          case 'Pin':
+                          case 'Unpin':
+                            controller.togglePin(
+                                msg.id, (msg.metadata?['pinned'] == true));
+                            break;
+                          case 'Mark as unread':
+                            controller.markAsUnread(msg.id);
+                            break;
+                        }
+                      },
+                    );
+                  },
+                ),
               );
-
-              if (res == null) return;
-              if (['👍', '❤️', '😂', '😮', '😢', '👏'].contains(res)) {
-                controller.sendReaction(msg.id, res);
-              } else if (res == 'Flag' || res == 'Unflag') {
-                final currentlyFlagged = (msg.metadata?['flagged'] == true);
-                controller.toggleFlag(msg.id, currentlyFlagged);
-              } else if (res == 'Pin' || res == 'Unpin') {
-                final currentlyPinned = (msg.metadata?['pinned'] == true);
-                controller.togglePin(msg.id, currentlyPinned);
-              } else if (res == 'Mark as unread') {
-                controller.markAsUnread(msg.id);
-              } else if (res == 'Edit') {
-                final newText = await _showEditSheet(msg);
-                if (newText != null && newText.trim().isNotEmpty) {
-                  controller.editMessage(msg.id, newText.trim());
-                }
-              } else if (res == 'Delete') {
-                controller.deleteMessage(msg.id);
-              }
             },
             onReact: (messageId, reaction) {
               controller.sendReaction(messageId, reaction);
+            },
+            onReactionsTap: () {
+              _showReactionDetailsSheet(msg);
             },
           );
 
@@ -389,5 +402,96 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+// --- Reactions bottom sheet (details) helpers ---
+extension _ChatDetailReactionUI on _ChatDetailScreenState {
+  String _reactionToEmoji(String reactionStr) {
+    try {
+      if (reactionStr.contains('U+')) {
+        final codePoints = reactionStr
+            .split(' ')
+            .where((p) => p.trim().isNotEmpty)
+            .map((e) => int.parse(e.replaceFirst('U+', ''), radix: 16))
+            .toList();
+        return String.fromCharCodes(codePoints);
+      }
+      return reactionStr;
+    } catch (_) {
+      return reactionStr;
+    }
+  }
+
+  void _showReactionDetailsSheet(types.Message message) {
+    final reactions = (message.metadata?['reactions'] as List?) ?? [];
+    if (reactions.isEmpty) return;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Reactions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            ListView.separated(
+              shrinkWrap: true,
+              itemCount: reactions.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final r = reactions[index] as Map;
+                final reactionStr = (r['reaction'] ?? '').toString();
+                final emoji = _reactionToEmoji(reactionStr);
+                final userId = r['user_id']?.toString() ?? '';
+                final isMine = userId == AppPref().userId.toString();
+                final userName =
+                    _nameForUserId(userId) ?? (isMine ? 'You' : 'User $userId');
+
+                return ListTile(
+                  leading: Text(emoji, style: const TextStyle(fontSize: 20)),
+                  title: Text(userName,
+                      style: const TextStyle(color: AppColor.black12Color)),
+                  trailing: isMine
+                      ? TextButton(
+                          onPressed: () {
+                            controller.sendReaction(message.id, emoji);
+                            Get.back();
+                          },
+                          child: const Text(
+                            'Remove',
+                            style: TextStyle(color: AppColor.red10Color),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _nameForUserId(String uid) {
+    try {
+      final idx = controller.messages.indexWhere((m) => m.author.id == uid);
+      if (idx != -1) {
+        final a = controller.messages[idx].author;
+        final first = a.firstName ?? '';
+        final last = a.lastName ?? '';
+        final name = (first + ' ' + last).trim();
+        if (name.isNotEmpty) return name;
+      }
+    } catch (_) {}
+    return null;
   }
 }

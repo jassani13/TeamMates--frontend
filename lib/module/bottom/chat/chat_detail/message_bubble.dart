@@ -14,6 +14,7 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onLongPress;
   final VoidCallback? onTap;
   final String? highlightQuery;
+  final VoidCallback? onReactionsTap;
 
   const MessageBubble({
     Key? key,
@@ -23,6 +24,7 @@ class MessageBubble extends StatelessWidget {
     this.onLongPress,
     this.onTap,
     this.highlightQuery,
+    this.onReactionsTap,
   }) : super(key: key);
 
   bool get _isDeleted => (message.metadata?['deleted_at'] != null);
@@ -269,28 +271,32 @@ class MessageBubble extends StatelessWidget {
                           ),
                         ),
                       if (reactions.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 6.0),
-                          child: Wrap(
-                            spacing: 4,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              ...reactions.take(2).map((r) {
-                                final reactionString =
-                                    (r['reaction'] ?? '').toString();
-                                final emoji = _reactionToEmoji(reactionString);
-                                final toShow =
-                                    emoji.isNotEmpty ? emoji : reactionString;
-                                return Text(toShow,
-                                    style: const TextStyle(fontSize: 12));
-                              }),
-                              if (reactions.length > 2)
-                                Text('+${reactions.length - 2}',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColor.black12Color)),
-                            ],
+                        GestureDetector(
+                          onTap: onReactionsTap,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 6.0),
+                            child: Wrap(
+                              spacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                ...reactions.take(2).map((r) {
+                                  final reactionString =
+                                      (r['reaction'] ?? '').toString();
+                                  final emoji =
+                                      _reactionToEmoji(reactionString);
+                                  final toShow =
+                                      emoji.isNotEmpty ? emoji : reactionString;
+                                  return Text(toShow,
+                                      style: const TextStyle(fontSize: 12));
+                                }),
+                                if (reactions.length > 2)
+                                  Text('+${reactions.length - 2}',
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColor.black12Color)),
+                              ],
+                            ),
                           ),
                         )
                     ],
