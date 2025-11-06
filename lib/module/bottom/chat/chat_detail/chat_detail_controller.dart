@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:base_code/model/conversation_item.dart';
 import 'package:base_code/module/bottom/chat/chat_controller.dart';
@@ -455,6 +456,8 @@ class ChatDetailController extends GetxController {
         source: ImageSource.gallery,
       );
       if (picked == null) return;
+      final confirmed = await _showImagePreviewSheet(picked.path) ?? false;
+      if (!confirmed) return;
       loading.value = true;
       final url = await chatController.setMediaChatApiCall(result: picked);
       loading.value = false;
@@ -481,6 +484,8 @@ class ChatDetailController extends GetxController {
       if (res == null || res.files.isEmpty || res.files.single.path == null)
         return;
       final file = res.files.single;
+      final confirmed = await _showDocumentPreviewSheet(file) ?? false;
+      if (!confirmed) return;
       loading.value = true;
       final url = await chatController.setMediaChatApiCall(result: file);
       loading.value = false;
@@ -495,6 +500,160 @@ class ChatDetailController extends GetxController {
     } catch (e) {
       loading.value = false;
     }
+  }
+
+  // ----- Preview Sheets -----
+  Future<bool?> _showImagePreviewSheet(String path) {
+    return Get.bottomSheet<bool>(
+      SafeArea(
+        child: Container(
+          padding:
+              const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Image preview',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.black12Color),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    color: AppColor.greyF6Color,
+                    child: path.isNotEmpty
+                        ? Image.file(
+                            File(path),
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 48, color: Colors.black26)),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text('Cancel',
+                          style: TextStyle(color: AppColor.black12Color)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Get.back(result: true),
+                      child: const Text('Send'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      enableDrag: true,
+    );
+  }
+
+  Future<bool?> _showDocumentPreviewSheet(PlatformFile file) {
+    final sizeKb = (file.size / 1024).toStringAsFixed(1);
+    return Get.bottomSheet<bool>(
+      SafeArea(
+        child: Container(
+          padding:
+              const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Document preview',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.black12Color),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColor.greyF6Color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.picture_as_pdf,
+                        size: 36, color: Colors.red),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            file.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColor.black12Color),
+                          ),
+                          const SizedBox(height: 6),
+                          Text('$sizeKb KB',
+                              style: const TextStyle(color: Colors.black54)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text('Cancel',
+                          style: TextStyle(color: AppColor.black12Color)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Get.back(result: true),
+                      child: const Text('Send'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      enableDrag: true,
+    );
   }
 
   void sendReaction(String messageId, String reaction) {
