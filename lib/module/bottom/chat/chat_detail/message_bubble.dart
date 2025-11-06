@@ -32,7 +32,8 @@ class MessageBubble extends StatelessWidget {
   String _reactionToEmoji(String reaction) {
     if (reaction.isEmpty) return reaction;
     if (!reaction.contains('U+')) return reaction;
-    final parts = reaction.split(RegExp(r'\s+')).where((p) => p.trim().isNotEmpty);
+    final parts =
+        reaction.split(RegExp(r'\s+')).where((p) => p.trim().isNotEmpty);
     final codePoints = <int>[];
     for (final p in parts) {
       final hex = p.toUpperCase().replaceFirst('U+', '');
@@ -42,7 +43,8 @@ class MessageBubble extends StatelessWidget {
     return codePoints.isEmpty ? reaction : String.fromCharCodes(codePoints);
   }
 
-  TextSpan _highlightSpan(String source, String query, TextStyle baseStyle, TextStyle highlightStyle) {
+  TextSpan _highlightSpan(String source, String query, TextStyle baseStyle,
+      TextStyle highlightStyle) {
     if (query.trim().isEmpty) return TextSpan(text: source, style: baseStyle);
     try {
       final pattern = RegExp(RegExp.escape(query), caseSensitive: false);
@@ -53,13 +55,16 @@ class MessageBubble extends StatelessWidget {
       int lastIndex = 0;
       for (final m in matches) {
         if (m.start > lastIndex) {
-          spans.add(TextSpan(text: source.substring(lastIndex, m.start), style: baseStyle));
+          spans.add(TextSpan(
+              text: source.substring(lastIndex, m.start), style: baseStyle));
         }
-        spans.add(TextSpan(text: source.substring(m.start, m.end), style: highlightStyle));
+        spans.add(TextSpan(
+            text: source.substring(m.start, m.end), style: highlightStyle));
         lastIndex = m.end;
       }
       if (lastIndex < source.length) {
-        spans.add(TextSpan(text: source.substring(lastIndex), style: baseStyle));
+        spans
+            .add(TextSpan(text: source.substring(lastIndex), style: baseStyle));
       }
       return TextSpan(children: spans);
     } catch (_) {
@@ -70,7 +75,8 @@ class MessageBubble extends StatelessWidget {
   Widget _buildMessageText(BuildContext context, String text) {
     final query = highlightQuery ?? '';
     final baseStyle = const TextStyle(color: Colors.black);
-    final highlightStyle = baseStyle.copyWith(backgroundColor: Colors.yellow.withOpacity(0.6));
+    final highlightStyle =
+        baseStyle.copyWith(backgroundColor: Colors.yellow.withOpacity(0.6));
     if (query.trim().isEmpty) {
       return Text(text, style: baseStyle);
     }
@@ -86,6 +92,8 @@ class MessageBubble extends StatelessWidget {
     final meta = message.metadata ?? {};
     final msgType = meta['msg_type'] ?? 'text';
     final reactions = meta['reactions'] as List? ?? [];
+    final isFlagged = meta['flagged'] == true;
+    final isPinned = meta['pinned'] == true;
 
     if (_isDeleted) {
       return Align(
@@ -98,7 +106,8 @@ class MessageBubble extends StatelessWidget {
           ),
           child: const Text(
             'This message was deleted.',
-            style: TextStyle(color: Colors.black45, fontStyle: FontStyle.italic),
+            style:
+                TextStyle(color: Colors.black45, fontStyle: FontStyle.italic),
           ),
         ),
       );
@@ -109,24 +118,32 @@ class MessageBubble extends StatelessWidget {
       final url = meta['file_url'] ?? '';
       content = ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: getImageView(finalUrl: url, height: 200, width: 200, fit: BoxFit.cover),
+        child: getImageView(
+            finalUrl: url, height: 200, width: 200, fit: BoxFit.cover),
       );
     } else if (msgType == 'file' || msgType == 'pdf') {
       final url = meta['file_url'] ?? '';
-      final title = meta['raw_msg'] ?? (message is types.FileMessage ? (message as types.FileMessage).name : 'Document');
+      final title = meta['raw_msg'] ??
+          (message is types.FileMessage
+              ? (message as types.FileMessage).name
+              : 'Document');
       content = GestureDetector(
         onTap: () => openPdf(url),
         child: Container(
           width: 200,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          decoration: BoxDecoration(color: AppColor.greyF6Color, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+              color: AppColor.greyF6Color,
+              borderRadius: BorderRadius.circular(10)),
           child: Row(
             children: [
               const Icon(Icons.picture_as_pdf, color: Colors.red),
               const SizedBox(width: 12),
               Expanded(
                 child: DefaultTextStyle(
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColor.black12Color),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColor.black12Color),
                   child: _buildMessageText(context, title),
                 ),
               ),
@@ -135,11 +152,17 @@ class MessageBubble extends StatelessWidget {
         ),
       );
     } else {
-      final text = meta['raw_msg'] ?? (message is types.TextMessage ? (message as types.TextMessage).text : '');
+      final text = meta['raw_msg'] ??
+          (message is types.TextMessage
+              ? (message as types.TextMessage).text
+              : '');
       content = Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-        decoration: BoxDecoration(color: AppColor.greyF6Color, borderRadius: BorderRadius.circular(10)),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+        decoration: BoxDecoration(
+            color: AppColor.greyF6Color,
+            borderRadius: BorderRadius.circular(10)),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -149,7 +172,8 @@ class MessageBubble extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: Padding(
                   padding: EdgeInsets.only(top: 4),
-                  child: Text('Edited', style: TextStyle(fontSize: 10, color: Colors.black38)),
+                  child: Text('Edited',
+                      style: TextStyle(fontSize: 10, color: Colors.black38)),
                 ),
               )
           ],
@@ -168,7 +192,12 @@ class MessageBubble extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: ClipOval(
-                child: getImageView(height: 30, width: 30, finalUrl: message.author.imageUrl ?? '', fit: BoxFit.cover, errorWidget: const Icon(Icons.account_circle, size: 30)),
+                child: getImageView(
+                    height: 30,
+                    width: 30,
+                    finalUrl: message.author.imageUrl ?? '',
+                    fit: BoxFit.cover,
+                    errorWidget: const Icon(Icons.account_circle, size: 30)),
               ),
             ),
           Flexible(
@@ -177,13 +206,41 @@ class MessageBubble extends StatelessWidget {
               children: [
                 if (!isMe)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 4, right: 6, left: 6),
-                    child: Text(message.author.firstName ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54)),
+                    padding:
+                        const EdgeInsets.only(bottom: 4, right: 6, left: 6),
+                    child: Text(message.author.firstName ?? '',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54)),
                   ),
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
                     content,
+                    // Small badges for pinned/flagged
+                    if (isFlagged || isPinned)
+                      Positioned(
+                        top: 4,
+                        right: 6,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isPinned)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.push_pin,
+                                    size: 14, color: Colors.amber),
+                              ),
+                            if (isFlagged)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.flag,
+                                    size: 14, color: Colors.redAccent),
+                              ),
+                          ],
+                        ),
+                      ),
                     if (reactions.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(right: 6.0),
@@ -192,12 +249,20 @@ class MessageBubble extends StatelessWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             ...reactions.take(2).map((r) {
-                              final reactionString = (r['reaction'] ?? '').toString();
+                              final reactionString =
+                                  (r['reaction'] ?? '').toString();
                               final emoji = _reactionToEmoji(reactionString);
-                              final toShow = emoji.isNotEmpty ? emoji : reactionString;
-                              return Text(toShow, style: const TextStyle(fontSize: 12));
+                              final toShow =
+                                  emoji.isNotEmpty ? emoji : reactionString;
+                              return Text(toShow,
+                                  style: const TextStyle(fontSize: 12));
                             }),
-                            if (reactions.length > 2) Text('+${reactions.length - 2}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColor.black12Color)),
+                            if (reactions.length > 2)
+                              Text('+${reactions.length - 2}',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColor.black12Color)),
                           ],
                         ),
                       )

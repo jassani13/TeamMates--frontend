@@ -52,7 +52,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildList() {
     return Obx(() {
-      final msgs = controller.messages;
+      final showFlaggedOnly = controller.showFlaggedOnly.value;
+      final showPinnedOnly = controller.showPinnedOnly.value;
+      List<types.Message> msgs = controller.messages;
+      if (showFlaggedOnly) {
+        msgs = msgs.where((m) => (m.metadata?['flagged'] == true)).toList();
+      }
+      if (showPinnedOnly) {
+        msgs = msgs.where((m) => (m.metadata?['pinned'] == true)).toList();
+      }
       final query = controller.searchQuery.value; // for highlight
       // Make Obx depend on last-read to show unread separator
       // (read the value without storing to avoid unused local warnings)
@@ -60,8 +68,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       if (controller.loading.value && msgs.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
-      // Compute first unread once for this build
-      final firstUnreadIndex = controller.getFirstUnreadIndex();
+      // Compute first unread once for this build (disabled when filters are on)
+      final bool filtersOn = showFlaggedOnly || showPinnedOnly;
+      final firstUnreadIndex =
+          filtersOn ? null : controller.getFirstUnreadIndex();
       return ScrollablePositionedList.separated(
         itemScrollController: controller.itemScrollController,
         itemPositionsListener: controller.itemPositionsListener,
@@ -86,7 +96,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               final isMine = msg.author.id == AppPref().userId.toString();
               final canEdit = isMine;
               final options = <String>[];
-              options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
+              // Reactions
+              //options.addAll(['👍', '❤️', '😂', '😮', '😢', '👏']);
+              options.addAll([
+                '👍',
+              ]);
+              // Message actions
+              final isFlagged = (msg.metadata?['flagged'] == true);
+              final isPinned = (msg.metadata?['pinned'] == true);
+              options.add(isFlagged ? 'Unflag' : 'Flag');
+              options.add(isPinned ? 'Unpin' : 'Pin');
+              options.add('Mark as unread');
               if (canEdit) options.add('Edit');
               if (controller.conversation?.ownerId?.toString() ==
                       AppPref().userId.toString() ||
@@ -101,6 +121,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       children: options
                           .map((o) => ListTile(
                                 title: Text(o),
+                                textColor: AppColor.black12Color,
                                 onTap: () => Navigator.of(context).pop(o),
                               ))
                           .toList(),
@@ -112,6 +133,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               if (res == null) return;
               if (['👍', '❤️', '😂', '😮', '😢', '👏'].contains(res)) {
                 controller.sendReaction(msg.id, res);
+              } else if (res == 'Flag' || res == 'Unflag') {
+                final currentlyFlagged = (msg.metadata?['flagged'] == true);
+                controller.toggleFlag(msg.id, currentlyFlagged);
+              } else if (res == 'Pin' || res == 'Unpin') {
+                final currentlyPinned = (msg.metadata?['pinned'] == true);
+                controller.togglePin(msg.id, currentlyPinned);
+              } else if (res == 'Mark as unread') {
+                controller.markAsUnread(msg.id);
               } else if (res == 'Edit') {
                 final newText = await _showEditSheet(msg);
                 if (newText != null && newText.trim().isNotEmpty) {
@@ -241,13 +270,41 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           searchTotal: controller.totalMatches),
       body: Column(
         children: [
+          // Simple filter row (Flagged / Pinned)
+          Obx(() {
+            final flagged = controller.showFlaggedOnly.value;
+            final pinned = controller.showPinnedOnly.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    FilterChip(
+                      selected: flagged,
+                      label: const Text('Flagged only'),
+                      onSelected: (v) => controller.showFlaggedOnly.value = v,
+                    ),
+                    FilterChip(
+                      selected: pinned,
+                      label: const Text('Pinned only'),
+                      onSelected: (v) => controller.showPinnedOnly.value = v,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
           Expanded(
               child: Stack(
             children: [
               _buildList(),
               // Show the jump button only when meaningful. Use Obx so it reacts to conversation/messages changes.
               Obx(() {
-                if (!controller.showJumpToUnreadButton.value) {
+                final filtersOn = controller.showFlaggedOnly.value ||
+                    controller.showPinnedOnly.value;
+                if (filtersOn || !controller.showJumpToUnreadButton.value) {
                   return const SizedBox.shrink();
                 }
                 return Positioned(

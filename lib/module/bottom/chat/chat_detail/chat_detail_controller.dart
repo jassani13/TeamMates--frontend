@@ -20,6 +20,10 @@ class ChatDetailController extends GetxController {
 
   // New: search query observable used for keyword-based highlighting
   final RxString searchQuery = ''.obs;
+  // Flagged filter toggle
+  final RxBool showFlaggedOnly = false.obs;
+  // Pinned filter toggle
+  final RxBool showPinnedOnly = false.obs;
   // Search navigation state
   final RxList<String> _matchIds = <String>[].obs;
   final RxInt _matchIndex = (-1).obs; // -1 when none selected
@@ -53,6 +57,11 @@ class ChatDetailController extends GetxController {
   static const evReaction = 'message_reaction';
   static const evMessageEdited = 'message_edited';
   static const evMessageDeleted = 'message_deleted';
+  static const evMarkUnread = 'mark_unread';
+  static const evFlag = 'flag_message';
+  static const evUnflag = 'unflag_message';
+  static const evPinnedEvent = 'message_pinned';
+  static const evFlaggedEvent = 'message_flagged';
 
   // Internal typing helpers
   Timer? _typingDebounce;
@@ -157,6 +166,8 @@ class ChatDetailController extends GetxController {
     socket.on(evReaction, _onReaction);
     socket.on(evMessageEdited, _onMessageEdited);
     socket.on(evMessageDeleted, _onMessageDeleted);
+    socket.on(evFlaggedEvent, _onMessageFlagged);
+    socket.on(evPinnedEvent, _onMessagePinned);
   }
 
   void _removeSocketListeners() {
@@ -167,6 +178,8 @@ class ChatDetailController extends GetxController {
     socket.off(evReaction, _onReaction);
     socket.off(evMessageEdited, _onMessageEdited);
     socket.off(evMessageDeleted, _onMessageDeleted);
+    socket.off(evFlaggedEvent, _onMessageFlagged);
+    socket.off(evPinnedEvent, _onMessagePinned);
   }
 
   /// Request initial messages for the conversation.
@@ -337,6 +350,44 @@ class ChatDetailController extends GetxController {
     messages.refresh();
   }
 
+  void _onMessageFlagged(dynamic data) {
+    try {
+      final id = data['message_id']?.toString();
+      final flagged = data['flagged'] == true;
+      if (id == null) return;
+      final idx = messages.indexWhere((m) => m.id == id);
+      if (idx == -1) return;
+      final old = messages[idx];
+      final meta = {...?old.metadata, 'flagged': flagged};
+      if (old is types.TextMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.ImageMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.FileMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      messages.refresh();
+    } catch (_) {}
+  }
+
+  void _onMessagePinned(dynamic data) {
+    try {
+      final id = data['message_id']?.toString();
+      final pinned = data['pinned'] == true;
+      if (id == null) return;
+      final idx = messages.indexWhere((m) => m.id == id);
+      if (idx == -1) return;
+      final old = messages[idx];
+      final meta = {...?old.metadata, 'pinned': pinned};
+      if (old is types.TextMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.ImageMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.FileMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      messages.refresh();
+    } catch (_) {}
+  }
+
   void disposeTimers() {
     _typingDebounce?.cancel();
     for (final t in _typingTimers.values) {
@@ -434,6 +485,54 @@ class ChatDetailController extends GetxController {
   void sendReaction(String messageId, String reaction) {
     socket
         .emit(evReaction, {'message_id': messageId, 'reaction_type': reaction});
+  }
+
+  // --- Flag / Pin / Mark as unread API ---
+  void toggleFlag(String messageId, bool currentlyFlagged) {
+    socket
+        .emit(currentlyFlagged ? evUnflag : evFlag, {'message_id': messageId});
+    // Optimistic local update so UI reflects immediately
+    final idx = messages.indexWhere((m) => m.id == messageId);
+    if (idx != -1) {
+      final old = messages[idx];
+      final meta = {...?old.metadata, 'flagged': !currentlyFlagged};
+      if (old is types.TextMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.ImageMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.FileMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      messages.refresh();
+    }
+  }
+
+  void togglePin(String messageId, bool currentlyPinned) {
+    socket.emit(currentlyPinned ? 'unpin_message' : 'pin_message',
+        {'message_id': messageId});
+    // Optimistic local update so UI reflects immediately
+    final idx = messages.indexWhere((m) => m.id == messageId);
+    if (idx != -1) {
+      final old = messages[idx];
+      final meta = {...?old.metadata, 'pinned': !currentlyPinned};
+      if (old is types.TextMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.ImageMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      if (old is types.FileMessage)
+        messages[idx] = old.copyWith(metadata: meta);
+      messages.refresh();
+    }
+  }
+
+  void markAsUnread(String messageId) {
+    socket.emit(evMarkUnread, {
+      'conversation_id': conversation?.conversationId ?? '',
+      'message_id': messageId,
+    });
+    // Optimistically update local unread boundary so UI reflects immediately
+    _updateConversationLastRead(messageId);
+    lastReadMessageId.value = messageId;
+    updateJumpToUnreadVisibility();
   }
 
   void editMessage(String messageId, String newText) {
@@ -686,6 +785,8 @@ class ChatDetailController extends GetxController {
       'raw_msg': raw['msg'],
       'file_url': raw['file_url'],
       'reactions': raw['reactions'] ?? [],
+      'flagged': raw['flagged'] == true,
+      'pinned': raw['pinned'] == true,
       'edited': raw['edited'] == true ||
           ((raw['updated_at']?.toString().isNotEmpty ?? false) &&
               (raw['updated_at']?.toString() != raw['created_at']?.toString())),
