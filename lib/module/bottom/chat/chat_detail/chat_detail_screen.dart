@@ -30,19 +30,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // put conversation from args into controller if present
     final args = Get.arguments ?? {};
     if (args['conversation'] != null) {
       controller.conversation = args['conversation'] as dynamic;
     }
-    // ensure controller loads
     controller.loadInitial();
   }
 
   @override
   void dispose() {
-    // Mark messages as read when leaving the screen if the latest message
-    // is from someone else (i.e., there are potential unreads).
     try {
       final msgs = controller.messages;
       final hasManualUnread = controller.manualUnreadMessageId.value.isNotEmpty;
@@ -55,17 +51,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.dispose();
   }
 
-  // Only allow editing within a short time window after message creation.
-  // Backend enforces the real rule; this is a best-effort UI gate.
   bool _canEditMessage(types.Message msg) {
     final isMine = msg.author.id == AppPref().userId.toString();
     if (!isMine) return false;
-    final createdAt = msg.createdAt; // millisecondsSinceEpoch (UTC)
+    final createdAt = msg.createdAt;
     if (createdAt == null) return false;
     const window = Duration(minutes: 15);
     final nowMs = DateTime.now().toUtc().millisecondsSinceEpoch;
-    final within = nowMs - createdAt <= window.inMilliseconds;
-    return within;
+    return nowMs - createdAt <= window.inMilliseconds;
   }
 
   Widget _buildList() {
@@ -79,21 +72,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       if (showPinnedOnly) {
         msgs = msgs.where((m) => (m.metadata?['pinned'] == true)).toList();
       }
-      final query = controller.searchQuery.value; // for highlight
-      // Make Obx depend on last-read to show unread separator
-      // (read the value without storing to avoid unused local warnings)
+      final query = controller.searchQuery.value;
       controller.lastReadMessageId.value;
       if (controller.loading.value && msgs.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
-      // Compute first unread once for this build (disabled when filters are on)
-      final bool filtersOn = showFlaggedOnly || showPinnedOnly;
+      final filtersOn = showFlaggedOnly || showPinnedOnly;
       final firstUnreadIndex =
           filtersOn ? null : controller.getFirstUnreadIndex();
+
       return ScrollablePositionedList.separated(
         itemScrollController: controller.itemScrollController,
         itemPositionsListener: controller.itemPositionsListener,
-        //itemPositionsListener: itemPositionsListener,
         reverse: true,
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         itemCount: msgs.length,
@@ -101,17 +91,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         itemBuilder: (context, idx) {
           final msg = msgs[idx];
           final isMe = msg.author.id == AppPref().userId.toString();
-          debugPrint(
-              "msg->id:${msg.id} :: idx:$idx :: msg->${msg.metadata?['raw_msg']}");
           controller.msgIdToIndex.putIfAbsent(msg.id, () => idx);
+
           final bubble = MessageBubble(
             message: msg,
             isMe: isMe,
             highlightQuery: query,
             onTap: () {},
-            onLongPress: () async {
-              // Show a lightweight overlay with reactions and a small menu (not a bottom sheet)
-              final isMine = msg.author.id == AppPref().userId.toString();
+            onLongPress: () {
+              final isMine = isMe;
               final canEdit = _canEditMessage(msg);
               final isFlagged = (msg.metadata?['flagged'] == true);
               final isPinned = (msg.metadata?['pinned'] == true);
@@ -119,64 +107,83 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               Navigator.of(context).push(
                 HeroDialogRoute(
                   builder: (context) {
-                    return ReactionsDialogWidget(
-                      reactions: const ['👍', '❤️', '😂', '😮', '😢', '👏'],
-                      menuItems: [
-                        if (isMine && canEdit)
-                          MenuItem(label: 'Edit', icon: Icons.edit),
-                        if (isMine)
-                          MenuItem(
-                            label: 'Delete',
-                            icon: Icons.delete_outline,
-                            isDestuctive: true,
-                          ),
-                        MenuItem(
-                          label: isFlagged ? 'Unflag' : 'Flag',
-                          icon: isFlagged ? Icons.flag : Icons.flag_outlined,
+                    final theme = Theme.of(context);
+                    return Theme(
+                      data: theme.copyWith(
+                        textTheme: theme.textTheme.apply(
+                          bodyColor: AppColor.black12Color,
+                          displayColor: AppColor.black12Color,
                         ),
-                        MenuItem(
-                          label: isPinned ? 'Unpin' : 'Pin',
-                          icon: isPinned
-                              ? Icons.push_pin
-                              : Icons.push_pin_outlined,
+                        listTileTheme: const ListTileThemeData(
+                          textColor: AppColor.black12Color,
+                          iconColor: AppColor.black12Color,
                         ),
-                        if (!isMine)
-                          MenuItem(
-                            label: 'Mark as unread',
-                            icon: Icons.mark_email_unread_outlined,
-                          ),
-                      ],
-                      id: msg.id,
-                      messageWidget: const SizedBox.shrink(),
-                      onReactionTap: (reaction) {
-                        controller.sendReaction(msg.id, reaction);
-                      },
-                      onContextMenuTap: (menuItem) async {
-                        switch (menuItem.label) {
-                          case 'Edit':
-                            final newText = await _showEditSheet(msg);
-                            if (newText != null && newText.trim().isNotEmpty) {
-                              controller.editMessage(msg.id, newText.trim());
+                      ),
+                      child: DefaultTextStyle.merge(
+                        style: const TextStyle(color: AppColor.black12Color),
+                        child: ReactionsDialogWidget(
+                          reactions: const ['👍', '❤️', '😂', '😮', '😢', '👏'],
+                          menuItems: [
+                            if (isMine && canEdit)
+                              MenuItem(label: 'Edit', icon: Icons.edit),
+                            if (isMine)
+                              MenuItem(
+                                label: 'Delete',
+                                icon: Icons.delete_outline,
+                                isDestuctive: true,
+                              ),
+                            MenuItem(
+                              label: isFlagged ? 'Unflag' : 'Flag',
+                              icon:
+                                  isFlagged ? Icons.flag : Icons.flag_outlined,
+                            ),
+                            MenuItem(
+                              label: isPinned ? 'Unpin' : 'Pin',
+                              icon: isPinned
+                                  ? Icons.push_pin
+                                  : Icons.push_pin_outlined,
+                            ),
+                            if (!isMine)
+                              MenuItem(
+                                label: 'Mark as unread',
+                                icon: Icons.mark_email_unread_outlined,
+                              ),
+                          ],
+                          id: msg.id,
+                          messageWidget: const SizedBox.shrink(),
+                          onReactionTap: (reaction) {
+                            controller.sendReaction(msg.id, reaction);
+                          },
+                          onContextMenuTap: (menuItem) async {
+                            switch (menuItem.label) {
+                              case 'Edit':
+                                final newText = await _showEditSheet(msg);
+                                if (newText != null &&
+                                    newText.trim().isNotEmpty) {
+                                  controller.editMessage(
+                                      msg.id, newText.trim());
+                                }
+                                break;
+                              case 'Delete':
+                                controller.deleteMessage(msg.id);
+                                break;
+                              case 'Flag':
+                              case 'Unflag':
+                                controller.toggleFlag(
+                                    msg.id, (msg.metadata?['flagged'] == true));
+                                break;
+                              case 'Pin':
+                              case 'Unpin':
+                                controller.togglePin(
+                                    msg.id, (msg.metadata?['pinned'] == true));
+                                break;
+                              case 'Mark as unread':
+                                controller.markAsUnread(msg.id);
+                                break;
                             }
-                            break;
-                          case 'Delete':
-                            controller.deleteMessage(msg.id);
-                            break;
-                          case 'Flag':
-                          case 'Unflag':
-                            controller.toggleFlag(
-                                msg.id, (msg.metadata?['flagged'] == true));
-                            break;
-                          case 'Pin':
-                          case 'Unpin':
-                            controller.togglePin(
-                                msg.id, (msg.metadata?['pinned'] == true));
-                            break;
-                          case 'Mark as unread':
-                            controller.markAsUnread(msg.id);
-                            break;
-                        }
-                      },
+                          },
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -197,15 +204,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 _UnreadSeparator(),
                 const SizedBox(height: 6),
                 Align(
-                    alignment:
-                        isMe ? Alignment.centerRight : Alignment.centerLeft,
-                    child: bubble),
+                  alignment:
+                      isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  child: bubble,
+                ),
               ],
             );
           }
+
           return Align(
-              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-              child: bubble);
+            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+            child: bubble,
+          );
         },
       );
     });
@@ -249,41 +259,45 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             (message is types.TextMessage ? message.text : ''));
     return Get.bottomSheet<String?>(
       SafeArea(
-          child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CommonTextField(controller: controllerText),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CommonTextField(controller: controllerText),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
                     child: CommonAppButton(
-                  text: 'Cancel',
-                  color: AppColor.redColor,
-                  onTap: () => Get.back<String?>(result: null),
-                )),
-                const SizedBox(width: 12),
-                Expanded(
+                      text: 'Cancel',
+                      color: AppColor.redColor,
+                      onTap: () => Get.back<String?>(result: null),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: CommonAppButton(
-                  text: 'Save',
-                  onTap: () => Get.back<String?>(result: controllerText.text),
-                )),
-              ],
-            )
-          ],
+                      text: 'Save',
+                      onTap: () =>
+                          Get.back<String?>(result: controllerText.text),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      )),
+      ),
       isScrollControlled: true,
     );
   }
 
   void _onSearchChanged(String q) {
-    debugPrint("_onSearchChanged: $q");
     controller.setSearchQuery(q);
   }
 
@@ -310,7 +324,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           searchTotal: controller.totalMatches),
       body: Column(
         children: [
-          // Simple filter row (Flagged / Pinned)
           Obx(() {
             final flagged = controller.showFlaggedOnly.value;
             final pinned = controller.showPinnedOnly.value;
@@ -337,36 +350,36 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             );
           }),
           Expanded(
-              child: Stack(
-            children: [
-              _buildList(),
-              // Show the jump button only when meaningful. Use Obx so it reacts to conversation/messages changes.
-              Obx(() {
-                final filtersOn = controller.showFlaggedOnly.value ||
-                    controller.showPinnedOnly.value;
-                if (filtersOn || !controller.showJumpToUnreadButton.value) {
-                  return const SizedBox.shrink();
-                }
-                return Positioned(
-                  bottom: 0,
-                  right: 12,
-                  child: SafeArea(
-                    child: ElevatedButton.icon(
-                      onPressed: controller.jumpToFirstUnread,
-                      icon:
-                          const Icon(Icons.keyboard_double_arrow_up, size: 18),
-                      label: const Text('Jump to first unread'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        textStyle: const TextStyle(fontSize: 13),
+            child: Stack(
+              children: [
+                _buildList(),
+                Obx(() {
+                  final filtersOn = controller.showFlaggedOnly.value ||
+                      controller.showPinnedOnly.value;
+                  if (filtersOn || !controller.showJumpToUnreadButton.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    bottom: 0,
+                    right: 12,
+                    child: SafeArea(
+                      child: ElevatedButton.icon(
+                        onPressed: controller.jumpToFirstUnread,
+                        icon: const Icon(Icons.keyboard_double_arrow_up,
+                            size: 18),
+                        label: const Text('Jump to first unread'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          textStyle: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }),
-            ],
-          )),
+                  );
+                }),
+              ],
+            ),
+          ),
           Obx(() {
             final typing = controller.typingUsers.values.toList();
             if (typing.isNotEmpty) {
@@ -388,17 +401,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ? const LinearProgressIndicator()
               : const SizedBox.shrink()),
           ChatInput(
-            onSend: (t) {
-              controller.sendText(t);
-            },
-            onAttachImage: () async {
-              await controller.sendImage();
-            },
-            onAttachFile: () async {
-              await controller.sendFile();
-            },
+            onSend: (t) => controller.sendText(t),
+            onAttachImage: () async => controller.sendImage(),
+            onAttachFile: () async => controller.sendFile(),
             onTextChanged: controller.onUserTyping,
-          )
+          ),
         ],
       ),
     );
@@ -440,7 +447,7 @@ extension _ChatDetailReactionUI on _ChatDetailScreenState {
           children: [
             const Text(
               'Reactions',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,color: AppColor.black12Color),
             ),
             const SizedBox(height: 12),
             ListView.separated(
