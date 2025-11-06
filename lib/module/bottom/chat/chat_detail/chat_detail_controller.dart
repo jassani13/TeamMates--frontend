@@ -156,7 +156,7 @@ class ChatDetailController extends GetxController {
 
     final isTyping = data['isTyping'] == true;
     if (isTyping) {
-      final known = types.User(id: uid);
+      final known = _resolveTypingUser(uid);
       typingUsers[uid] = known;
       _typingTimers[uid]?.cancel();
       _typingTimers[uid] = Timer(_typingTTL, () {
@@ -646,5 +646,54 @@ class ChatDetailController extends GetxController {
       text: raw['msg']?.toString() ?? '',
       metadata: metadata,
     );
+  }
+
+  /// Best-effort resolver to attach a human-readable name for typing users.
+  /// Order of resolution:
+  /// 1) Any existing message authored by [uid] -> reuse its author info
+  /// 2) For personal conversations, fallback to conversation title/image
+  /// 3) Otherwise return a minimal user with only id
+  types.User _resolveTypingUser(String uid) {
+    // 1) Try to find an authored message from this user to reuse name/image
+    try {
+      final idx = messages.indexWhere((m) => m.author.id == uid);
+      if (idx != -1) {
+        final a = messages[idx].author;
+        return types.User(
+          id: a.id,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          imageUrl: a.imageUrl,
+        );
+      }
+    } catch (_) {}
+
+    // 2) For personal chats, the conversation title/image represent the other user
+    try {
+      if ((conversation?.type ?? '').toLowerCase() == 'personal' &&
+          uid != me.id) {
+        final title = (conversation?.title ?? '').trim();
+        final img = (conversation?.image ?? '').trim();
+        if (title.isNotEmpty) {
+          // Split naive: first token -> firstName, rest -> lastName
+          final parts = title.split(' ');
+          final first = parts.isNotEmpty ? parts.first : title;
+          final last = parts.length > 1 ? parts.sublist(1).join(' ') : null;
+          return types.User(
+            id: uid,
+            firstName: first,
+            lastName: last,
+            imageUrl: img.isNotEmpty ? img : null,
+          );
+        }
+        // If no title, still attach image when available
+        if (img.isNotEmpty) {
+          return types.User(id: uid, imageUrl: img);
+        }
+      }
+    } catch (_) {}
+
+    // 3) Fallback minimal
+    return types.User(id: uid);
   }
 }
