@@ -17,6 +17,8 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onTap;
   final String? highlightQuery;
   final VoidCallback? onReactionsTap;
+  // Fired when the read-receipt (double check) is tapped
+  final VoidCallback? onReadByTap;
   final bool showReadReceipt;
 
   const MessageBubble({
@@ -28,6 +30,7 @@ class MessageBubble extends StatelessWidget {
     this.onTap,
     this.highlightQuery,
     this.onReactionsTap,
+    this.onReadByTap,
     this.showReadReceipt = true,
   }) : super(key: key);
 
@@ -376,8 +379,11 @@ class MessageBubble extends StatelessWidget {
                         Positioned(
                           bottom: 4,
                           right: reactions.isNotEmpty ? 4 : 6,
-                          child:
-                              _ReadReceiptIndicator(readByCount: readBy.length),
+                          child: GestureDetector(
+                            onTap: onReadByTap,
+                            child: _ReadReceiptIndicator(
+                                readByCount: readBy.length),
+                          ),
                         ),
                     ],
                   ),

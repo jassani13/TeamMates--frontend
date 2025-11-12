@@ -203,6 +203,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             onReactionsTap: () {
               _showReactionDetailsSheet(msg);
             },
+            onReadByTap: () {
+              _showReadByDetailsSheet(msg);
+            },
           );
 
           if (firstUnreadIndex != null && idx == firstUnreadIndex) {
@@ -511,5 +514,53 @@ extension _ChatDetailReactionUI on _ChatDetailScreenState {
       }
     } catch (_) {}
     return null;
+  }
+
+  void _showReadByDetailsSheet(types.Message message) {
+    final raw = (message.metadata?['read_by'] as List?) ?? [];
+    final ids =
+        raw.map((e) => e.toString().trim()).where((s) => s.isNotEmpty).toList();
+    if (ids.isEmpty) return;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Read by',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.black12Color),
+            ),
+            const SizedBox(height: 12),
+            ListView.separated(
+              shrinkWrap: true,
+              itemCount: ids.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final uid = ids[index];
+                final isMe = uid == AppPref().userId.toString();
+                final name =
+                    _nameForUserId(uid) ?? (isMe ? 'You' : 'User $uid');
+                return ListTile(
+                  leading:
+                      const Icon(Icons.check, color: AppColor.black12Color),
+                  title: Text(name,
+                      style: const TextStyle(color: AppColor.black12Color)),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
