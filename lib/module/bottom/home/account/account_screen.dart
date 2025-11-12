@@ -128,6 +128,13 @@ class AccountScreen extends StatelessWidget {
               Gap(12),
               CommonTitleText(text: "General"),
               Gap(16),
+              buildContainer(
+                  isNoti: false,
+                  text: "Chat Settings",
+                  icon: AppImage.privacy,
+                  onTap: () {
+                    Get.toNamed(AppRouter.privacySettingsScreen);
+                  }),
               Visibility(
                 visible: AppPref().role == 'coach',
                 child: buildContainer(

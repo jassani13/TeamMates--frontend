@@ -54,6 +54,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   bool _canEditMessage(types.Message msg) {
     final isMine = msg.author.id == AppPref().userId.toString();
     if (!isMine) return false;
+    // Disallow editing for non-text messages (images, pdf/files)
+    final msgType = (msg.metadata?['msg_type']?.toString().toLowerCase() ??
+        (msg is types.TextMessage
+            ? 'text'
+            : (msg is types.ImageMessage
+                ? 'image'
+                : (msg is types.FileMessage ? 'file' : 'text'))));
+    if (msgType != 'text') return false;
     final createdAt = msg.createdAt;
     if (createdAt == null) return false;
     const window = Duration(minutes: 15);
@@ -447,7 +455,10 @@ extension _ChatDetailReactionUI on _ChatDetailScreenState {
           children: [
             const Text(
               'Reactions',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,color: AppColor.black12Color),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.black12Color),
             ),
             const SizedBox(height: 12),
             ListView.separated(

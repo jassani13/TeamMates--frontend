@@ -14,6 +14,7 @@ import 'package:base_code/package/screen_packages.dart';
 
 import 'module/bottom/chat/chat_detail/chat_detail_screen.dart';
 import 'module/bottom/chat/group_chat/group_chat_edit_screen.dart';
+import 'module/bottom/home/account/privacy/privacy_settings_screen.dart';
 import 'module/roster/add_staff_form.dart';
 import 'module/bottom/roster/addNonPlayer/add_non_player_screen.dart';
 
@@ -58,6 +59,7 @@ class AppRouter {
   static const calendar = '/calendar';
   static const searchChatScreen = '/searchChatScreen';
   static const webViewScreen = '/webViewScreen';
+  static const privacySettingsScreen = '/privacy_settings_screen';
 
   static List<GetPage> getPages = [
     GetPage(name: addNonPlayer, page: () => AddNonPlayerScreen()),
@@ -100,5 +102,6 @@ class AppRouter {
     GetPage(name: calendar, page: () => CalendarScreen()),
     GetPage(name: searchChatScreen, page: () => SearchChatScreen()),
     GetPage(name: webViewScreen, page: () => WebViewScreen()),
+    GetPage(name: privacySettingsScreen, page: () => PrivacySettingsScreen()),
   ];
 }

@@ -10,6 +10,7 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 
 import '../chat_screen.dart';
 
@@ -21,10 +22,13 @@ class ChatDetailController extends GetxController {
 
   // New: search query observable used for keyword-based highlighting
   final RxString searchQuery = ''.obs;
+
   // Flagged filter toggle
   final RxBool showFlaggedOnly = false.obs;
+
   // Pinned filter toggle
   final RxBool showPinnedOnly = false.obs;
+
   // Search navigation state
   final RxList<String> _matchIds = <String>[].obs;
   final RxInt _matchIndex = (-1).obs; // -1 when none selected
@@ -42,13 +46,19 @@ class ChatDetailController extends GetxController {
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
   final Map<String, int> msgIdToIndex = {};
+
   // Controls visibility of the "Jump to first unread" button
   final RxBool showJumpToUnreadButton = false.obs;
+
   // Observable last-read id to allow UI to rebuild separators when it changes
   final RxString lastReadMessageId = ''.obs;
+
   // Track manual unread boundary set during this session. When non-empty,
   // we should not auto-mark read (including on dispose) to preserve the user's intent.
   final RxString manualUnreadMessageId = ''.obs;
+
+  // Read receipts: whether my privacy setting allows showing read receipts
+  final RxBool myReadReceiptsOn = true.obs;
 
   // Socket event constants (kept consistent with the rest of the app)
   static const evGetMessages = 'get_messages';
@@ -86,7 +96,31 @@ class ChatDetailController extends GetxController {
     _registerSocketListeners();
     // Track viewport to decide when to show/hide the jump button
     itemPositionsListener.itemPositions.addListener(_onViewportChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchMyPrivacy();
+    });
+
     loadInitial();
+  }
+
+  Future<void> _fetchMyPrivacy() async {
+    try {
+      final body = dio_pkg.FormData.fromMap({'user_id': AppPref().userId});
+      final res =
+          await callApi(dio.post(ApiEndPoint.readReceiptsPrivacy, data: body));
+      if (res?.statusCode == 200) {
+        final data = res?.data;
+        final val = (data?['data']?['read_receipts'] ?? true);
+        if (val is bool)
+          myReadReceiptsOn.value = val;
+        else if (val is num)
+          myReadReceiptsOn.value = val != 0;
+        else if (val is String)
+          myReadReceiptsOn.value = (val.toLowerCase() == 'true' || val == '1');
+      }
+    } catch (e) {
+      debugPrint("_fetchMyPrivacy_error: $e");
+    }
   }
 
   /// Set the current search query; UI should call this when user types in search.
@@ -269,7 +303,45 @@ class ChatDetailController extends GetxController {
   }
 
   void _onMessagesRead(dynamic data) {
-    // optional: implement per-message read state if required
+    try {
+      if (data == null) return;
+      final cid = data['conversation_id']?.toString();
+      if (cid != conversation?.conversationId) return;
+      final readerId = data['user_id']?.toString();
+      if (readerId == null || readerId.trim().isEmpty || readerId == me.id) {
+        return; // ignore my own or invalid read events
+      }
+      final lastIdStr = data['last_read_message_id']?.toString();
+      final lastId = int.tryParse(lastIdStr ?? '');
+      if (lastId == null) return;
+
+      bool changed = false;
+      for (int i = 0; i < messages.length; i++) {
+        final m = messages[i];
+        if (m.author.id != me.id) continue; // only care about messages I sent
+        final mid = int.tryParse(m.id) ?? -1;
+        if (mid <= lastId) {
+          final meta = {...?m.metadata};
+          final existing = (meta['read_by'] as List?) ?? [];
+          final readBy = existing
+              .map((e) => e.toString())
+              .where((s) => s.trim().isNotEmpty)
+              .toList();
+          if (!readBy.contains(readerId)) {
+            readBy.add(readerId);
+            meta['read_by'] = readBy;
+            if (m is types.TextMessage)
+              messages[i] = m.copyWith(metadata: meta);
+            if (m is types.ImageMessage)
+              messages[i] = m.copyWith(metadata: meta);
+            if (m is types.FileMessage)
+              messages[i] = m.copyWith(metadata: meta);
+            changed = true;
+          }
+        }
+      }
+      if (changed) messages.refresh();
+    } catch (_) {}
   }
 
   void _onReaction(dynamic data) {
@@ -959,12 +1031,14 @@ class ChatDetailController extends GetxController {
     final createdAt = createdAtStr != null
         ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
         : DateTime.now().toUtc().millisecondsSinceEpoch;
-
+    debugPrint("_fromSocket: raw:$raw");
     final metadata = <String, dynamic>{
       'msg_type': msgType,
       'raw_msg': raw['msg'],
       'file_url': raw['file_url'],
       'reactions': raw['reactions'] ?? [],
+      // Populate read receipts from server payload (if provided)
+      'read_by': raw['read_by'] ?? raw['readBy'] ?? [],
       'flagged': raw['flagged'] == true,
       'pinned': raw['pinned'] == true,
       'edited': raw['edited'] == true ||
@@ -975,6 +1049,7 @@ class ChatDetailController extends GetxController {
       'deleted_by': raw['deleted_by']?.toString(),
       'deleted_at': raw['deleted_at'],
     };
+    debugPrint("mtag: $metadata");
 
     if (msgType == 'image') {
       return types.ImageMessage(

@@ -17,6 +17,7 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onTap;
   final String? highlightQuery;
   final VoidCallback? onReactionsTap;
+  final bool showReadReceipt;
 
   const MessageBubble({
     Key? key,
@@ -27,9 +28,11 @@ class MessageBubble extends StatelessWidget {
     this.onTap,
     this.highlightQuery,
     this.onReactionsTap,
+    this.showReadReceipt = true,
   }) : super(key: key);
 
   bool get _isDeleted => (message.metadata?['deleted_at'] != null);
+
   bool get _isEdited => (message.metadata?['edited'] == true);
 
   String _reactionToEmoji(String reaction) {
@@ -160,6 +163,11 @@ class MessageBubble extends StatelessWidget {
     final reactions = meta['reactions'] as List? ?? [];
     final isFlagged = meta['flagged'] == true;
     final isPinned = meta['pinned'] == true;
+    final readBy = ((meta['read_by'] as List?)
+            ?.map((e) => e.toString().trim())
+            .where((s) => s.isNotEmpty)
+            .toList()) ??
+        [];
 
     if (_isDeleted) {
       // Keep deleted bubbles left-aligned and maintain consistent leading spacing
@@ -363,7 +371,14 @@ class MessageBubble extends StatelessWidget {
                               ],
                             ),
                           ),
-                        )
+                        ),
+                      if (isMe && showReadReceipt && readBy.isNotEmpty)
+                        Positioned(
+                          bottom: 4,
+                          right: reactions.isNotEmpty ? 4 : 6,
+                          child:
+                              _ReadReceiptIndicator(readByCount: readBy.length),
+                        ),
                     ],
                   ),
                 )
@@ -373,5 +388,23 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ReadReceiptIndicator extends StatelessWidget {
+  final int readByCount;
+
+  const _ReadReceiptIndicator({Key? key, required this.readByCount})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Single check = delivered (implicitly), double = read by >=1, show a small stacked icon.
+    // If multiple readers, still show double check, tinted blue.
+    bool isDouble = readByCount >= 1;
+    if (!isDouble) {
+      return Icon(Icons.done, size: 14, color: Colors.grey.shade600);
+    }
+    return const Icon(Icons.done_all, size: 14, color: Color(0xFF34B7F1));
   }
 }
