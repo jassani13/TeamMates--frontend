@@ -7,6 +7,8 @@ import '../../../data/network/api_client.dart';
 import '../../../data/network/dio_client.dart';
 import '../../../data/network/end_point.dart';
 import '../../../model/conversation_item.dart';
+import '../../../model/search_message_hit.dart';
+import 'chat_screen.dart';
 import '../../../package/screen_packages.dart';
 
 class ChatScreenController extends GetxController {
@@ -15,10 +17,16 @@ class ChatScreenController extends GetxController {
   List<ChatListData> chatListData = <ChatListData>[];
   List<ChatListData> grpChatListData = <ChatListData>[];
   final RxList<ConversationItem> conversations = <ConversationItem>[].obs;
+
   // Current search query for filtering conversation list
   final RxString searchQuery = ''.obs;
+
+  // Message-level search hits
+  final RxList<SearchMessageHit> messageHits = <SearchMessageHit>[].obs;
+
   // Map of conversation_id -> display text like "Alice is typing…"
   final RxMap<String, String> typingDisplay = <String, String>{}.obs;
+
   // Internal TTL timers to auto-clear typing states
   final Map<String, Timer> _typingTimers = {};
 
@@ -31,6 +39,36 @@ class ChatScreenController extends GetxController {
     conversations.assignAll(list);
   }
 
+  // Public method invoked once global socket is ready (from ChatScreen)
+  void attachSearchSocket() {
+    try {
+      socket.off('search_messages_result', _onSearchMessagesResult);
+      socket.on('search_messages_result', _onSearchMessagesResult);
+    } catch (e) {
+      debugPrint("attachSearchSocket->error: $e");
+    }
+  }
+
+  void _onSearchMessagesResult(dynamic payload) {
+    try {
+      final data = payload is Map ? payload['data'] : null;
+      final q = payload is Map ? (payload['query']?.toString() ?? '') : '';
+      if (q != searchQuery.value.trim()) {
+        // stale response for previous query; ignore
+        return;
+      }
+      final list = (data is List)
+          ? data
+              .map((e) =>
+                  SearchMessageHit.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+          : <SearchMessageHit>[];
+      messageHits.assignAll(list);
+    } catch (e) {
+      messageHits.clear();
+    }
+  }
+
   List<ConversationItem> get filtered {
     final q = searchQuery.value.trim().toLowerCase();
     if (q.isEmpty) return conversations;
@@ -38,6 +76,7 @@ class ChatScreenController extends GetxController {
       if (text == null || text.isEmpty) return false;
       return text.toLowerCase().contains(q);
     }
+
     return conversations.where((c) {
       return containsIgnoreCase(c.title, q) ||
           containsIgnoreCase(c.lastMessage, q) ||
@@ -47,6 +86,16 @@ class ChatScreenController extends GetxController {
 
   void setSearchQuery(String q) {
     searchQuery.value = q;
+    // Perform server-side message search (debounced externally)
+    messageHits.clear();
+    final trimmed = q.trim();
+    if (trimmed.isEmpty) {
+      return; // cleared
+    }
+    // Emit socket request
+    try {
+      socket.emit('search_messages', {'query': trimmed});
+    } catch (_) {}
   }
 
   void updateOrInsert(ConversationItem item) {

@@ -37,6 +37,9 @@ class ChatDetailController extends GetxController {
 
   ConversationItem? conversation;
   late final types.User me;
+  // If navigating from a search hit, use this to jump to the specific message once.
+  String? _initialFocusMessageId;
+  bool _didInitialFocusJump = false;
 
   // Reuse existing chat controller for media upload helper
   final ChatScreenController chatController = Get.put(ChatScreenController());
@@ -91,6 +94,11 @@ class ChatDetailController extends GetxController {
     super.onInit();
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem?;
+    // Pick up a specific message to focus when opening the screen (from global search results)
+    final focusId = args['focus_message_id']?.toString();
+    if (focusId != null && focusId.isNotEmpty) {
+      _initialFocusMessageId = focusId;
+    }
     me = types.User(id: AppPref().userId.toString());
     lastReadMessageId.value = conversation?.lastReadMessageId ?? '';
     _registerSocketListeners();
@@ -252,6 +260,18 @@ class ChatDetailController extends GetxController {
     }
     // After messages load, update jump button visibility
     updateJumpToUnreadVisibility();
+
+    // If we navigated with a target message id, jump to it once the list is ready
+    if (_initialFocusMessageId != null && !_didInitialFocusJump) {
+      _didInitialFocusJump = true;
+      final targetId = _initialFocusMessageId!;
+      // Wait for first frame so that item builder can populate index map
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // small delay to ensure layout complete
+        await Future.delayed(const Duration(milliseconds: 120));
+        await scrollToMessageNoSideEffects(targetId);
+      });
+    }
   }
 
   void _onNewMessage(dynamic data) {

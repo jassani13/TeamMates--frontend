@@ -2,9 +2,11 @@ import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:intl/intl.dart';
 import '../../../components/search_input.dart';
 
 import '../../../model/conversation_item.dart';
+import '../../../model/search_message_hit.dart';
 
 late IO.Socket socket;
 
@@ -45,127 +47,49 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.onConnect((_) {
       if (kDebugMode) print('[SOCKET] connected');
       socket.emit('register', {'user_id': AppPref().userId});
-    });
+      chatController.attachSearchSocket();
 
-    socket.onDisconnect((_) {
-      if (kDebugMode) print('[SOCKET] disconnected');
-    });
-
-    socket.on('conversation_list', (payload) {
-      debugPrint("conversation_list: $payload");
-      final list =
-          payload is Map && payload['data'] != null ? payload['data'] : payload;
-      if (list is List) {
-        chatController.setConversations(list);
-        // Join all conversation rooms so we can receive typing events for list view
-        try {
-          for (final c in chatController.conversations) {
-            final id = c.conversationId ?? '';
-            if (id.isNotEmpty) socket.emit('joinConversation', id);
-          }
-        } catch (_) {}
-      }
-    });
-
-    socket.on('updateConversationList', (payload) {
-      final data = payload['resData'] ?? payload;
-      debugPrint("updateConversationList: $data");
-      if (data is Map) {
-        final convId = data['conversation_id']?.toString();
-        if (convId == null) return;
-        chatController.patchConversation(
-            convId: convId,
-            type: data['type']?.toString(),
-            ownerId: data['owner_id']?.toString(),
-            title: data['title']?.toString(),
-            image: data['image']?.toString(),
-            lastMessage: data['last_message']?.toString() ?? '',
-            msgType: data['msg_type']?.toString() ?? 'text',
-            fileUrl: data['last_message_file_url']?.toString() ?? '',
-            createdAt: data['created_at']?.toString(),
-            unreadCount: data['unread_count'] is int
-                ? data['unread_count'] as int
-                : int.tryParse(data['unread_count']?.toString() ?? '0') ?? 0,
-            lastReadMessageId: data['last_read_message_id']);
-        // Ensure we joined this conversation room to get typing events
-        socket.emit('joinConversation', convId);
-      }
-    });
-    // New incoming message (server should emit new_message; if not adjust to your emitted event)
-    socket.on('new_message', (msg) async {
-      if (kDebugMode) print('[SOCKET] new_message $msg');
-      final conversationId = msg['conversation_id']?.toString();
-      if (conversationId == null) return;
-
-      // Optionally optimistically update last message
-      final idx = chatController.conversations
-          .indexWhere((c) => c.conversationId == conversationId);
-      if (idx >= 0) {
-        final old = chatController.conversations[idx];
-        final updated = ConversationItem(
-            conversationId: old.conversationId,
-            type: old.type,
-            title: old.title,
-            image: old.image,
-            ownerId: old.ownerId,
-            lastMessage: msg['msg_type'] == 'text'
-                ? (msg['msg'] ?? '')
-                : msg['msg_type'] ?? 'file',
-            lastMessageFileUrl: msg['file_url'] ?? '',
-            msgType: msg['msg_type'] ?? 'text',
-            createdAt: DateTime.now(),
-            unreadCount: old.unreadCount ??
-                0 +
-                    (msg['sender_id'].toString() == AppPref().userId.toString()
-                        ? 0
-                        : 1),
-            lastReadMessageId: "${msg?['last_read_message_id']}");
-        debugPrint("Updating_conversation_locally: ${updated.ownerId}");
-        chatController.updateOrInsert(updated);
-      } else {
-        // Fallback: ask server for fresh list just for safety
-        socket.emit('get_conversations', {'user_id': AppPref().userId});
-      }
-    });
-
-    // Read receipts reducing unread
-    socket.on('messages_read', (payload) {
-      final convId = payload['conversation_id']?.toString();
-      final userId = payload['user_id']?.toString();
-      if (userId == AppPref().userId.toString()) {
-        // our own read ack -> ensure local unread zero
-        if (convId != null) chatController.markConversationRead(convId);
-      }
-    });
-
-    // Reactions
-    socket.on('message_reaction', (payload) {
-      // update message-level UI in conversation screen (implement there)
-    });
-
-    // Typing for list view (requires being in conv_* rooms)
-    socket.on('typing', (payload) {
+      // Request conversations explicitly (server also emits on register)
       try {
-        final convId = payload['conversation_id']?.toString() ?? '';
-        final isTyping = payload['isTyping'] == true;
-        final uid = payload['user_id']?.toString();
-        final first = (payload['sender_first_name']?.toString() ?? '').trim();
-        final last = (payload['sender_last_name']?.toString() ?? '').trim();
-        final full = ((first.isNotEmpty || last.isNotEmpty)
-                ? (first + (last.isNotEmpty ? ' ' + last : ''))
-                : '')
-            .trim();
-        if (convId.isNotEmpty && uid != AppPref().userId.toString()) {
-          chatController.setTypingForConversation(
-            conversationId: convId,
-            isTyping: isTyping,
-            typingUserId: uid,
-            displayName: full.isNotEmpty ? full : null,
-          );
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
+      } catch (_) {}
+
+      // Listen for full conversation list
+      socket.off('conversation_list');
+      socket.on('conversation_list', (data) {
+        try {
+          if (data is List) {
+            chatController.setConversations(data);
+          }
+        } catch (e) {
+          if (kDebugMode) debugPrint('conversation_list parse error: $e');
         }
-      } catch (e) {
-        debugPrint('typing handler error: $e');
-      }
+      });
+
+      // Listen for incremental conversation updates (unread, last message etc.)
+      socket.off('updateConversationList');
+      socket.on('updateConversationList', (payload) {
+        try {
+          final res = payload is Map ? payload['resData'] ?? payload : payload;
+          if (res is Map) {
+            chatController.patchConversation(
+              convId: (res['conversation_id'] ?? '').toString(),
+              lastMessage: (res['last_message'] ?? '').toString(),
+              msgType: (res['msg_type'] ?? 'text').toString(),
+              fileUrl: (res['last_message_file_url'] ?? '').toString(),
+              type: (res['type'] ?? '').toString(),
+              ownerId: res['owner_id']?.toString(),
+              title: (res['title'] ?? '').toString(),
+              image: (res['image'] ?? '').toString(),
+              createdAt: (res['created_at'] ?? '').toString(),
+              unreadCount:
+                  int.tryParse((res['unread_count'] ?? '0').toString()),
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) debugPrint('updateConversationList error: $e');
+        }
+      });
     });
 
     // Presence (if you keep existing events)
@@ -248,7 +172,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Gap(12),
               Expanded(child: buildConversationList())
-
             ],
           ),
         ],
@@ -258,116 +181,202 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget buildConversationList() {
     return Obx(() {
+      final query = chatController.searchQuery.value.trim();
       final items = chatController.filtered;
-      if (items.isEmpty) {
+      final hits = chatController.messageHits;
+
+      if (query.isEmpty && items.isEmpty) {
         return Center(
-            child: Text(
-          'No Conversations Yet',
-          style: TextStyle(color: AppColor.black12Color),
-        ));
+            child: Text('No Conversations Yet',
+                style: TextStyle(color: AppColor.black12Color)));
       }
-      return ListView.separated(
+
+      return ListView(
         key:
             ValueKey("conversation_${chatController.selectedChatMethod.value}"),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: items.length,
-        separatorBuilder: (_, __) =>
-            Divider(color: AppColor.greyF6Color, height: 1),
-        itemBuilder: (_, i) {
-          ConversationItem c = items[i];
-          debugPrint(
-              "Rendering conversation: ${c.conversationId}::${c.ownerId}");
-          final timeAgo = c.createdAt == null
-              ? ''
-              : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
-          return GestureDetector(
-            onTap: () {
-              debugPrint("Conversation tapped: ${c.ownerId}");
-              Get.toNamed(
-                AppRouter.conversationDetailScreen,
-                arguments: {'conversation': c},
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              child: Row(
+        padding: const EdgeInsets.only(bottom: 40),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text('Chats',
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)
+                        .textColor(AppColor.grey4EColor)),
+          ),
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text('No chats match',
+                  style:
+                      TextStyle().normal14w500.textColor(AppColor.grey4EColor)),
+            )
+          else
+            ...items.map(_conversationTile),
+          if (query.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text('Messages',
+                  style:
+                      const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)
+                          .textColor(AppColor.grey4EColor)),
+            ),
+            if (hits.isEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('No matching messages',
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.grey4EColor)),
+              )
+            else
+              ...hits.map((h) => _messageHitTile(h, query)).toList(),
+          ],
+        ],
+      );
+    });
+  }
+
+  Widget _conversationTile(ConversationItem c) {
+    final timeAgo = c.createdAt == null
+        ? ''
+        : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(AppRouter.conversationDetailScreen,
+            arguments: {'conversation': c});
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            ClipOval(
+              child: getImageView(
+                  errorWidget: const Icon(Icons.account_circle, size: 40),
+                  finalUrl: c.image ?? '',
+                  fit: BoxFit.cover),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipOval(
-                    child: getImageView(
-                        errorWidget: Icon(
-                          Icons.account_circle,
-                          size: 40,
-                        ),
-                        finalUrl: c.image ?? '',
-                        fit: BoxFit.cover),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            c.title == ''
-                                ? '(Untitled ${c.type})'
-                                : c.title ?? '',
-                            style: TextStyle()
-                                .normal16w500
-                                .textColor(AppColor.black12Color)),
-                        Obx(() {
-                          final typingText = chatController
-                                  .typingDisplay[c.conversationId ?? ''] ??
-                              '';
-                          final showTyping = typingText.isNotEmpty;
-                          final subtitleText = showTyping
-                              ? typingText
-                              : (c.msgType == 'text'
-                                  ? (c.lastMessage ?? '')
-                                  : (c.msgType == 'null'
-                                      ? 'File'
-                                      : (c.msgType ?? 'file')));
-                          return Text(
-                            subtitleText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle().normal14w500.textColor(showTyping
-                                ? Colors.green
-                                : AppColor.grey4EColor),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(timeAgo,
-                          style: TextStyle()
-                              .normal14w500
-                              .textColor(AppColor.grey4EColor)),
-                      if ((c.unreadCount ?? 0) > 0) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColor.greyF6Color,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text('${c.unreadCount}',
-                              style: TextStyle()
-                                  .normal14w500
-                                  .textColor(AppColor.black)),
-                        )
-                      ]
-                    ],
-                  )
+                  Text(c.title == '' ? '(Untitled ${c.type})' : c.title ?? '',
+                      style: TextStyle()
+                          .normal16w500
+                          .textColor(AppColor.black12Color)),
+                  Obx(() {
+                    final typingText =
+                        chatController.typingDisplay[c.conversationId ?? ''] ??
+                            '';
+                    final showTyping = typingText.isNotEmpty;
+                    final subtitleText = showTyping
+                        ? typingText
+                        : (c.msgType == 'text'
+                            ? (c.lastMessage ?? '')
+                            : (c.msgType == 'null'
+                                ? 'File'
+                                : (c.msgType ?? 'file')));
+                    return Text(
+                      subtitleText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle().normal14w500.textColor(
+                          showTyping ? Colors.green : AppColor.grey4EColor),
+                    );
+                  }),
                 ],
               ),
             ),
-          );
-        },
-      );
-    });
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(timeAgo,
+                    style: TextStyle()
+                        .normal14w500
+                        .textColor(AppColor.grey4EColor)),
+                if ((c.unreadCount ?? 0) > 0) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColor.greyF6Color,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('${c.unreadCount}',
+                        style:
+                            TextStyle().normal14w500.textColor(AppColor.black)),
+                  )
+                ]
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _messageHitTile(SearchMessageHit hit, String query) {
+    final dateStr = hit.createdAt == null
+        ? ''
+        : DateFormat('dd/MM/yyyy').format(hit.createdAt!.toLocal());
+    final qLower = query.toLowerCase();
+    final source = hit.text;
+    final idx = source.toLowerCase().indexOf(qLower);
+    final before = idx >= 0 ? source.substring(0, idx) : source;
+    final match = idx >= 0 ? source.substring(idx, idx + query.length) : '';
+    final after = idx >= 0 ? source.substring(idx + query.length) : '';
+    InlineSpan span = match.isEmpty
+        ? TextSpan(text: source)
+        : TextSpan(children: [
+            TextSpan(text: before),
+            TextSpan(
+                text: match,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(text: after),
+          ]);
+    return GestureDetector(
+      onTap: () {
+        final conv = chatController.conversations
+            .firstWhereOrNull((c) => c.conversationId == hit.conversationId);
+        if (conv != null) {
+          Get.toNamed(AppRouter.conversationDetailScreen, arguments: {
+            'conversation': conv,
+            'focus_message_id': hit.messageId,
+          });
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(hit.senderDisplayName,
+                      style: const TextStyle(fontWeight: FontWeight.w600)
+                          .textColor(AppColor.black12Color)),
+                ),
+                const SizedBox(width: 8),
+                Text(dateStr,
+                    style: const TextStyle(fontSize: 12)
+                        .textColor(AppColor.grey4EColor)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(color: AppColor.black12Color),
+                children: [span],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
