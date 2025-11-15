@@ -10,10 +10,6 @@ import '../../../model/conversation_item.dart';
 import '../../../package/screen_packages.dart';
 
 class ChatScreenController extends GetxController {
-  List chatList = [
-    "Group",
-    "Individual Chats",
-  ];
   RxInt selectedChatMethod = 0.obs;
   AutoScrollController controller = AutoScrollController();
   List<ChatListData> chatListData = <ChatListData>[];
@@ -34,11 +30,7 @@ class ChatScreenController extends GetxController {
   }
 
   List<ConversationItem> get filtered {
-    if (selectedChatMethod.value == 0) {
-      return conversations.where((c) => c.type != 'personal').toList();
-    } else {
-      return conversations.where((c) => c.type == 'personal').toList();
-    }
+    return conversations;
   }
 
   void updateOrInsert(ConversationItem item) {

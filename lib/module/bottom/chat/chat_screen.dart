@@ -234,31 +234,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
               Gap(24),
-              Container(
-                height: 63,
-                width: double.infinity,
-                padding: EdgeInsets.all(
-                  16,
-                ),
-                margin: EdgeInsets.symmetric(
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColor.greyF6Color,
-                  borderRadius: BorderRadius.circular(
-                    8,
-                  ),
-                ),
-                child: HorizontalSelectionList(
-                  items: chatController.chatList,
-                  selectedIndex: chatController.selectedChatMethod,
-                  controller: chatController.controller,
-                  onItemSelected: (index) {
-                    chatController.selectedChatMethod.value = index;
-                  },
-                ),
-              ),
-              Gap(24),
               Expanded(child: buildConversationList())
               // Obx(
               //   () => Expanded(
