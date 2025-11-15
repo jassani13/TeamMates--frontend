@@ -22,11 +22,6 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final controller = Get.put(ChatDetailController());
 
-  // Scrolling is handled in the controller for readability.
-  // controller.itemScrollController
-  // controller.itemPositionsListener
-  // controller.msgIdToIndex
-
   @override
   void initState() {
     super.initState();
