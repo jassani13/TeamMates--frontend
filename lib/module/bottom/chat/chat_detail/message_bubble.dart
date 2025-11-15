@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../utils/catched_network_image.dart';
 import '../../../../utils/common_function.dart';
@@ -50,6 +51,24 @@ class MessageBubble extends StatelessWidget {
       if (val != null) codePoints.add(val);
     }
     return codePoints.isEmpty ? reaction : String.fromCharCodes(codePoints);
+  }
+
+  String _formatTime(types.Message m) {
+    try {
+      final ms = m.createdAt;
+      if (ms != null) {
+        final dt =
+            DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true).toLocal();
+        return DateFormat('h:mm a').format(dt);
+      }
+      final createdStr = m.metadata?['created_at']?.toString();
+      if (createdStr != null && createdStr.isNotEmpty) {
+        final dt =
+            DateTime.tryParse(createdStr.replaceFirst(' ', 'T'))?.toLocal();
+        if (dt != null) return DateFormat('h:mm a').format(dt);
+      }
+    } catch (_) {}
+    return '';
   }
 
   TextSpan _highlightSpan(String source, String query, TextStyle baseStyle,
@@ -217,10 +236,21 @@ class MessageBubble extends StatelessWidget {
     Widget content;
     if (msgType == 'image') {
       final url = meta['file_url'] ?? '';
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: getImageView(
-            finalUrl: url, height: 200, width: 200, fit: BoxFit.cover),
+      // Wrap image in a Container that has extra bottom/right padding to avoid footer collision.
+      final willShowFooter = (isMe && showReadReceipt) || isPinned || isFlagged;
+      content = Container(
+        padding: EdgeInsets.only(
+          right: willShowFooter ? 72.0 : 20.0,
+          bottom: 18.0 + 6.0,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: getImageView(
+              finalUrl: url, height: 200, width: 200, fit: BoxFit.cover),
+        ),
       );
     } else if (msgType == 'file' || msgType == 'pdf') {
       final url = meta['file_url'] ?? '';
@@ -232,7 +262,15 @@ class MessageBubble extends StatelessWidget {
         onTap: () => openPdf(url),
         child: Container(
           width: 200,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          // Reserve space to avoid footer overlap on file/pdf bubbles as well.
+          padding: EdgeInsets.only(
+            top: 16,
+            left: 16,
+            right: ((isMe && showReadReceipt) || isPinned || isFlagged)
+                ? 72.0
+                : 28.0,
+            bottom: 18.0 + 8.0,
+          ),
           decoration: BoxDecoration(
               color: AppColor.greyF6Color,
               borderRadius: BorderRadius.circular(10)),
@@ -257,8 +295,20 @@ class MessageBubble extends StatelessWidget {
           (message is types.TextMessage
               ? (message as types.TextMessage).text
               : '');
+      // Reserve space for the bottom-right footer (tick/time/pin/flag) to avoid overlap with text.
+      final willShowFooter = (isMe && showReadReceipt) || isPinned || isFlagged;
+      const footerHeightReserve = 10.0; // vertical space for footer row
+      final rightReserve =
+          willShowFooter ? 76.0 : 28.0; // extra space for multiple icons
       content = Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        padding: EdgeInsets.only(
+          top: 12,
+          left: 14,
+          // Extra right padding so long lines don't render underneath the footer row.
+          right: rightReserve,
+          // Extra bottom padding so last line isn't overlapped by Positioned footer.
+          bottom: footerHeightReserve + 8, // include a little breathing room
+        ),
         decoration: BoxDecoration(
             color: AppColor.greyF6Color,
             borderRadius: BorderRadius.circular(10)),
@@ -276,7 +326,7 @@ class MessageBubble extends StatelessWidget {
                   child: Text('Edited',
                       style: TextStyle(fontSize: 10, color: Colors.black38)),
                 ),
-              )
+              ),
           ],
         ),
       );
@@ -323,34 +373,26 @@ class MessageBubble extends StatelessWidget {
                     alignment: Alignment.bottomRight,
                     children: [
                       content,
-                      // Small badges for pinned/flagged
-                      if (isFlagged || isPinned)
-                        Positioned(
-                          top: 4,
-                          right: 6,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isPinned)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 4),
-                                  child: Icon(Icons.push_pin,
-                                      size: 14, color: Colors.amber),
-                                ),
-                              if (isFlagged)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 4),
-                                  child: Icon(Icons.flag,
-                                      size: 14, color: Colors.redAccent),
-                                ),
-                            ],
-                          ),
+                      // Footer: bottom-right ordered right->left: tick, time, pin, flag
+                      Positioned(
+                        bottom: 4,
+                        right: 6,
+                        child: _BubbleFooter(
+                          timeText: _formatTime(message),
+                          onMedia: msgType == 'image',
+                          showRead: isMe && showReadReceipt,
+                          readByCount: readBy.length,
+                          onReadByTap: onReadByTap,
+                          isPinned: isPinned,
+                          isFlagged: isFlagged,
                         ),
+                      ),
                       if (reactions.isNotEmpty)
-                        GestureDetector(
-                          onTap: onReactionsTap,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 6.0),
+                        Positioned(
+                          bottom: 22,
+                          right: 6,
+                          child: GestureDetector(
+                            onTap: onReactionsTap,
                             child: Wrap(
                               spacing: 4,
                               crossAxisAlignment: WrapCrossAlignment.center,
@@ -375,16 +417,6 @@ class MessageBubble extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (isMe && showReadReceipt && readBy.isNotEmpty)
-                        Positioned(
-                          bottom: 4,
-                          right: reactions.isNotEmpty ? 4 : 6,
-                          child: GestureDetector(
-                            onTap: onReadByTap,
-                            child: _ReadReceiptIndicator(
-                                readByCount: readBy.length),
-                          ),
-                        ),
                     ],
                   ),
                 )
@@ -397,20 +429,88 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-class _ReadReceiptIndicator extends StatelessWidget {
+class _BubbleFooter extends StatelessWidget {
+  final String timeText;
+  final bool onMedia;
+  final bool showRead;
   final int readByCount;
+  final VoidCallback? onReadByTap;
+  final bool isPinned;
+  final bool isFlagged;
 
-  const _ReadReceiptIndicator({Key? key, required this.readByCount})
-      : super(key: key);
+  const _BubbleFooter({
+    Key? key,
+    required this.timeText,
+    required this.onMedia,
+    required this.showRead,
+    required this.readByCount,
+    this.onReadByTap,
+    this.isPinned = false,
+    this.isFlagged = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Single check = delivered (implicitly), double = read by >=1, show a small stacked icon.
-    // If multiple readers, still show double check, tinted blue.
-    bool isDouble = readByCount >= 1;
-    if (!isDouble) {
-      return Icon(Icons.done, size: 14, color: Colors.grey.shade600);
+    final hasRead = showRead && readByCount > 0;
+    final showTime = timeText.isNotEmpty;
+    if (!showTime && !hasRead && !isPinned && !isFlagged) {
+      return const SizedBox.shrink();
     }
-    return const Icon(Icons.done_all, size: 14, color: Color(0xFF34B7F1));
+
+    final timeWidget = Text(
+      timeText,
+      style: TextStyle(
+        fontSize: 10,
+        color: onMedia ? Colors.white : Colors.grey.shade600,
+      ),
+    );
+    final readIcon = hasRead
+        ? GestureDetector(
+            onTap: onReadByTap,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 4),
+              child: Icon(Icons.done_all, size: 14, color: Color(0xFF25D366)),
+            ),
+          )
+        : const SizedBox.shrink();
+
+    final pinIcon = isPinned
+        ? const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Icon(Icons.push_pin, size: 14, color: Colors.amber),
+          )
+        : const SizedBox.shrink();
+    final flagIcon = isFlagged
+        ? const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Icon(Icons.flag, size: 14, color: Colors.redAccent),
+          )
+        : const SizedBox.shrink();
+
+    // Order visually from right to left as requested:
+    // rightmost: read tick, then time, then pin, then flag (leftmost)
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // leftmost
+        flagIcon,
+        pinIcon,
+        if (showTime) timeWidget,
+        // rightmost
+        readIcon,
+      ],
+    );
+
+    if (onMedia) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: row,
+      );
+    }
+    return row;
   }
 }
