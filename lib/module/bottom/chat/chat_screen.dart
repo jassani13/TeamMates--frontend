@@ -248,19 +248,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               Gap(12),
               Expanded(child: buildConversationList())
-              // Obx(
-              //   () => Expanded(
-              //     child: Column(
-              //       children: [
-              //         if (chatController.selectedChatMethod.value == 0) ...[
-              //           _tamChatList(),
-              //         ] else ...[
-              //           _personalChatList(),
-              //         ]
-              //       ],
-              //     ),
-              //   ),
-              // )
+
             ],
           ),
         ],

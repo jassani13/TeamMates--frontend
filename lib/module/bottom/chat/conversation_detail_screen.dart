@@ -218,7 +218,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     super.initState();
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem;
-    debugPrint("ownerId: ${conversation?.ownerId}");
     _registerSocketListeners();
     _loadInitial();
     socket.on(evTyping, _onTyping);
