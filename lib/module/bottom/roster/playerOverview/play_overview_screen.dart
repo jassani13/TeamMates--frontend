@@ -16,7 +16,8 @@ class PlayOverviewScreen extends StatefulWidget {
 }
 
 class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
-  final playerOverviewController = Get.put<PlayerOverviewController>(PlayerOverviewController());
+  final playerOverviewController =
+      Get.put<PlayerOverviewController>(PlayerOverviewController());
   final allPlayerController = Get.find<AllPlayerController>();
   int index = 0;
 
@@ -33,26 +34,31 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
     return Scaffold(
       bottomNavigationBar: (AppPref().role == "coach")
           ? Container(
-        decoration: const BoxDecoration(
-          color: AppColor.white,
-          boxShadow: [
-            BoxShadow(
-              offset: Offset(0, -2),
-              color: AppColor.lightPrimaryColor,
-            ),
-          ],
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
-        child: CommonAppButton(
-          color: AppColor.redColor,
-          text: "Remove from the team",
-          onTap: () async {
-            await playerOverviewController.removePlayerFromTeam(context,
-                tID: allPlayerController.rosterDetailModel.value.data?[0].teamId ?? 0,
-                mID: (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].userId ?? 0));
-          },
-        ),
-      )
+              decoration: const BoxDecoration(
+                color: AppColor.white,
+                boxShadow: [
+                  BoxShadow(
+                    offset: Offset(0, -2),
+                    color: AppColor.lightPrimaryColor,
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
+              child: CommonAppButton(
+                color: AppColor.redColor,
+                text: "Remove from the team",
+                onTap: () async {
+                  await playerOverviewController.removePlayerFromTeam(context,
+                      tID: allPlayerController
+                              .rosterDetailModel.value.data?[0].teamId ??
+                          0,
+                      mID: (allPlayerController.rosterDetailModel.value.data?[0]
+                              .playerTeams?[index].userId ??
+                          0));
+                },
+              ),
+            )
           : const SizedBox(),
       body: Column(
         children: [
@@ -62,35 +68,46 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
             child: Stack(
               children: [
                 Obx(
-                      () => (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile ?? "").contains("icons")
+                  () => (allPlayerController.rosterDetailModel.value.data?[0]
+                                  .playerTeams?[index].profile ??
+                              "")
+                          .contains("icons")
                       ? Image.asset(
-                    AppImage.defaultPlayer,
-                    fit: BoxFit.cover,
-                    height: MediaQuery.of(context).size.height / 3,
-                    width: double.infinity,
-                  )
+                          AppImage.defaultPlayer,
+                          fit: BoxFit.cover,
+                          height: MediaQuery.of(context).size.height / 3,
+                          width: double.infinity,
+                        )
                       : Stack(
-                    children: [
-                      getImageView(
-                        finalUrl: '${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].profile}' ?? "",
-                        fit: BoxFit.cover,
-                        height: MediaQuery.of(context).size.height / 3,
-                        width: double.infinity,
-                      ),
-                      Container(
-                        height: MediaQuery.of(context).size.height / 3,
-                        width: double.infinity,
-                        color: Colors.black38,
-                      )
-                    ],
-                  ),
+                          children: [
+                            getImageView(
+                              finalUrl: (allPlayerController
+                                      .rosterDetailModel
+                                      .value
+                                      .data?[0]
+                                      .playerTeams?[index]
+                                      .profile ??
+                                  ''),
+                              fit: BoxFit.cover,
+                              height: MediaQuery.of(context).size.height / 3,
+                              width: double.infinity,
+                            ),
+                            Container(
+                              height: MediaQuery.of(context).size.height / 3,
+                              width: double.infinity,
+                              color: Colors.black38,
+                            )
+                          ],
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+                      Gap(Platform.isAndroid
+                          ? ScreenUtil().statusBarHeight + 20
+                          : ScreenUtil().statusBarHeight + 10),
                       Row(
                         children: [
                           GestureDetector(
@@ -116,17 +133,18 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
                             CommonIconButton(
                                 image: AppImage.edit,
                                 onTap: () {
-                                  Get.toNamed(AppRouter.editPlayer, arguments: [index]);
+                                  Get.toNamed(AppRouter.editPlayer,
+                                      arguments: [index]);
                                 }),
                         ],
                       ),
                       const Spacer(),
                       Obx(
-                            () => Text(
+                        () => Text(
                           "${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].firstName} ${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].lastName}",
                           style: TextStyle().normal32w500s.textColor(
-                            AppColor.white,
-                          ),
+                                AppColor.white,
+                              ),
                         ),
                       ),
                       const Gap(16),
@@ -139,72 +157,106 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                           heading: "Name",
                           image: AppImage.fname,
                           value:
-                          "${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].firstName ?? "-"} ${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].lastName ?? ""}"),
+                              "${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].firstName ?? "-"} ${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].lastName ?? ""}"),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                           image: AppImage.clock,
                           heading: "Birthday",
-                          value: allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].dob ?? "-"),
+                          value: allPlayerController.rosterDetailModel.value
+                                  .data?[0].playerTeams?[index].dob ??
+                              "-"),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                           image: AppImage.location,
                           heading: "Location",
-                          value: (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].address ?? "").isNotEmpty
+                          value: (allPlayerController
+                                          .rosterDetailModel
+                                          .value
+                                          .data?[0]
+                                          .playerTeams?[index]
+                                          .address ??
+                                      "")
+                                  .isNotEmpty
                               ? "${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].address ?? ""}, ${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].city ?? ""}, ${allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].state ?? "-"}"
                               : "-"),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                         image: AppImage.person,
                         heading: "Jersey Number",
-                        value: allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].jerseyNumber ?? "-",
+                        value: allPlayerController.rosterDetailModel.value
+                                .data?[0].playerTeams?[index].jerseyNumber ??
+                            "-",
                       ),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                         image: AppImage.assignment,
                         heading: "Allergy",
-                        value: allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].allergy ?? "-",
+                        value: allPlayerController.rosterDetailModel.value
+                                .data?[0].playerTeams?[index].allergy ??
+                            "-",
                       ),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                         image: AppImage.position,
                         heading: "Position",
-                        value: allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].position ?? "-",
+                        value: allPlayerController.rosterDetailModel.value
+                                .data?[0].playerTeams?[index].position ??
+                            "-",
                       ),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                         image: AppImage.email,
                         heading: "Email",
-                        value: (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].userId ?? 0) != AppPref().userId
+                        value: (allPlayerController.rosterDetailModel.value
+                                        .data?[0].playerTeams?[index].userId ??
+                                    0) !=
+                                AppPref().userId
                             ? playerOverviewController.isCoach.value
-                            ? (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].email ?? "-")
-                            : "-"
-                            : (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].email ?? "-"),
+                                ? (allPlayerController.rosterDetailModel.value
+                                        .data?[0].playerTeams?[index].email ??
+                                    "-")
+                                : "-"
+                            : (allPlayerController.rosterDetailModel.value
+                                    .data?[0].playerTeams?[index].email ??
+                                "-"),
                       ),
                     ),
                     Obx(
-                          () => buildContainer(
+                      () => buildContainer(
                         isFirst: false,
                         image: AppImage.call,
                         heading: "Phone number",
-                        value: (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].userId ?? 0) != AppPref().userId
+                        value: (allPlayerController.rosterDetailModel.value
+                                        .data?[0].playerTeams?[index].userId ??
+                                    0) !=
+                                AppPref().userId
                             ? playerOverviewController.isCoach.value
-                            ? (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].phoneNumber ?? "-")
-                            : "-"
-                            : (allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index].phoneNumber ?? "-"),
+                                ? (allPlayerController
+                                        .rosterDetailModel
+                                        .value
+                                        .data?[0]
+                                        .playerTeams?[index]
+                                        .phoneNumber ??
+                                    "-")
+                                : "-"
+                            : (allPlayerController.rosterDetailModel.value
+                                    .data?[0].playerTeams?[index].phoneNumber ??
+                                "-"),
                       ),
                     ),
                     // NEW: Display ALL user emails
@@ -221,11 +273,22 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
 
   Widget _buildAllEmailsSection() {
     return Obx(() {
-      final playerTeam = allPlayerController.rosterDetailModel.value.data?[0].playerTeams?[index];
+      final playerTeam = allPlayerController
+          .rosterDetailModel.value.data?[0].playerTeams?[index];
       final userEmails = playerTeam?.userEmails ?? [];
       final userRelationships = playerTeam?.userRelationships ?? [];
+      debugPrint("playerTeam userEmails: $userEmails");
+      debugPrint("playerTeam userRelationships: $userRelationships");
+      debugPrint("playerTeam ${playerTeam}");
 
       if (userEmails.isEmpty || !playerOverviewController.isCoach.value) {
+        return const SizedBox();
+      }
+
+      // Skip the first 2 emails (primary ones shown elsewhere). If there are no extra emails, hide the section.
+      const int skip = 2;
+      final int extraCount = (userEmails.length - skip);
+      if (extraCount <= 0) {
         return const SizedBox();
       }
 
@@ -238,20 +301,21 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
             children: [
               SvgPicture.asset(
                 AppImage.info,
-                colorFilter: const ColorFilter.mode(AppColor.black12Color, BlendMode.srcIn),
+                colorFilter: const ColorFilter.mode(
+                    AppColor.black12Color, BlendMode.srcIn),
               ),
               const Gap(16),
               Text(
                 "Contact Information",
                 style: TextStyle().normal16w500.textColor(
-                  AppColor.black12Color,
-                ),
+                      AppColor.black12Color,
+                    ),
               ),
             ],
           ),
           const Gap(8),
-          ...List.generate(userEmails.length - 2, (emailIndex) {
-            final actualIndex = emailIndex + 2; // shift by 2
+          ...List.generate(extraCount, (emailIndex) {
+            final actualIndex = emailIndex + skip; // shift by 2
             final email = userEmails[actualIndex].toString();
             final relationship = actualIndex < userRelationships.length
                 ? userRelationships[actualIndex].toString()
@@ -264,20 +328,19 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
                   Text(
                     relationship,
                     style: TextStyle().normal14w600.textColor(
-                      AppColor.grey6EColor,
-                    ),
+                          AppColor.grey6EColor,
+                        ),
                   ),
                   Text(
                     email,
                     style: TextStyle().normal14w500.textColor(
-                      AppColor.grey6EColor,
-                    ),
+                          AppColor.grey6EColor,
+                        ),
                   ),
                 ],
               ),
             );
           }),
-
         ],
       );
     });
@@ -294,10 +357,10 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
       decoration: BoxDecoration(
         border: isFirst == true
             ? Border(
-          bottom: BorderSide(
-            color: AppColor.greyEAColor,
-          ),
-        )
+                bottom: BorderSide(
+                  color: AppColor.greyEAColor,
+                ),
+              )
             : null,
       ),
       child: Row(
@@ -307,7 +370,8 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
             padding: const EdgeInsets.only(top: 4.0),
             child: SvgPicture.asset(
               image ?? AppImage.name,
-              colorFilter: ColorFilter.mode(AppColor.black12Color, BlendMode.srcIn),
+              colorFilter:
+                  ColorFilter.mode(AppColor.black12Color, BlendMode.srcIn),
             ),
           ),
           Gap(16),
@@ -317,15 +381,15 @@ class _PlayOverviewScreenState extends State<PlayOverviewScreen> {
               Text(
                 heading ?? "",
                 style: TextStyle().normal16w500.textColor(
-                  AppColor.black12Color,
-                ),
+                      AppColor.black12Color,
+                    ),
               ),
               Gap(4),
               Text(
                 value ?? "",
                 style: TextStyle().normal14w500.textColor(
-                  AppColor.grey6EColor,
-                ),
+                      AppColor.grey6EColor,
+                    ),
               ),
             ],
           )
