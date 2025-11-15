@@ -2,6 +2,7 @@ import 'package:base_code/module/bottom/chat/chat_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../../../components/search_input.dart';
 
 import '../../../model/conversation_item.dart';
 
@@ -16,6 +17,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
+  final TextEditingController _searchCtrl = TextEditingController();
 
   void initUnifiedSocket() {
     //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
@@ -197,6 +199,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -233,7 +236,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   Gap(16),
                 ],
               ),
-              Gap(24),
+              Gap(16),
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: CommonSearchField(
+                  controller: _searchCtrl,
+                  hintText: 'Search conversations',
+                  onChanged: (text) => chatController.setSearchQuery(text),
+                ),
+              ),
+              Gap(12),
               Expanded(child: buildConversationList())
               // Obx(
               //   () => Expanded(
@@ -259,7 +272,11 @@ class _ChatScreenState extends State<ChatScreen> {
     return Obx(() {
       final items = chatController.filtered;
       if (items.isEmpty) {
-        return Center(child: Text('No Conversations Yet'));
+        return Center(
+            child: Text(
+          'No Conversations Yet',
+          style: TextStyle(color: AppColor.black12Color),
+        ));
       }
       return ListView.separated(
         key:

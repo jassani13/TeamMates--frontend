@@ -15,6 +15,8 @@ class ChatScreenController extends GetxController {
   List<ChatListData> chatListData = <ChatListData>[];
   List<ChatListData> grpChatListData = <ChatListData>[];
   final RxList<ConversationItem> conversations = <ConversationItem>[].obs;
+  // Current search query for filtering conversation list
+  final RxString searchQuery = ''.obs;
   // Map of conversation_id -> display text like "Alice is typing…"
   final RxMap<String, String> typingDisplay = <String, String>{}.obs;
   // Internal TTL timers to auto-clear typing states
@@ -30,7 +32,21 @@ class ChatScreenController extends GetxController {
   }
 
   List<ConversationItem> get filtered {
-    return conversations;
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return conversations;
+    bool containsIgnoreCase(String? text, String q) {
+      if (text == null || text.isEmpty) return false;
+      return text.toLowerCase().contains(q);
+    }
+    return conversations.where((c) {
+      return containsIgnoreCase(c.title, q) ||
+          containsIgnoreCase(c.lastMessage, q) ||
+          containsIgnoreCase(c.type, q);
+    }).toList(growable: false);
+  }
+
+  void setSearchQuery(String q) {
+    searchQuery.value = q;
   }
 
   void updateOrInsert(ConversationItem item) {
