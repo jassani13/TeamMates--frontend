@@ -37,6 +37,7 @@ class ChatDetailController extends GetxController {
 
   ConversationItem? conversation;
   late final types.User me;
+
   // If navigating from a search hit, use this to jump to the specific message once.
   String? _initialFocusMessageId;
   bool _didInitialFocusJump = false;
@@ -112,10 +113,11 @@ class ChatDetailController extends GetxController {
   }
 
   Future<void> _fetchMyPrivacy() async {
+    debugPrint("_fetchMyPrivacy_start");
     try {
       final body = dio_pkg.FormData.fromMap({'user_id': AppPref().userId});
-      final res =
-          await callApi(dio.post(ApiEndPoint.readReceiptsPrivacy, data: body));
+      final res = await callApi(
+          dio.post(ApiEndPoint.readReceiptsPrivacy, data: body), false);
       if (res?.statusCode == 200) {
         final data = res?.data;
         final val = (data?['data']?['read_receipts'] ?? true);
@@ -231,7 +233,6 @@ class ChatDetailController extends GetxController {
   /// Request initial messages for the conversation.
   void loadInitial() {
     if (conversation == null) return;
-    loading.value = true;
     socket.emit(evGetMessages, {
       'conversation_id': conversation?.conversationId ?? '',
     });
