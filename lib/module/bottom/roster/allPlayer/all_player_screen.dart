@@ -7,12 +7,14 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../model/conversation_item.dart';
 import '../../../../utils/common_function.dart';
 
 class AllPlayerScreen extends StatelessWidget {
   AllPlayerScreen({super.key});
 
-  final allPlayerController = Get.put<AllPlayerController>(AllPlayerController());
+  final allPlayerController =
+      Get.put<AllPlayerController>(AllPlayerController());
 
   void _showAddOptionsBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -61,7 +63,9 @@ class AllPlayerScreen extends StatelessWidget {
                   Get.back();
                   hideKeyboard();
                   Get.toNamed(AppRouter.addPlayer, arguments: [
-                    allPlayerController.rosterDetailModel.value.data?[0].teamId ?? 0,
+                    allPlayerController
+                            .rosterDetailModel.value.data?[0].teamId ??
+                        0,
                     true
                   ]);
                 },
@@ -73,7 +77,9 @@ class AllPlayerScreen extends StatelessWidget {
                   Get.back();
                   hideKeyboard();
                   Get.toNamed(AppRouter.addNonPlayer, arguments: [
-                    allPlayerController.rosterDetailModel.value.data?[0].teamId ?? 0,
+                    allPlayerController
+                            .rosterDetailModel.value.data?[0].teamId ??
+                        0,
                     true
                   ]);
                 },
@@ -102,7 +108,8 @@ class AllPlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOptionItem(BuildContext context, {required String title, required VoidCallback onTap}) {
+  Widget _buildOptionItem(BuildContext context,
+      {required String title, required VoidCallback onTap}) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -151,7 +158,10 @@ class AllPlayerScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Obx(
-                () => CommonTitleText(text: allPlayerController.rosterDetailModel.value.data?[0].name ?? ""),
+            () => CommonTitleText(
+                text:
+                    allPlayerController.rosterDetailModel.value.data?[0].name ??
+                        ""),
           ),
           centerTitle: false,
           actions: [
@@ -167,31 +177,35 @@ class AllPlayerScreen extends StatelessWidget {
         ),
         bottomNavigationBar: (AppPref().role == "coach")
             ? Obx(() {
-          return allPlayerController.isShimmer.value
-              ? const SizedBox()
-              : Container(
-            decoration: const BoxDecoration(
-              color: AppColor.white,
-              boxShadow: [
-                BoxShadow(
-                  offset: Offset(0, -2),
-                  color: AppColor.lightPrimaryColor,
-                ),
-              ],
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: Platform.isAndroid ? 20 : 24),
-            child: CommonAppButton(
-              color: AppColor.redColor,
-              text: "Delete team",
-              onTap: () {
-                allPlayerController.deleteTeam(
-                  context,
-                  tID: allPlayerController.rosterDetailModel.value.data?[0].teamId ?? 0,
-                );
-              },
-            ),
-          );
-        })
+                return allPlayerController.isShimmer.value
+                    ? const SizedBox()
+                    : Container(
+                        decoration: const BoxDecoration(
+                          color: AppColor.white,
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(0, -2),
+                              color: AppColor.lightPrimaryColor,
+                            ),
+                          ],
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: Platform.isAndroid ? 20 : 24),
+                        child: CommonAppButton(
+                          color: AppColor.redColor,
+                          text: "Delete team",
+                          onTap: () {
+                            allPlayerController.deleteTeam(
+                              context,
+                              tID: allPlayerController.rosterDetailModel.value
+                                      .data?[0].teamId ??
+                                  0,
+                            );
+                          },
+                        ),
+                      );
+              })
             : const SizedBox(),
         body: Column(
           children: [
@@ -200,7 +214,8 @@ class AllPlayerScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: CommonTextField(
                 onChange: (value) {
-                  allPlayerController.searchQuery.value = (value ?? "").toLowerCase();
+                  allPlayerController.searchQuery.value =
+                      (value ?? "").toLowerCase();
                 },
                 prefixIcon: const Icon(
                   Icons.search,
@@ -213,41 +228,48 @@ class AllPlayerScreen extends StatelessWidget {
             const Gap(16),
             Expanded(
               child: Obx(
-                    () => allPlayerController.isShimmer.value
+                () => allPlayerController.isShimmer.value
                     ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ShimmerListClass(
-                    length: 10,
-                    height: 60,
-                  ),
-                )
-                    : (allPlayerController.rosterDetailModel.value.data?[0].playerTeams ?? []).isEmpty
-                    ? Center(
-                    child: buildNoData(text: "No Team Members Found"))
-                    : RefreshIndicator(
-                  onRefresh: () async {
-                    int? teamId;
-                    if (Get.arguments is Map && Get.arguments.containsKey('teamId')) {
-                      teamId = Get.arguments['teamId'] as int;
-                    } else if (Get.arguments is List && Get.arguments.isNotEmpty) {
-                      teamId = Get.arguments[0] as int;
-                    }
-                    if (teamId != null) {
-                      await allPlayerController.getRosterApiCall(teamId: teamId);
-                    }
-                  },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildPlayersSection(),
-                        _buildStaffSection(),
-                      ],
-                    ),
-                  ),
-                ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: ShimmerListClass(
+                          length: 10,
+                          height: 60,
+                        ),
+                      )
+                    : (allPlayerController.rosterDetailModel.value.data?[0]
+                                    .playerTeams ??
+                                [])
+                            .isEmpty
+                        ? Center(
+                            child: buildNoData(text: "No Team Members Found"))
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              int? teamId;
+                              if (Get.arguments is Map &&
+                                  Get.arguments.containsKey('teamId')) {
+                                teamId = Get.arguments['teamId'] as int;
+                              } else if (Get.arguments is List &&
+                                  Get.arguments.isNotEmpty) {
+                                teamId = Get.arguments[0] as int;
+                              }
+                              if (teamId != null) {
+                                await allPlayerController.getRosterApiCall(
+                                    teamId: teamId);
+                              }
+                            },
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildPlayersSection(),
+                                  _buildStaffSection(),
+                                ],
+                              ),
+                            ),
+                          ),
               ),
             ),
           ],
@@ -258,21 +280,29 @@ class AllPlayerScreen extends StatelessWidget {
 
   Widget _buildPlayersSection() {
     return Obx(() {
-      var allMembers = allPlayerController.rosterDetailModel.value.data?[0].playerTeams ?? [];
+      var allMembers =
+          allPlayerController.rosterDetailModel.value.data?[0].playerTeams ??
+              [];
 
       // ✅ Filter by user_identity instead of role
-      var players = allMembers.where((member) =>
-      (member.userIdentity?.toLowerCase() == 'player' ||
-          member.userIdentity == null) // Handle null case if needed
-      ).toList();
+      var players = allMembers
+          .where((member) => (member.userIdentity?.toLowerCase() == 'player' ||
+                  member.userIdentity == null) // Handle null case if needed
+              )
+          .toList();
 
       var filteredPlayers = players
           .where((player) =>
-      (player.firstName ?? "").toLowerCase().contains(allPlayerController.searchQuery.value) ||
-          (player.lastName ?? "").toLowerCase().contains(allPlayerController.searchQuery.value))
+              (player.firstName ?? "")
+                  .toLowerCase()
+                  .contains(allPlayerController.searchQuery.value) ||
+              (player.lastName ?? "")
+                  .toLowerCase()
+                  .contains(allPlayerController.searchQuery.value))
           .toList();
 
-      if (filteredPlayers.isEmpty && allPlayerController.searchQuery.value.isEmpty) {
+      if (filteredPlayers.isEmpty &&
+          allPlayerController.searchQuery.value.isEmpty) {
         return const SizedBox();
       }
 
@@ -292,7 +322,8 @@ class AllPlayerScreen extends StatelessWidget {
               child: Center(
                 child: Text(
                   "No players found",
-                  style: TextStyle().normal14w500.textColor(AppColor.grey4EColor),
+                  style:
+                      TextStyle().normal14w500.textColor(AppColor.grey4EColor),
                 ),
               ),
             )
@@ -303,8 +334,9 @@ class AllPlayerScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 PlayerTeams player = filteredPlayers[index];
-                int originalIndex = allPlayerController.rosterDetailModel.value.data?[0].playerTeams
-                    ?.indexWhere((p) => p.userId == player.userId) ??
+                int originalIndex = allPlayerController
+                        .rosterDetailModel.value.data?[0].playerTeams
+                        ?.indexWhere((p) => p.userId == player.userId) ??
                     0;
 
                 return _buildMemberTile(player, originalIndex, index);
@@ -318,20 +350,27 @@ class AllPlayerScreen extends StatelessWidget {
 
   Widget _buildStaffSection() {
     return Obx(() {
-      var allMembers = allPlayerController.rosterDetailModel.value.data?[0].playerTeams ?? [];
+      var allMembers =
+          allPlayerController.rosterDetailModel.value.data?[0].playerTeams ??
+              [];
 
       // ✅ Filter by user_identity instead of role
-      var staff = allMembers.where((member) =>
-      member.userIdentity?.toLowerCase() == 'non_player'
-      ).toList();
+      var staff = allMembers
+          .where((member) => member.userIdentity?.toLowerCase() == 'non_player')
+          .toList();
 
       var filteredStaff = staff
           .where((staffMember) =>
-      (staffMember.firstName ?? "").toLowerCase().contains(allPlayerController.searchQuery.value) ||
-          (staffMember.lastName ?? "").toLowerCase().contains(allPlayerController.searchQuery.value))
+              (staffMember.firstName ?? "")
+                  .toLowerCase()
+                  .contains(allPlayerController.searchQuery.value) ||
+              (staffMember.lastName ?? "")
+                  .toLowerCase()
+                  .contains(allPlayerController.searchQuery.value))
           .toList();
 
-      if (filteredStaff.isEmpty && allPlayerController.searchQuery.value.isEmpty) {
+      if (filteredStaff.isEmpty &&
+          allPlayerController.searchQuery.value.isEmpty) {
         return const SizedBox();
       }
 
@@ -351,7 +390,8 @@ class AllPlayerScreen extends StatelessWidget {
               child: Center(
                 child: Text(
                   "No staff found",
-                  style: TextStyle().normal14w500.textColor(AppColor.grey4EColor),
+                  style:
+                      TextStyle().normal14w500.textColor(AppColor.grey4EColor),
                 ),
               ),
             )
@@ -362,11 +402,13 @@ class AllPlayerScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 PlayerTeams staffMember = filteredStaff[index];
-                int originalIndex = allPlayerController.rosterDetailModel.value.data?[0].playerTeams
-                    ?.indexWhere((p) => p.userId == staffMember.userId) ??
+                int originalIndex = allPlayerController
+                        .rosterDetailModel.value.data?[0].playerTeams
+                        ?.indexWhere((p) => p.userId == staffMember.userId) ??
                     0;
 
-                return _buildMemberTile(staffMember, originalIndex, index, isStaff: true);
+                return _buildMemberTile(staffMember, originalIndex, index,
+                    isStaff: true);
               },
             ),
         ],
@@ -374,7 +416,8 @@ class AllPlayerScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildMemberTile(PlayerTeams member, int originalIndex, int index, {bool isStaff = false}) {
+  Widget _buildMemberTile(PlayerTeams member, int originalIndex, int index,
+      {bool isStaff = false}) {
     return GestureDetector(
       onTap: () {
         hideKeyboard();
@@ -390,10 +433,10 @@ class AllPlayerScreen extends StatelessWidget {
           border: index == 0
               ? null
               : const Border(
-            top: BorderSide(
-              color: AppColor.greyF6Color,
-            ),
-          ),
+                  top: BorderSide(
+                    color: AppColor.greyF6Color,
+                  ),
+                ),
         ),
         child: Row(
           children: [
@@ -401,7 +444,10 @@ class AllPlayerScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               child: getImageView(
                 // Use a local asset for "assets/icons/team1.png" and network for others.
-                finalUrl: member.profile != null && member.profile!.startsWith('http') ? member.profile! : 'assets/icons/team1.png',
+                finalUrl:
+                    member.profile != null && member.profile!.startsWith('http')
+                        ? member.profile!
+                        : 'assets/icons/team1.png',
                 fit: BoxFit.cover,
               ),
             ),
@@ -414,32 +460,33 @@ class AllPlayerScreen extends StatelessWidget {
                   Text(
                     "${member.firstName ?? ""} ${member.lastName ?? ""}",
                     style: TextStyle().normal20w500.textColor(
-                      AppColor.black12Color,
-                    ),
+                          AppColor.black12Color,
+                        ),
                   ),
                   if (isStaff)
                     Text(
                       "${member.staff_role ?? "Staff"}",
                       style: TextStyle().normal14w500.textColor(
-                        AppColor.grey4EColor,
-                      ),
+                            AppColor.grey4EColor,
+                          ),
                     )
-                  else if ((member.jerseyNumber ?? "").isNotEmpty || (member.position ?? "").isNotEmpty)
+                  else if ((member.jerseyNumber ?? "").isNotEmpty ||
+                      (member.position ?? "").isNotEmpty)
                     RichText(
                       text: TextSpan(children: [
                         if ((member.jerseyNumber ?? "").isNotEmpty)
                           TextSpan(
                             text: "#${member.jerseyNumber ?? ""}",
                             style: TextStyle().normal14w500.textColor(
-                              AppColor.grey4EColor,
-                            ),
+                                  AppColor.grey4EColor,
+                                ),
                           ),
                         if ((member.position ?? "").isNotEmpty)
                           TextSpan(
                             text: " - ${member.position ?? ""}",
                             style: TextStyle().normal14w500.textColor(
-                              AppColor.grey4EColor,
-                            ),
+                                  AppColor.grey4EColor,
+                                ),
                           ),
                       ]),
                     ),
@@ -448,16 +495,16 @@ class AllPlayerScreen extends StatelessWidget {
             ),
             const Gap(16),
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 hideKeyboard();
+                ConversationItem? conversation =
+                    await Get.put(SearchChatController())
+                        .createPersonalChat("${member.userId}");
+                if (conversation == null) return;
                 Get.toNamed(
-                  AppRouter.personalChat,
+                  AppRouter.conversationDetailScreen,
                   arguments: {
-                    'chatData': ChatListData(
-                      firstName: member.firstName,
-                      lastName: member.lastName,
-                      otherId: member.userId.toString(),
-                    ),
+                    'conversation': conversation,
                   },
                 );
               },
