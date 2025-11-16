@@ -20,6 +20,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final chatController = Get.put<ChatScreenController>(ChatScreenController());
   final TextEditingController _searchCtrl = TextEditingController();
+  final Set<String> _joinedConversations = <String>{};
 
   void initUnifiedSocket() {
     //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
@@ -60,6 +61,18 @@ class _ChatScreenState extends State<ChatScreen> {
         try {
           if (data is List) {
             chatController.setConversations(data);
+            // Join conversation rooms so we can receive typing events for list rows
+            for (final item in data) {
+              try {
+                if (item is Map) {
+                  final id = (item['conversation_id'] ?? '').toString();
+                  if (id.isNotEmpty && !_joinedConversations.contains(id)) {
+                    socket.emit('join_chat_room', {'conversation_id': id});
+                    _joinedConversations.add(id);
+                  }
+                }
+              } catch (_) {}
+            }
           }
         } catch (e) {
           if (kDebugMode) debugPrint('conversation_list parse error: $e');
@@ -85,9 +98,40 @@ class _ChatScreenState extends State<ChatScreen> {
               unreadCount:
                   int.tryParse((res['unread_count'] ?? '0').toString()),
             );
+            // Ensure we are subscribed to typing events for this conversation
+            final id = (res['conversation_id'] ?? '').toString();
+            if (id.isNotEmpty && !_joinedConversations.contains(id)) {
+              socket.emit('join_chat_room', {'conversation_id': id});
+              _joinedConversations.add(id);
+            }
           }
         } catch (e) {
           if (kDebugMode) debugPrint('updateConversationList error: $e');
+        }
+      });
+
+      // Typing events from joined conversation rooms -> show in list
+      socket.off('typing');
+      socket.on('typing', (payload) {
+        try {
+          if (payload is! Map) return;
+          final convId =
+              (payload['conversation_id'] ?? payload['chat_room_id'] ?? '')
+                  .toString();
+          if (convId.isEmpty) return;
+          final isTyping = payload['isTyping'] == true;
+          final uid = (payload['user_id'] ?? '').toString();
+          final first = (payload['sender_first_name'] ?? '').toString();
+          final last = (payload['sender_last_name'] ?? '').toString();
+          final display = (first + ' ' + last).trim();
+          chatController.setTypingForConversation(
+            conversationId: convId,
+            isTyping: isTyping,
+            typingUserId: uid,
+            displayName: display.isNotEmpty ? display : null,
+          );
+        } catch (e) {
+          if (kDebugMode) debugPrint('typing(list) error: $e');
         }
       });
     });
