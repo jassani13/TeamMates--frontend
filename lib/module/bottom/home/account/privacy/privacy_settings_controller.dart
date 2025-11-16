@@ -43,10 +43,8 @@ class PrivacySettingsController extends GetxController {
   }
 
   void setReadReceipts(bool value) async {
-    // Prevent spamming multiple concurrent saves
     if (saving.value) return;
     saving.value = true;
-    //final previous = readReceiptsEnabled.value;
     readReceiptsEnabled.value = value;
     try {
       final body = FormData.fromMap({
@@ -54,19 +52,17 @@ class PrivacySettingsController extends GetxController {
         'read_receipts': value ? 1 : 0,
       });
       final res = await callApi(
-          dio.post(ApiEndPoint.readReceiptsPrivacy, data: body));
+          dio.post(ApiEndPoint.readReceiptsPrivacy, data: body),false);
       if (res?.statusCode == 200) {
         Get.snackbar(
             'Privacy', 'Read receipts ${value ? 'enabled' : 'disabled'}',
             snackPosition: SnackPosition.BOTTOM);
       } else {
-        //readReceiptsEnabled.value = previous; // revert
         Get.snackbar('Privacy', 'Could not update setting',
             snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
       debugPrint('error->setReadReceipts: $e');
-      //readReceiptsEnabled.value = previous; // revert
       Get.snackbar('Privacy', 'Error saving setting',
           snackPosition: SnackPosition.BOTTOM);
     } finally {

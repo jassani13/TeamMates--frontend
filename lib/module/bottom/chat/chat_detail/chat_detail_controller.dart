@@ -113,7 +113,6 @@ class ChatDetailController extends GetxController {
   }
 
   Future<void> _fetchMyPrivacy() async {
-    debugPrint("_fetchMyPrivacy_start");
     try {
       final body = dio_pkg.FormData.fromMap({'user_id': AppPref().userId});
       final res = await callApi(
