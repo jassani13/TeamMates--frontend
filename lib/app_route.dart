@@ -31,7 +31,6 @@ class AppRouter {
   static const profile = '/profile';
   static const playOverview = '/playOverview';
   static const editPlayer = '/editPlayer';
-  static const personalChat = '/personalChat';
   static const addTeam = '/addTeam';
   static const addPlayer = '/addPlayer';
   static const allPlayer = '/allPlayer';
@@ -46,7 +45,6 @@ class AppRouter {
   static const liveScore = '/liveScore';
   static const participatedPlayer = '/participatedPlayer';
   static const schedule = '/schedule';
-  static const grpChat = '/grp_chat';
   static const createGroupChat = '/createGroupChat';
   static const editGroupChatScreen = '/EditGroupChatScreen';
   static const addMembersToGroupChat = '/addMembersToGroupChat';

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../app_route.dart';
+import '../model/conversation_item.dart';
 
 class PushNotificationService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -22,6 +23,9 @@ class PushNotificationService {
   Future<void> initialize() async {
     await Firebase.initializeApp();
 
+    // Ensure FCM auto-init is enabled (generates token automatically)
+    await _fcm.setAutoInitEnabled(true);
+
     // Request permissions
     NotificationSettings settings = await _fcm.requestPermission(
       alert: true,
@@ -31,9 +35,27 @@ class PushNotificationService {
 
     debugPrint("Notification permission: ${settings.authorizationStatus}");
 
+    // iOS/macOS: allow foreground notification presentation
+    if (Platform.isIOS || Platform.isMacOS) {
+      await _fcm.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+
     // Save token
     _deviceToken = await getAndSaveDeviceToken();
     debugPrint("FCM_Token: $_deviceToken");
+
+    // Persist refreshed tokens
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      debugPrint("FCM token refreshed: $newToken");
+      if (newToken.isNotEmpty) {
+        AppPref().fcmToken = newToken;
+        _deviceToken = newToken;
+      }
+    });
 
     // Setup local notifications
     const androidSettings =
@@ -120,53 +142,73 @@ class PushNotificationService {
   }
 
   static void _handleNotificationData(Map<String, dynamic> data) {
-    if (data.containsKey('conversation_type')) {
-      switch (data['conversation_type']) {
-        case 'personal':
-          _navigateToChat(data);
-          break;
-        case 'group':
-          _navigateToTeamChat(data);
-          break;
-        default:
-          debugPrint("Unknown conversation type: ${data['conversation_type']}");
+    // Prefer unified navigation when a conversation_id is present
+    final convId = (data['conversation_id'] ?? '').toString();
+    final convTypeRaw = (data['conversation_type'] ?? '').toString();
+    if (convId.isNotEmpty) {
+      final convType = convTypeRaw.isEmpty
+          ? null
+          : (convTypeRaw == 'group'
+              ? 'team'
+              : convTypeRaw); // normalize legacy 'group' -> 'team'
+
+      final title = (data['title'] ?? data['team_name'] ?? '').toString();
+      final image = (data['image'] ?? '').toString();
+
+      final conversation = ConversationItem(
+        conversationId: convId,
+        type: convType,
+        title: title,
+        image: image,
+        lastMessage: '',
+        lastMessageFileUrl: '',
+        lastReadMessageId: '',
+        msgType: 'text',
+        createdAt: null,
+        unreadCount: 0,
+      );
+
+      if (Get.currentRoute != AppRouter.conversationDetailScreen) {
+        Get.toNamed(AppRouter.conversationDetailScreen, arguments: {
+          'conversation': conversation,
+        });
       }
-    }
-  }
-
-  static void _navigateToChat(Map<String, dynamic> data) {
-    if (Get.currentRoute != AppRouter.personalChat) {
-      Get.toNamed(AppRouter.personalChat, arguments: {
-        'chatData': ChatListData(
-          firstName: data["first_name"] ?? '',
-          lastName: data["last_name"] ?? '',
-          otherId: data['sender_id'] ?? '',
-        ),
-      });
-    }
-  }
-
-  static void _navigateToTeamChat(Map<String, dynamic> data) {
-    if (Get.currentRoute != AppRouter.grpChat) {
-      Get.toNamed(AppRouter.grpChat, arguments: {
-        'chatData': ChatListData(
-          teamName: data['team_name'],
-          teamId: data['team_id'],
-        ),
-      });
+      return;
     }
   }
 
   // =========================
   // Token
   // =========================
+
   static Future<String?> getAndSaveDeviceToken() async {
     String? token;
 
     if (Platform.isIOS) {
-      token = await _fcm.getAPNSToken();
+      String? apnsToken = await _fcm.getAPNSToken();
+      if (apnsToken != null) {
+        token = await _fcm.getToken();
+        debugPrint("getToken:$token");
+      } else {
+        Future.delayed(const Duration(seconds: 3), () async {
+          String? apnsToken = await _fcm.getAPNSToken();
+          debugPrint("inside_delayed_apnsToken:$apnsToken");
+          if (apnsToken != null) {
+            token = await _fcm.getToken();
+          } else {
+            try {
+              token = await _fcm.getToken();
+            } catch (e) {
+              debugPrint("APNs token error: $e");
+            }
+          }
+        });
+      }
+
+      print("Token_178:$token");
     } else {
       token = await _fcm.getToken();
+      debugPrint("getToken->android:$token");
     }
 
     if (token != null) {
@@ -179,6 +221,7 @@ class PushNotificationService {
   // =========================
   // Topic Management
   // =========================
+
   static Future<void> subscribeToTopic(String topic) async {
     await _fcm.subscribeToTopic(topic);
     debugPrint("Subscribed to $topic");

@@ -35,18 +35,21 @@ class LoginController extends GetxController {
 
       if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       final String email = googleUser.email;
       final String firstName = googleUser.displayName?.split(" ").first ?? "";
-      final String lastName = googleUser.displayName?.split(" ").skip(1).join(" ") ?? "";
+      final String lastName =
+          googleUser.displayName?.split(" ").skip(1).join(" ") ?? "";
 
       await checkUserExistsOrNotApiCall(
         email: email,
@@ -74,7 +77,8 @@ class LoginController extends GetxController {
         accessToken: appleCredential.authorizationCode,
       );
 
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       final email = appleCredential.email ?? userCredential.user?.email ?? "";
 
@@ -100,10 +104,11 @@ class LoginController extends GetxController {
 
   Future<void> loginApiCall() async {
     try {
+      String? fcmToken = AppPref().fcmToken;
       var data = {
         "email": lEmailController.text.toString(),
         "password": lPasswordController.text.toString(),
-        "fcm_token": AppPref().fcmToken,
+        "fcm_token": fcmToken,
       };
       var res = await callApi(
         dio.post(
@@ -117,12 +122,12 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
-        
+
         // Set proUser=true for specific email
-        if (lEmailController.text.toString().toLowerCase() == "demoteammates@gmail.com") {
-          AppPref().proUser = true;
-        }
-        
+        // if (lEmailController.text.toString().toLowerCase() == "demoteammates@gmail.com") {
+        //   AppPref().proUser = true;
+        // }
+
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else if (userModel.role == 'family') {
@@ -139,7 +144,8 @@ class LoginController extends GetxController {
           AppPref().isLogin = true;
           Get.offAllNamed(AppRouter.bottom);
         }
-        Get.find<InAppPurchaseController>().checkActiveSubscription(isFromPurchase: false);
+        Get.find<InAppPurchaseController>()
+            .checkActiveSubscription(isFromPurchase: false);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -166,10 +172,11 @@ class LoginController extends GetxController {
 
       if (res?.statusCode == 200) {
         if (res?.data["data"]["is_register"] == true) {
-          UserModel userModel = UserModel.fromJson(res?.data['data']["details"]);
+          UserModel userModel =
+              UserModel.fromJson(res?.data['data']["details"]);
           AppPref().userModel = userModel;
           AppPref().userId = userModel.userId;
-          
+
           // Set proUser=true for specific email
           if (email.toLowerCase() == "demoteammates@gmail.com") {
             AppPref().proUser = true;
@@ -231,12 +238,12 @@ class LoginController extends GetxController {
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;
-        
+
         // Set proUser=true for specific email
         if (email.toLowerCase() == "demoteammates@gmail.com") {
           AppPref().proUser = true;
         }
-        
+
         if (userModel.role == null) {
           Get.toNamed(AppRouter.selectRole);
         } else {

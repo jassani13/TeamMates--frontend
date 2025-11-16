@@ -1,6 +1,7 @@
 import UIKit
 import Flutter
-// import Firebase
+import FirebaseCore
+import FirebaseMessaging
 import UserNotifications
 
 @main
@@ -9,17 +10,24 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // FirebaseApp.configure()
+    
+    if FirebaseApp.app() == nil {
+      FirebaseApp.configure()
+    }
+
     GeneratedPluginRegistrant.register(with: self)
 
-    // Request push notification permissions
+    UNUserNotificationCenter.current().delegate = self
+
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-        if granted {
-            DispatchQueue.main.async {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
+      if granted {
+        DispatchQueue.main.async {
+          UIApplication.shared.registerForRemoteNotifications()
         }
+      }
     }
+
+    Messaging.messaging().delegate = self
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
@@ -31,7 +39,7 @@ import UserNotifications
     let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
     let token = tokenParts.joined()
     print("Device Token: \(token)")
-    // Send this token to your server
+    Messaging.messaging().apnsToken = deviceToken
   }
 
   override func application(
@@ -39,5 +47,24 @@ import UserNotifications
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
     print("Failed to register: \(error)")
+  }
+}
+
+extension AppDelegate: MessagingDelegate {
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    print("[FCM] didReceiveRegistrationToken: \(fcmToken ?? "nil")")
+  }
+}
+
+extension AppDelegate {
+  override func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                       willPresent notification: UNNotification,
+                                       withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .list, .sound, .badge])
+    } else {
+      completionHandler([.alert, .sound, .badge])
+    }
   }
 }
