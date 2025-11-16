@@ -10,37 +10,6 @@ class GroupChatController extends GetxController {
   final ImagePicker picker = ImagePicker();
   RxList<UserModel> members = <UserModel>[].obs;
 
-  // Future<String> setMediaChatApiCall({
-  //   required result,
-  // }) async {
-  //   try {
-  //     FormData formData = FormData.fromMap({
-  //       'media': [
-  //         await MultipartFile.fromFile(
-  //           result?.path ?? "",
-  //           filename: basename(result?.path ?? ""),
-  //         ),
-  //       ]
-  //     });
-  //     var res = await callApi(
-  //       dio.post(
-  //         ApiEndPoint.setChatMedia,
-  //         data: formData,
-  //       ),
-  //       false,
-  //     );
-  //     if (res?.statusCode == 200) {
-  //       return res?.data["data"]["media_name"];
-  //     }
-  //     return "";
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print(e);
-  //     }
-  //     return "";
-  //   } finally {}
-  // }
-
   Future getImage({required ImageSource source}) async {
     final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
     if (pickedFile != null) {
@@ -104,7 +73,7 @@ class GroupChatController extends GetxController {
         ),
         true,
       );
-      debugPrint("createGroupChat response: $res");
+
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
         debugPrint("createGroupChat jsonData: $jsonData");
@@ -115,8 +84,6 @@ class GroupChatController extends GetxController {
         Get.put(SearchChatController()).selectedPlayersIDsForGroupChat.clear();
         Get.back();
         socket.emit('get_conversations', {'user_id': AppPref().userId});
-        debugPrint(
-            "createGroupChat conv: ${conv.conversationId}: ${conv.title}");
         Get.toNamed(
           AppRouter.conversationDetailScreen,
           arguments: {
@@ -182,16 +149,11 @@ class GroupChatController extends GetxController {
         ),
         true,
       );
-      debugPrint("editGroupChat response: $res");
+
       if (res?.statusCode == 200) {
         AppToast.showAppToast('Chat Group created successfully');
-        //socket.emit('getGroupChatList', AppPref().userId);
-        //var jsonData = res?.data;
-        //String groupId = jsonData['data']['group_id'].toString();
-        //userModel.value = UserModel.fromJson(jsonData['data']);
-        //AppPref().userModel = userModel.value;
+        socket.emit('get_conversations', {'user_id': AppPref().userId});
 
-        //Get.back(result: userModel.value);
       }
     } catch (e) {
       debugPrint(
