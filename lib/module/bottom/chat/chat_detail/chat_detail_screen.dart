@@ -388,20 +388,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
           Obx(() {
             final typing = controller.typingUsers.values.toList();
-            if (typing.isNotEmpty) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${typing.first.firstName ?? 'User'} is typing...',
-                    style: TextStyle(color: AppColor.black12Color),
+            final show = typing.isNotEmpty;
+            final child = show
+                ? Padding(
+                    key: const ValueKey('typing_shown'),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${typing.first.firstName ?? 'User'} is typing...',
+                        style: const TextStyle(color: AppColor.black12Color),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('typing_hidden'));
+
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SizeTransition(
+                    sizeFactor: animation,
+                    axisAlignment: -1.0,
+                    child: child,
                   ),
-                ),
-              );
-            }
-            return const SizedBox.shrink();
+                );
+              },
+              child: child,
+            );
           }),
           Obx(() => controller.loading.value
               ? const LinearProgressIndicator()
