@@ -1,4 +1,5 @@
 import 'package:base_code/package/screen_packages.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class ChatInput extends StatefulWidget {
@@ -50,6 +51,45 @@ class _ChatInputState extends State<ChatInput> {
     setState(() => _canSend = false);
   }
 
+  void _openAttachmentSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.photo, color: AppColor.black12Color),
+                title: const Text('Image',
+                    style: TextStyle(color: AppColor.black12Color)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onAttachImage();
+                },
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.attach_file, color: AppColor.black12Color),
+                title: const Text('File',
+                    style: TextStyle(color: AppColor.black12Color)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onAttachFile();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -59,13 +99,13 @@ class _ChatInputState extends State<ChatInput> {
         color: Colors.white,
         child: Row(
           children: [
-            IconButton(
-              onPressed: widget.onAttachImage,
-              icon: const Icon(Icons.photo),
-            ),
-            IconButton(
-              onPressed: widget.onAttachFile,
-              icon: const Icon(Icons.attach_file),
+            Transform.rotate(
+              angle: math.pi,
+              child: IconButton(
+                onPressed: () => _openAttachmentSheet(context),
+                icon: const Icon(Icons.attach_file),
+                color: AppColor.black12Color,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
