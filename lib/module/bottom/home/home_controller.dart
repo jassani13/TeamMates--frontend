@@ -6,13 +6,16 @@ class HomeController extends GetxController {
   Rxn<HomeModel> homeModel = Rxn<HomeModel>();
   RxBool isShimmer = false.obs;
   RxString contact = "".obs;
-  final GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> refreshKey =
+      GlobalKey<RefreshIndicatorState>();
 
   Future<void> getHomeDetailsApiCall() async {
     try {
       isShimmer.value = true;
+      String? fcmToken = AppPref().fcmToken;
       var data = {
         "user_id": AppPref().userId,
+        "fcm_token": fcmToken,
       };
       var res = await callApi(
         dio.post(
@@ -34,6 +37,7 @@ class HomeController extends GetxController {
       isShimmer.value = false;
     }
   }
+
   Future<void> getCoachApiCall() async {
     try {
       var data = {
@@ -49,7 +53,8 @@ class HomeController extends GetxController {
 
       if (res?.statusCode == 200) {
         var jsonData = res?.data;
-        contact.value=jsonData["data"]["emergency_contact"] ?? "Not Added yet";
+        contact.value =
+            jsonData["data"]["emergency_contact"] ?? "Not Added yet";
       }
     } catch (e) {
       if (kDebugMode) {
@@ -62,9 +67,8 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     getHomeDetailsApiCall();
-    if(AppPref().role=="team"){
+    if (AppPref().role == "team") {
       getCoachApiCall();
-
     }
   }
 }

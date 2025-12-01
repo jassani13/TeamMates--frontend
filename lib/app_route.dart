@@ -78,7 +78,8 @@ class AppRouter {
     GetPage(name: addGame, page: () => AddGameScreen()),
     GetPage(name: newOpponent, page: () => NewOpponentScreen()),
     GetPage(name: newLocation, page: () => NewLocationScreen()),
-    GetPage(name: volunteerAssignments, page: () => VolunteerAssignmentsScreen()),
+    GetPage(
+        name: volunteerAssignments, page: () => VolunteerAssignmentsScreen()),
     GetPage(name: challengeMembers, page: () => ChallengeMembersScreen()),
     GetPage(name: createChallenge, page: () => CreateChallengeScreen()),
     GetPage(name: gameProgress, page: () => GameProgressScreen()),
