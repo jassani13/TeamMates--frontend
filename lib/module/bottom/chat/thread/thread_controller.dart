@@ -8,6 +8,7 @@ import '../chat_screen.dart';
 class ThreadController extends GetxController {
   final int parentMessageId;
   final types.Message parentMessage;
+  final int initialRepliesCount;
 
   final RxList<types.Message> replies = <types.Message>[].obs;
   final RxBool loading = false.obs;
@@ -18,11 +19,13 @@ class ThreadController extends GetxController {
   ThreadController({
     required this.parentMessageId,
     required this.parentMessage,
+    this.initialRepliesCount = 0,
   });
 
   @override
   void onInit() {
     super.onInit();
+    totalReplies.value = initialRepliesCount;
     _setupSocketListeners();
     loadThreadReplies();
   }
