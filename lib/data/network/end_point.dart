@@ -57,4 +57,9 @@ class ApiEndPoint {
   static const String removeGroupMember = "/api/chat/removeGroupMember";
   static const String addGroupMembers = "/api/chat/addGroupMembers";
   static const String readReceiptsPrivacy = "/api/user/read_receipts_privacy";
+
+  // threaded replies endpoints
+  static const String sendThreadReply = "/api/chat/sendThreadReply";
+  static const String getThreadReplies = "/api/chat/getThreadReplies";
+  static const String getThreadPreviews = "/api/chat/getThreadPreviews";
 }

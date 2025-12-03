@@ -80,6 +80,7 @@ class ChatDetailController extends GetxController {
   static const evUnflag = 'unflag_message';
   static const evPinnedEvent = 'message_pinned';
   static const evFlaggedEvent = 'message_flagged';
+  static const evThreadReply = 'new_thread_reply';
 
   // Internal typing helpers
   Timer? _typingDebounce;
@@ -215,6 +216,7 @@ class ChatDetailController extends GetxController {
     socket.on(evMessageDeleted, _onMessageDeleted);
     socket.on(evFlaggedEvent, _onMessageFlagged);
     socket.on(evPinnedEvent, _onMessagePinned);
+    socket.on(evThreadReply, _onThreadReply);
   }
 
   void _removeSocketListeners() {
@@ -227,6 +229,7 @@ class ChatDetailController extends GetxController {
     socket.off(evMessageDeleted, _onMessageDeleted);
     socket.off(evFlaggedEvent, _onMessageFlagged);
     socket.off(evPinnedEvent, _onMessagePinned);
+    socket.off(evThreadReply, _onThreadReply);
   }
 
   /// Request initial messages for the conversation.
@@ -242,19 +245,40 @@ class ChatDetailController extends GetxController {
     if (payload['conversation_id']?.toString() != conversation?.conversationId)
       return;
     final list = (payload['messages'] as List?) ?? [];
-    messages.clear();
+    final parentMessages = <dynamic>[];
+    final threadReplies = <dynamic>[];
     for (final raw in list) {
+      if (raw is Map &&
+          raw['parent_message_id'] != null &&
+          raw['parent_message_id'].toString().isNotEmpty) {
+        threadReplies.add(raw);
+      } else {
+        parentMessages.add(raw);
+      }
+    }
+
+    messages.clear();
+    for (final raw in parentMessages) {
       final msg = _fromSocket(raw);
       messages.insert(0, msg);
     }
+
+    for (final raw in threadReplies) {
+      final parentId = raw['parent_message_id']?.toString();
+      if (parentId == null || parentId.isEmpty) continue;
+      _refreshThreadPreviewFromPayload(
+        parentId: parentId,
+        repliesCount: raw['parent_replies_count'] ?? raw['replies_count'],
+        messageData: raw is Map ? raw : null,
+      );
+    }
+
     loading.value = false;
-    // Update last read from server (honors manual_unread on backend)
     final fromServerLastRead = payload['last_read_message_id']?.toString();
     if (fromServerLastRead != null && fromServerLastRead.isNotEmpty) {
       _updateConversationLastRead(fromServerLastRead);
       lastReadMessageId.value = fromServerLastRead;
     } else {
-      // Ensure lastRead observable is in sync with conversation state
       lastReadMessageId.value =
           conversation?.lastReadMessageId ?? lastReadMessageId.value;
     }
@@ -279,6 +303,15 @@ class ChatDetailController extends GetxController {
     if (raw == null) return;
     if (raw['conversation_id']?.toString() != conversation?.conversationId)
       return;
+    final parentId = raw['parent_message_id']?.toString();
+    if (parentId != null && parentId.isNotEmpty) {
+      _refreshThreadPreviewFromPayload(
+        parentId: parentId,
+        repliesCount: raw['parent_replies_count'] ?? raw['replies_count'],
+        messageData: raw is Map ? raw : null,
+      );
+      return;
+    }
     final msg = _fromSocket(raw);
     messages.insert(0, msg);
     // Update visibility as list changed
@@ -538,6 +571,51 @@ class ChatDetailController extends GetxController {
       });
       _isTyping = false;
     }
+  }
+
+  void _onThreadReply(dynamic data) {
+    if (data == null) return;
+    final cid = data['conversation_id']?.toString();
+    if (cid != conversation?.conversationId) return;
+    final parentId = data['parent_message_id']?.toString();
+    if (parentId == null || parentId.isEmpty) return;
+
+    final idx = messages.indexWhere((m) => m.id == parentId);
+    if (idx == -1) return;
+
+    final messageData = data['message'] as Map?;
+    final old = messages[idx];
+    final meta = {...?old.metadata};
+
+    final countFromPayload = data['parent_replies_count'];
+    final parsedCount = countFromPayload is int
+        ? countFromPayload
+        : int.tryParse(countFromPayload?.toString() ?? '');
+    final existingCount = meta['replies_count'] is int
+        ? meta['replies_count'] as int
+        : int.tryParse(meta['replies_count']?.toString() ?? '0') ?? 0;
+    meta['replies_count'] = parsedCount ?? (existingCount + 1);
+
+    final msgType =
+        (messageData?['msg_type'] ?? meta['latest_reply_msg_type'] ?? 'text')
+            .toString();
+    final previewText = _threadPreviewLabel(
+      msgType,
+      messageData?['msg'],
+    );
+
+    meta['latest_reply_text'] = previewText;
+    meta['latest_reply_sender'] =
+        (messageData?['sender_name'] ?? '').toString();
+    meta['latest_reply_sender_id'] = messageData?['sender_id']?.toString();
+    meta['latest_reply_msg_type'] = msgType;
+    meta['latest_reply_created_at'] = messageData?['created_at']?.toString();
+    meta['latest_reply_file_url'] = (messageData?['file_url'] ?? '').toString();
+
+    if (old is types.TextMessage) messages[idx] = old.copyWith(metadata: meta);
+    if (old is types.ImageMessage) messages[idx] = old.copyWith(metadata: meta);
+    if (old is types.FileMessage) messages[idx] = old.copyWith(metadata: meta);
+    messages.refresh();
   }
 
   Future<void> sendImage() async {
@@ -1051,7 +1129,7 @@ class ChatDetailController extends GetxController {
     final createdAt = createdAtStr != null
         ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
         : DateTime.now().toUtc().millisecondsSinceEpoch;
-    debugPrint("_fromSocket: raw:$raw");
+
     final metadata = <String, dynamic>{
       'msg_type': msgType,
       'raw_msg': raw['msg'],
@@ -1068,8 +1146,15 @@ class ChatDetailController extends GetxController {
       'updated_at': raw['updated_at'],
       'deleted_by': raw['deleted_by']?.toString(),
       'deleted_at': raw['deleted_at'],
+      'parent_message_id': raw['parent_message_id']?.toString(),
+      'replies_count': raw['replies_count'] ?? 0,
+      'latest_reply_text': raw['latest_reply_text'] ?? '',
+      'latest_reply_sender': raw['latest_reply_sender'] ?? '',
+      'latest_reply_sender_id': raw['latest_reply_sender_id']?.toString(),
+      'latest_reply_msg_type': raw['latest_reply_msg_type'] ?? '',
+      'latest_reply_created_at': raw['latest_reply_created_at'],
+      'latest_reply_file_url': raw['latest_reply_file_url'] ?? '',
     };
-    debugPrint("mtag: $metadata");
 
     if (msgType == 'image') {
       return types.ImageMessage(
@@ -1161,5 +1246,101 @@ class ChatDetailController extends GetxController {
 
     // 3) Fallback minimal
     return types.User(id: uid);
+  }
+
+  void _refreshThreadPreviewFromPayload({
+    required String parentId,
+    dynamic repliesCount,
+    Map? messageData,
+  }) {
+    final idx = messages.indexWhere((m) => m.id == parentId);
+    if (idx == -1) return;
+
+    final old = messages[idx];
+    final meta = {...?old.metadata};
+
+    final parsedCount = _intFrom(repliesCount);
+    final existingCount = _intFrom(meta['replies_count']) ?? 0;
+
+    if (parsedCount != null) {
+      if (parsedCount > 0) {
+        meta['replies_count'] = parsedCount;
+      } else if (existingCount > 0) {
+        meta['replies_count'] = existingCount;
+      } else {
+        meta['replies_count'] = 1;
+      }
+    } else {
+      meta['replies_count'] = existingCount + 1;
+    }
+
+    if (messageData != null) {
+      final msgType =
+          (messageData['msg_type'] ?? meta['latest_reply_msg_type'] ?? 'text')
+              .toString();
+      final previewText = _threadPreviewLabel(
+        msgType,
+        messageData['msg'] ?? messageData['raw_msg'],
+      );
+      final sender =
+          _extractSenderName(messageData) ?? meta['latest_reply_sender'] ?? '';
+
+      meta['latest_reply_text'] = previewText;
+      meta['latest_reply_sender'] = sender;
+      if (messageData['sender_id'] != null) {
+        meta['latest_reply_sender_id'] = messageData['sender_id'].toString();
+      }
+      meta['latest_reply_msg_type'] = msgType;
+      meta['latest_reply_created_at'] = messageData['created_at']?.toString() ??
+          messageData['updated_at']?.toString() ??
+          meta['latest_reply_created_at'];
+      final fileUrl = (messageData['file_url'] ?? '').toString();
+      meta['latest_reply_file_url'] = msgType == 'text' ? '' : fileUrl;
+    }
+
+    if (old is types.TextMessage) {
+      messages[idx] = old.copyWith(metadata: meta);
+    } else if (old is types.ImageMessage) {
+      messages[idx] = old.copyWith(metadata: meta);
+    } else if (old is types.FileMessage) {
+      messages[idx] = old.copyWith(metadata: meta);
+    }
+    messages.refresh();
+  }
+
+  int? _intFrom(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
+  String? _extractSenderName(Map? messageData) {
+    if (messageData == null) return null;
+    final direct = (messageData['sender_name'] ?? '').toString().trim();
+    if (direct.isNotEmpty) return direct;
+    final first = (messageData['sender_first_name'] ?? '').toString().trim();
+    final last = (messageData['sender_last_name'] ?? '').toString().trim();
+    final combined = ('$first $last').trim();
+    return combined.isNotEmpty ? combined : null;
+  }
+
+  String _threadPreviewLabel(String msgType, dynamic rawMsg) {
+    final normalized = msgType.toLowerCase();
+    final text = (rawMsg ?? '').toString();
+    switch (normalized) {
+      case 'image':
+        return 'Photo';
+      case 'video':
+        return 'Video';
+      case 'audio':
+        return 'Audio';
+      case 'file':
+        return text.isNotEmpty ? text : 'File';
+      case 'media':
+        return 'Attachment';
+      default:
+        return text;
+    }
   }
 }

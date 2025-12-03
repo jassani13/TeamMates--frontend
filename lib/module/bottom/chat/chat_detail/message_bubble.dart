@@ -1,3 +1,4 @@
+import 'package:base_code/components/thread_preview_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:base_code/package/screen_packages.dart';
@@ -21,6 +22,7 @@ class MessageBubble extends StatelessWidget {
   // Fired when the read-receipt (double check) is tapped
   final VoidCallback? onReadByTap;
   final bool showReadReceipt;
+  final VoidCallback? onThreadPreviewTap;
 
   const MessageBubble({
     Key? key,
@@ -33,6 +35,7 @@ class MessageBubble extends StatelessWidget {
     this.onReactionsTap,
     this.onReadByTap,
     this.showReadReceipt = true,
+    this.onThreadPreviewTap,
   }) : super(key: key);
 
   bool get _isDeleted => (message.metadata?['deleted_at'] != null);
@@ -190,6 +193,12 @@ class MessageBubble extends StatelessWidget {
             .where((s) => s.isNotEmpty)
             .toList()) ??
         [];
+    final repliesCount = meta['replies_count'] is int
+        ? meta['replies_count'] as int
+        : int.tryParse(meta['replies_count']?.toString() ?? '0') ?? 0;
+    final latestReplyText = (meta['latest_reply_text'] ?? '').toString();
+    final latestReplySender = (meta['latest_reply_sender'] ?? '').toString();
+    final showThreadPreview = repliesCount > 0;
 
     if (_isDeleted) {
       // Keep deleted bubbles left-aligned and maintain consistent leading spacing
@@ -369,53 +378,70 @@ class MessageBubble extends StatelessWidget {
                   ),
                 Padding(
                   padding: const EdgeInsets.only(left: 6),
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      content,
-                      // Footer: bottom-right ordered right->left: tick, time, pin, flag
-                      Positioned(
-                        bottom: 4,
-                        right: 6,
-                        child: _BubbleFooter(
-                          timeText: _formatTime(message),
-                          onMedia: msgType == 'image',
-                          showRead: isMe && showReadReceipt,
-                          readByCount: readBy.length,
-                          onReadByTap: onReadByTap,
-                          isPinned: isPinned,
-                          isFlagged: isFlagged,
-                        ),
-                      ),
-                      if (reactions.isNotEmpty)
-                        Positioned(
-                          bottom: 22,
-                          right: 6,
-                          child: GestureDetector(
-                            onTap: onReactionsTap,
-                            child: Wrap(
-                              spacing: 4,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                ...reactions.take(2).map((r) {
-                                  final reactionString =
-                                      (r['reaction'] ?? '').toString();
-                                  final emoji =
-                                      _reactionToEmoji(reactionString);
-                                  final toShow =
-                                      emoji.isNotEmpty ? emoji : reactionString;
-                                  return Text(toShow,
-                                      style: const TextStyle(fontSize: 12));
-                                }),
-                                if (reactions.length > 2)
-                                  Text('+${reactions.length - 2}',
-                                      style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColor.black12Color)),
-                              ],
+                      Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          content,
+                          Positioned(
+                            bottom: 4,
+                            right: 6,
+                            child: _BubbleFooter(
+                              timeText: _formatTime(message),
+                              onMedia: msgType == 'image',
+                              showRead: isMe && showReadReceipt,
+                              readByCount: readBy.length,
+                              onReadByTap: onReadByTap,
+                              isPinned: isPinned,
+                              isFlagged: isFlagged,
                             ),
                           ),
+                          if (reactions.isNotEmpty)
+                            Positioned(
+                              bottom: 22,
+                              right: 6,
+                              child: GestureDetector(
+                                onTap: onReactionsTap,
+                                child: Wrap(
+                                  spacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    ...reactions.take(2).map((r) {
+                                      final reactionString =
+                                          (r['reaction'] ?? '').toString();
+                                      final emoji =
+                                          _reactionToEmoji(reactionString);
+                                      final toShow = emoji.isNotEmpty
+                                          ? emoji
+                                          : reactionString;
+                                      return Text(toShow,
+                                          style: const TextStyle(fontSize: 12));
+                                    }),
+                                    if (reactions.length > 2)
+                                      Text('+${reactions.length - 2}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColor.black12Color)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (showThreadPreview)
+                        ThreadPreviewWidget(
+                          repliesCount: repliesCount,
+                          latestReplyText: latestReplyText.isNotEmpty
+                              ? latestReplyText
+                              : null,
+                          latestReplySender: latestReplySender.isNotEmpty
+                              ? latestReplySender
+                              : null,
+                          margin: const EdgeInsets.only(top: 6),
+                          onTap: onThreadPreviewTap ?? onTap ?? () {},
                         ),
                     ],
                   ),

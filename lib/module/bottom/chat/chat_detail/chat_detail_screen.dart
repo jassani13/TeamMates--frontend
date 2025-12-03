@@ -101,6 +101,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             isMe: isMe,
             highlightQuery: query,
             onTap: () {},
+            onThreadPreviewTap: () => _openThreadScreen(msg),
             onLongPress: () {
               final isMine = isMe;
               final canEdit = _canEditMessage(msg);
@@ -127,6 +128,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         child: ReactionsDialogWidget(
                           reactions: const ['👍', '❤️', '😂', '😮', '😢', '👏'],
                           menuItems: [
+                            MenuItem(
+                              label: 'Reply in Thread',
+                              icon: Icons.forum_outlined,
+                            ),
                             if (isMine && canEdit)
                               MenuItem(label: 'Edit', icon: Icons.edit),
                             if (isMine)
@@ -159,6 +164,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           },
                           onContextMenuTap: (menuItem) async {
                             switch (menuItem.label) {
+                              case 'Reply in Thread':
+                                _openThreadScreen(msg);
+                                break;
                               case 'Edit':
                                 final newText = await _showEditSheet(msg);
                                 if (newText != null &&
@@ -256,6 +264,34 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _openThreadScreen(types.Message message) {
+    final msgText = message.metadata?['raw_msg'] ??
+        (message is types.TextMessage ? message.text : '');
+
+    Get.toNamed(
+      AppRouter.threadDetailScreen,
+      arguments: {
+        'parent_message': {
+          'message_id': int.tryParse(message.id) ?? 0,
+          'msg': msgText,
+          'sender_id': message.author.id,
+          'sender_name':
+              '${message.author.firstName ?? ''} ${message.author.lastName ?? ''}'
+                  .trim(),
+          'sender_profile': message.author.imageUrl,
+          'created_at': message.createdAt != null
+              ? DateTime.fromMillisecondsSinceEpoch(message.createdAt!)
+                  .toIso8601String()
+              : DateTime.now().toIso8601String(),
+          'replies_count': message.metadata?['replies_count'] ?? 0,
+        },
+        'conversation_id':
+            int.tryParse(controller.conversation?.conversationId ?? '0') ?? 0,
+        'message_id': int.tryParse(message.id) ?? 0,
+      },
     );
   }
 
