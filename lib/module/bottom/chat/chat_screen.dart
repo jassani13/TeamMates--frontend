@@ -240,13 +240,13 @@ class _ChatScreenState extends State<ChatScreen> {
             ValueKey("conversation_${chatController.selectedChatMethod.value}"),
         padding: const EdgeInsets.only(bottom: 40),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text('Chats',
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)
-                        .textColor(AppColor.grey4EColor)),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          //   child: Text('Chats',
+          //       style:
+          //           const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)
+          //               .textColor(AppColor.grey4EColor)),
+          // ),
           if (items.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
