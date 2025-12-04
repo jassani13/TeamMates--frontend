@@ -1,8 +1,16 @@
-import 'package:base_code/components/socket_service.dart';
-import 'package:base_code/package/config_packages.dart';
-import 'package:get/get.dart';
-import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'dart:convert';
 
+import 'package:base_code/components/socket_service.dart';
+import 'package:base_code/data/network/dio_client.dart';
+import 'package:base_code/module/bottom/chat/chat_controller.dart';
+import 'package:base_code/package/config_packages.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+
+import '../../../../utils/app_toast.dart';
 import '../chat_screen.dart';
 
 class ThreadController extends GetxController {
@@ -15,6 +23,11 @@ class ThreadController extends GetxController {
   final RxBool hasMore = false.obs;
   final RxInt totalReplies = 0.obs;
   final RxInt currentPage = 1.obs;
+  final RxBool sendingAttachment = false.obs;
+
+  final ChatScreenController chatScreenController =
+      Get.put(ChatScreenController());
+  final ImagePicker _imagePicker = ImagePicker();
 
   ThreadController({
     required this.parentMessageId,
@@ -66,10 +79,12 @@ class ThreadController extends GetxController {
           .map((e) => _buildThreadMessage(Map<String, dynamic>.from(e)))
           .toList();
 
+      final normalized = newReplies.toList();
+
       if (currentPage.value == 1) {
-        replies.value = newReplies;
+        replies.value = normalized;
       } else {
-        replies.addAll(newReplies);
+        replies.insertAll(0, normalized);
       }
 
       loading.value = false;
@@ -127,86 +142,121 @@ class ThreadController extends GetxController {
   void sendThreadReply(types.PartialText message) {
     final currentUser = AppPref().userModel;
     if (currentUser == null) return;
+    final text = message.text.trim();
+    if (text.isEmpty) return;
 
     socket.emit('send_thread_reply', {
       'parent_message_id': parentMessageId,
-      'message': message.text,
+      'message': text,
       'msg_type': 'text',
     });
 
-    // Optimistically add to UI
-    // final optimisticReply = types.TextMessage(
-    //   author: types.User(
-    //     id: currentUser.userId.toString(),
-    //     firstName: currentUser.firstName,
-    //     lastName: currentUser.lastName,
-    //     imageUrl: currentUser.profile,
-    //   ),
-    //   createdAt: DateTime.now().millisecondsSinceEpoch,
-    //   id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-    //   text: message.text,
-    // );
-
-    //replies.insert(0, optimisticReply);
+    totalReplies.value = totalReplies.value + 1;
   }
 
-  void sendImageReply(String imageUrl) {
+  void sendImageReply({required String fileUrl, required String fileName}) {
     final currentUser = AppPref().userModel;
     if (currentUser == null) return;
 
+    final displayName = fileName.isNotEmpty ? fileName : 'image';
+
     socket.emit('send_thread_reply', {
       'parent_message_id': parentMessageId,
-      'message': imageUrl,
+      'message': displayName,
       'msg_type': 'image',
+      'file_url': fileUrl,
     });
 
-    // Optimistically add to UI
-    final optimisticReply = types.ImageMessage(
-      author: types.User(
-        id: currentUser.userId.toString(),
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
-        imageUrl: currentUser.profile,
-      ),
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-      uri: imageUrl,
-      name: 'image',
-      size: 0,
-      height: 200,
-      width: 200,
-    );
-
-    replies.insert(0, optimisticReply);
+    totalReplies.value = totalReplies.value + 1;
   }
 
-  void sendFileReply(String fileUrl, String fileName) {
+  void sendFileReply({required String fileUrl, required String fileName}) {
     final currentUser = AppPref().userModel;
     if (currentUser == null) return;
 
+    final displayName = fileName.isNotEmpty ? fileName : 'file';
+
     socket.emit('send_thread_reply', {
       'parent_message_id': parentMessageId,
-      'message': fileName,
+      'message': displayName,
       'msg_type': 'file',
       'file_url': fileUrl,
     });
 
-    // Optimistically add to UI
-    final optimisticReply = types.FileMessage(
-      author: types.User(
-        id: currentUser.userId.toString(),
-        firstName: currentUser.firstName,
-        lastName: currentUser.lastName,
-        imageUrl: currentUser.profile,
-      ),
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-      uri: fileUrl,
-      name: fileName,
-      size: 0,
-    );
+    totalReplies.value = totalReplies.value + 1;
+  }
 
-    replies.insert(0, optimisticReply);
+  Future<void> pickImageAttachment() async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1440,
+      );
+      if (picked == null) return;
+      await _uploadAndDispatchAttachment(
+        file: picked,
+        msgType: 'image',
+        displayName: picked.name ?? p.basename(picked.path),
+      );
+    } catch (e) {
+      AppToast.showAppToast('Unable to pick image');
+    }
+  }
+
+  Future<void> pickDocumentAttachment() async {
+    try {
+      final res = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowMultiple: false,
+        allowedExtensions: ['pdf'],
+      );
+      if (res == null || res.files.isEmpty || res.files.single.path == null) {
+        return;
+      }
+      final file = res.files.single;
+      await _uploadAndDispatchAttachment(
+        file: file,
+        msgType: 'file',
+        displayName: file.name,
+      );
+    } catch (e) {
+      AppToast.showAppToast('Unable to pick file');
+    }
+  }
+
+  Future<void> _uploadAndDispatchAttachment({
+    required dynamic file,
+    required String msgType,
+    required String displayName,
+  }) async {
+    if (sendingAttachment.value) return;
+    try {
+      sendingAttachment.value = true;
+      final uploaded =
+          await chatScreenController.setMediaChatApiCall(result: file);
+      if (uploaded.isEmpty) {
+        AppToast.showAppToast('Upload failed. Please try again.');
+        return;
+      }
+      if (msgType == 'image') {
+        sendImageReply(fileUrl: uploaded, fileName: displayName);
+      } else {
+        sendFileReply(fileUrl: uploaded, fileName: displayName);
+      }
+    } catch (e) {
+      AppToast.showAppToast('Unable to upload attachment');
+    } finally {
+      sendingAttachment.value = false;
+    }
+  }
+
+  String _resolveFileUrl(String raw) {
+    if (raw.isEmpty) return '';
+    final trimmed = raw.trim();
+    if (trimmed.toLowerCase().startsWith('http')) return trimmed;
+    final normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+    return '$publicImageUrl$normalized';
   }
 
   types.Message _buildThreadMessage(Map<String, dynamic> payload) {
@@ -218,43 +268,75 @@ class ThreadController extends GetxController {
         : DateTime.now().millisecondsSinceEpoch;
     final author = types.User(
       id: payload['sender_id']?.toString() ?? '',
-      firstName: payload['sender_name'],
-      lastName: payload['sender_last_name'],
-      imageUrl: payload['sender_profile'],
+      firstName: payload['sender_name']?.toString(),
+      lastName: payload['sender_last_name']?.toString(),
+      imageUrl: payload['sender_profile']?.toString(),
     );
     final id = payload['message_id']?.toString() ??
         'temp_${DateTime.now().millisecondsSinceEpoch}';
-    final resource = payload['file_url'] ?? payload['msg'] ?? '';
+    final decodedMsg = _decodePayloadText(payload['msg']);
+
+    String attachmentPath = '';
+    if (rawType != 'text') {
+      final candidate = (payload['file_url'] ?? '').toString();
+      if (candidate.trim().isNotEmpty) {
+        attachmentPath = candidate;
+      } else if ((payload['msg'] ?? '').toString().trim().isNotEmpty) {
+        attachmentPath = payload['msg'].toString();
+      }
+    }
+    final resolvedUrl =
+        attachmentPath.isNotEmpty ? _resolveFileUrl(attachmentPath) : '';
+
+    final metadata = <String, dynamic>{
+      'msg_type': rawType,
+      'raw_msg': decodedMsg,
+    };
+    if (resolvedUrl.isNotEmpty) metadata['file_url'] = resolvedUrl;
 
     if (rawType == 'image' || rawType == 'media') {
       return types.ImageMessage(
         createdAt: createdAt,
-        uri: resource,
+        uri: resolvedUrl,
         author: author,
         id: id,
         size: 0,
-        name: '',
+        name: decodedMsg,
         height: 200,
         width: 200,
+        metadata: metadata,
       );
     }
 
     if (rawType == 'file' || rawType == 'pdf') {
       return types.FileMessage(
         createdAt: createdAt,
-        uri: resource,
+        uri: resolvedUrl,
         author: author,
         id: id,
-        name: payload['msg']?.toString() ?? 'file',
+        name: decodedMsg.isNotEmpty ? decodedMsg : 'file',
         size: 0,
+        metadata: metadata,
       );
     }
 
     return types.TextMessage(
       createdAt: createdAt,
-      text: payload['msg']?.toString() ?? '',
+      text: decodedMsg,
       author: author,
       id: id,
+      metadata: metadata,
     );
+  }
+
+  String _decodePayloadText(dynamic raw) {
+    if (raw == null) return '';
+    final str = raw.toString();
+    try {
+      final bytes = latin1.encode(str);
+      return utf8.decode(bytes);
+    } catch (_) {
+      return str;
+    }
   }
 }

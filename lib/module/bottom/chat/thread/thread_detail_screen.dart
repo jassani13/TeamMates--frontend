@@ -70,6 +70,8 @@ class ThreadDetailScreen extends StatelessWidget {
               return Chat(
                 messages: controller.replies,
                 onSendPressed: controller.sendThreadReply,
+                onAttachmentPressed: () =>
+                    _showAttachmentSheet(context, controller),
                 user: user,
                 theme: DefaultChatTheme(
                   backgroundColor: Colors.white,
@@ -82,6 +84,13 @@ class ThreadDetailScreen extends StatelessWidget {
               );
             }),
           ),
+
+          Obx(() {
+            if (!controller.sendingAttachment.value) {
+              return SizedBox.shrink();
+            }
+            return const LinearProgressIndicator(minHeight: 2);
+          }),
 
           // Load more indicator
           Obx(() {
@@ -103,6 +112,45 @@ class ThreadDetailScreen extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+
+  void _showAttachmentSheet(BuildContext context, ThreadController controller) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.photo, color: AppColor.black12Color),
+                title: const Text('Image',
+                    style: TextStyle(color: AppColor.black12Color)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  controller.pickImageAttachment();
+                },
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.attach_file, color: AppColor.black12Color),
+                title: const Text('File',
+                    style: TextStyle(color: AppColor.black12Color)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  controller.pickDocumentAttachment();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 
