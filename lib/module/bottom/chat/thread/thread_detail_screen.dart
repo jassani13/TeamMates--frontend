@@ -3,6 +3,7 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import '../../../../utils/common_function.dart';
 
 class ThreadDetailScreen extends StatelessWidget {
   const ThreadDetailScreen({super.key});
@@ -72,6 +73,17 @@ class ThreadDetailScreen extends StatelessWidget {
                 onSendPressed: controller.sendThreadReply,
                 onAttachmentPressed: () =>
                     _showAttachmentSheet(context, controller),
+                onMessageTap: (context, message) {
+                  if (message is types.FileMessage) {
+                    final url = (message.uri.isNotEmpty
+                            ? message.uri
+                            : (message.metadata?['file_url']?.toString() ?? ''))
+                        .trim();
+                    if (url.isNotEmpty) {
+                      openPdf(url);
+                    }
+                  }
+                },
                 user: user,
                 theme: DefaultChatTheme(
                   backgroundColor: Colors.white,
