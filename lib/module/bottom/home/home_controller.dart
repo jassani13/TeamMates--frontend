@@ -17,6 +17,7 @@ class HomeController extends GetxController {
         "user_id": AppPref().userId,
         "fcm_token": fcmToken,
       };
+      debugPrint("getHomeDetailsApiCall:$data");
       var res = await callApi(
         dio.post(
           ApiEndPoint.homeDetails,

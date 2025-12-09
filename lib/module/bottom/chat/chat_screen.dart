@@ -26,10 +26,11 @@ class _ChatScreenState extends State<ChatScreen> {
     //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
     //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
     //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
-    String url = "http://10.0.2.2:3000";
-    if (Platform.isIOS) {
-      url = "http://127.0.0.1:3000";
-    }
+    const bool useLocalServer = false;
+    const String productionBaseUrl = 'http://54.196.239.6:3000';
+    String localBaseUrl =Platform.isIOS? 'http://127.0.0.1:8000': 'http://10.0.2.2:8000';
+
+    String url = useLocalServer ? localBaseUrl : productionBaseUrl;
 
     socket = IO.io(
       url,
@@ -46,7 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
     socket.connect();
 
     socket.onConnect((_) {
-      if (kDebugMode) print('[SOCKET] connected');
+      debugPrint('[SOCKET] connected');
       socket.emit('register', {'user_id': AppPref().userId});
       chatController.attachSearchSocket();
 
@@ -134,14 +135,20 @@ class _ChatScreenState extends State<ChatScreen> {
           if (kDebugMode) debugPrint('typing(list) error: $e');
         }
       });
+
+
+      // Presence (if you keep existing events)
+      socket.emit('userOnline', [AppPref().userId]);
+      socket.on('updateUserStatus', (data) {
+        chatController.onlineUsers.clear();
+        chatController.onlineUsers.addAll(data as Map);
+      });
     });
 
-    // Presence (if you keep existing events)
-    socket.emit('userOnline', [AppPref().userId]);
-    socket.on('updateUserStatus', (data) {
-      chatController.onlineUsers.clear();
-      chatController.onlineUsers.addAll(data as Map);
+    socket.onConnectError((e){
+      debugPrint('[SOCKET] connect error:$e');
     });
+
   }
 
   void userOnline() {

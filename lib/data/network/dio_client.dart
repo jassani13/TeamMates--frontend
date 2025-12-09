@@ -8,9 +8,10 @@ BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
 
-const bool useLocalServer = true;
+const bool useLocalServer = false;
 
-const String productionBaseUrl = /*'http://13.220.132.157'*/ 'http://api.teammatesapp.org';
+//const String productionBaseUrl = /*'http://13.220.132.157'*/ 'http://api.teammatesapp.org';
+const String productionBaseUrl = 'http://54.196.239.6';
 //const String localBaseUrl = 'http://127.0.0.1:8000';
  String localBaseUrl =Platform.isIOS? 'http://127.0.0.1:8000': 'http://10.0.2.2:8000';
 
