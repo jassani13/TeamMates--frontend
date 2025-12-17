@@ -10,6 +10,7 @@ CachedNetworkImage getImageView({
   Color? color,
   Widget? errorWidget,
 }) {
+
   return CachedNetworkImage(
     imageUrl: finalUrl,
     fit: fit,

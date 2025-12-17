@@ -27,6 +27,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initUnifiedSocket() {
     final String url = ServerConfig.socketBaseUrl;
 
+    debugPrint("[SOCKET] init url:$url");
+
     socket = IO.io(
       url,
       {
