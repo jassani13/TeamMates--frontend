@@ -3,6 +3,8 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:intl/intl.dart';
+
+import '../../../data/network/server_config.dart';
 import '../../../components/search_input.dart';
 
 import '../../../model/conversation_item.dart';
@@ -23,14 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final Set<String> _joinedConversations = <String>{};
 
   void initUnifiedSocket() {
-    //    //socket .220.132.157:3000', <String, dynamic>{ // Production server
-    //    socket = IO.io('http://127.0.0.1:3000', <String, dynamic>{ // ios server
-    //   //socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
-    const bool useLocalServer = false;
-    const String productionBaseUrl = 'http://54.196.239.6:3000';
-    String localBaseUrl =Platform.isIOS? 'http://127.0.0.1:8000': 'http://10.0.2.2:8000';
-
-    String url = useLocalServer ? localBaseUrl : productionBaseUrl;
+    final String url = ServerConfig.socketBaseUrl;
 
     socket = IO.io(
       url,
@@ -54,11 +49,14 @@ class _ChatScreenState extends State<ChatScreen> {
       // Request conversations explicitly (server also emits on register)
       try {
         socket.emit('get_conversations', {'user_id': AppPref().userId});
-      } catch (_) {}
+      } catch (e) {
+        debugPrint("get_conversations emit error:$e");
+      }
 
       // Listen for full conversation list
       socket.off('conversation_list');
       socket.on('conversation_list', (data) {
+        debugPrint("conversation_list:$data");
         try {
           if (data is List) {
             chatController.setConversations(data);

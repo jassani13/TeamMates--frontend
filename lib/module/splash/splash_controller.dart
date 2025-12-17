@@ -2,6 +2,13 @@ import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 
 class SplashController extends GetxController {
+
+  validateToken() async {
+    debugPrint("inside validateToken");
+    String? tkn =  AppPref().token;
+    debugPrint("Splash Token: $tkn");
+  }
+
   goNextScreen() async {
     3.delay(
       () async {
@@ -29,5 +36,6 @@ class SplashController extends GetxController {
   void onReady() {
     super.onReady();
     goNextScreen();
+    //validateToken();
   }
 }

@@ -557,12 +557,15 @@ class ChatDetailController extends GetxController {
 
   // ----- Public API for UI -----
   void sendText(String text) {
+    debugPrint("sending text: $text :: conversation:$conversation");
     if (text.trim().isEmpty || conversation == null) return;
+    debugPrint("emitting send message:${conversation?.conversationId}");
     socket.emit(evSend, {
       'conversation_id': conversation?.conversationId ?? '',
       'msg': text.trim(),
       'msg_type': 'text',
     });
+    debugPrint("sending message: $text");
     // stop typing
     if (_isTyping) {
       socket.emit(evTyping, {

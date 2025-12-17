@@ -2,26 +2,17 @@ import 'package:base_code/package/screen_packages.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:flutter/foundation.dart' as Foundation;
 
+import 'server_config.dart';
+
 late Dio dio;
 
 BaseOptions baseOptions = BaseOptions(
     connectTimeout: const Duration(seconds: 60),
     receiveTimeout: const Duration(seconds: 60));
 
-const bool useLocalServer = false;
+final String baseUrl = ServerConfig.apiBaseUrl;
+final String publicImageUrl = ServerConfig.publicImageBaseUrl;
 
-//const String productionBaseUrl = /*'http://13.220.132.157'*/ 'http://api.teammatesapp.org';
-const String productionBaseUrl = 'http://54.196.239.6';
-//const String localBaseUrl = 'http://127.0.0.1:8000';
- String localBaseUrl =Platform.isIOS? 'http://127.0.0.1:8000': 'http://10.0.2.2:8000';
-
- String baseUrl = useLocalServer ? localBaseUrl : productionBaseUrl;
-
- String publicImageUrl =
-    useLocalServer ? "$localBaseUrl/" : "$productionBaseUrl/";
-
-// https://team.notegiftcard.com/migrate-fresh DB clear
-//03007182536 --- wifi
 Future<void> dioSetUp({int? language}) async {
 
   dio = Dio(baseOptions);
@@ -31,7 +22,7 @@ Future<void> dioSetUp({int? language}) async {
     var customHeaders = {
       'Accept': 'application/json',
       'X-Requested-With': "XMLHttpRequest",
-      //"key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
+      "key": "qIKiO7iXPr0XGexMkgm31R7k21Db7jkGKyA1kbxUt2s",
     };
     option.headers.addAll(customHeaders);
     handler.next(option);

@@ -91,6 +91,7 @@ class SearchChatController extends GetxController {
   }
 
   Future<ConversationItem?> createPersonalChat(String playerId) async {
+
     try {
       final Map<String, dynamic> payload = {
         "user_id": AppPref().userId,

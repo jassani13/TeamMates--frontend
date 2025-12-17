@@ -119,6 +119,7 @@ class LoginController extends GetxController {
       );
 
       if (res?.statusCode == 200) {
+        debugPrint("loginApiCall response: ${res?.data}");
         UserModel userModel = UserModel.fromJson(res?.data["data"]);
         AppPref().userModel = userModel;
         AppPref().userId = userModel.userId;

@@ -497,6 +497,7 @@ class AllPlayerScreen extends StatelessWidget {
             GestureDetector(
               onTap: () async {
                 hideKeyboard();
+                debugPrint("mtag->id:: ${member.userId}");
                 ConversationItem? conversation =
                     await Get.put(SearchChatController())
                         .createPersonalChat("${member.userId}");
