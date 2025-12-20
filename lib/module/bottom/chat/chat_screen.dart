@@ -199,14 +199,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   Gap(16),
                   CommonTitleText(text: "Chat"),
                   const Spacer(),
-                  Visibility(
-                    visible: AppPref().role == 'coach',
-                    child: CommonIconButton(
-                      image: AppImage.plus,
-                      onTap: () {
-                        Get.toNamed(AppRouter.searchChatScreen);
-                      },
-                    ),
+                  CommonIconButton(
+                    image: AppImage.plus,
+                    onTap: () {
+                      Get.toNamed(AppRouter.searchChatScreen);
+                    },
                   ),
                   Gap(16),
                 ],

@@ -18,22 +18,22 @@ class SearchChatScreen extends StatelessWidget {
             title: const CommonTitleText(text: 'Search'),
             centerTitle: false,
             actions: [
-              Obx(() {
-                return Visibility(
-                  visible: AppPref().role == 'coach' &&
-                      controller.selectedPlayersIDsForGroupChat.isNotEmpty,
-                  child: CommonIconButton(
-                    image: AppImage.plus,
-                    onTap: () async {
-                      Get.toNamed(AppRouter.createGroupChat, arguments: {
-                        'selectedPlayers':
-                            controller.selectedPlayersIDsForGroupChat
-                      });
-                    },
-                  ),
-                );
-              }),
-              Gap(16)
+              // Obx(() {
+              //   return Visibility(
+              //     visible: AppPref().role == 'coach' &&
+              //         controller.selectedPlayersIDsForGroupChat.isNotEmpty,
+              //     child: CommonIconButton(
+              //       image: AppImage.plus,
+              //       onTap: () async {
+              //         Get.toNamed(AppRouter.createGroupChat, arguments: {
+              //           'selectedPlayers':
+              //               controller.selectedPlayersIDsForGroupChat
+              //         });
+              //       },
+              //     ),
+              //   );
+              // }),
+              // Gap(16)
             ],
           ),
           body: Padding(
