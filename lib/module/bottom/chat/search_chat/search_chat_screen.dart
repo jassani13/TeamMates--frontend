@@ -15,32 +15,59 @@ class SearchChatScreen extends StatelessWidget {
           backgroundColor: AppColor.white,
           appBar: AppBar(
             backgroundColor: AppColor.white,
-            title: const CommonTitleText(text: 'Search'),
+            title: Obx(() => CommonTitleText(
+                text: controller.isCreatingGroup.value
+                    ? 'Create Group'
+                    : 'Search')),
             centerTitle: false,
             actions: [
-              // Obx(() {
-              //   return Visibility(
-              //     visible: AppPref().role == 'coach' &&
-              //         controller.selectedPlayersIDsForGroupChat.isNotEmpty,
-              //     child: CommonIconButton(
-              //       image: AppImage.plus,
-              //       onTap: () async {
-              //         Get.toNamed(AppRouter.createGroupChat, arguments: {
-              //           'selectedPlayers':
-              //               controller.selectedPlayersIDsForGroupChat
-              //         });
-              //       },
-              //     ),
-              //   );
-              // }),
-              // Gap(16)
+              Obx(
+                () => !controller.isCreatingGroup.value
+                    ? PopupMenuButton(
+                        icon: const Icon(Icons.more_vert_rounded),
+                        onSelected: (val) {
+                          if (val == "create_group") {
+                            controller.isCreatingGroup.value = true;
+                            controller.selectedChatMethod.value = 1;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                              PopupMenuItem<String>(
+                                value: "create_group",
+                                child: Text(
+                                  "Create Chat Group",
+                                  style:
+                                      TextStyle(color: AppColor.black12Color),
+                                ),
+                              ),
+                            ])
+                    : SizedBox(),
+              ),
+              Obx(() {
+                return Visibility(
+                  visible: controller.isCreatingGroup.value &&
+                      controller.selectedPlayersIDsForGroupChat.isNotEmpty,
+                  child: CommonIconButton(
+                    image: AppImage.plus,
+                    onTap: () async {
+                      Get.toNamed(AppRouter.createGroupChat, arguments: {
+                        'selectedPlayers':
+                            controller.selectedPlayersIDsForGroupChat
+                      });
+                    },
+                  ),
+                );
+              }),
+              Gap(16)
             ],
           ),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-                _buildMethodSelector(),
+                Obx(() => controller.isCreatingGroup.value
+                    ? SizedBox()
+                    : _buildMethodSelector()),
                 const Gap(6),
                 Expanded(child: Obx(() => _buildSearchContent(context))),
               ],
@@ -214,6 +241,9 @@ class SearchChatScreen extends StatelessWidget {
           .contains(roster.userId.toString());
       return GestureDetector(
         onTap: () {
+          if (!controller.isCreatingGroup.value) {
+            return;
+          }
           if (isSelected) {
             controller.selectedPlayersIDsForGroupChat
                 .remove(roster.userId.toString());
@@ -252,10 +282,14 @@ class SearchChatScreen extends StatelessWidget {
                       Icons.check_circle,
                       color: Colors.green,
                     )
-                  : _buildChatButton(
-                      onTap: () => _onPlayerChatTap(roster.userId.toString(),
-                          roster.firstName ?? "", roster.lastName ?? ""),
-                    ),
+                  : controller.isCreatingGroup.value
+                      ? Icon(Icons.circle_outlined)
+                      : _buildChatButton(
+                          onTap: () => _onPlayerChatTap(
+                              roster.userId.toString(),
+                              roster.firstName ?? "",
+                              roster.lastName ?? ""),
+                        ),
           ]),
         ),
       );

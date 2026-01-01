@@ -16,6 +16,7 @@ class SearchChatController extends GetxController {
   TextEditingController searchTeamController = TextEditingController();
   TextEditingController searchPlayerController = TextEditingController();
 
+  RxBool isCreatingGroup = false.obs;
   RxList<String> selectedPlayersIDsForGroupChat = <String>[].obs;
 
 
