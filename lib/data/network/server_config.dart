@@ -17,7 +17,7 @@ class ServerConfig {
   static String get _socketLocal => '$_localHost:3000';
 
   static bool get useLocalServer {
-    return true;
+    return false;
     return !kReleaseMode;
   }
 
