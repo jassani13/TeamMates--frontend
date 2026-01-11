@@ -21,11 +21,14 @@ class ScheduleScreen extends StatelessWidget {
             key: scheduleController.refreshKey,
             onRefresh: () async {
               await scheduleController.getScheduleListApiCall(
-                  filter: scheduleController.selectedMethod1List[scheduleController.selectedSearchMethod1.value]);
+                  filter: scheduleController.selectedMethod1List[
+                      scheduleController.selectedSearchMethod1.value]);
             },
             child: Column(
               children: [
-                Gap(Platform.isAndroid ? ScreenUtil().statusBarHeight + 20 : ScreenUtil().statusBarHeight + 10),
+                Gap(Platform.isAndroid
+                    ? ScreenUtil().statusBarHeight + 20
+                    : ScreenUtil().statusBarHeight + 10),
                 Row(
                   children: [
                     Gap(16),
@@ -72,7 +75,8 @@ class ScheduleScreen extends StatelessWidget {
                           scheduleController.selectedSearchMethod1.value = (-1);
                           await scheduleController.getScheduleListApiCall(
                             filter: null,
-                            startDate: DateFormat('yyyy-MM-dd').format(startDate),
+                            startDate:
+                                DateFormat('yyyy-MM-dd').format(startDate),
                             endDate: DateFormat('yyyy-MM-dd').format(endDate),
                           );
                         }
@@ -93,22 +97,28 @@ class ScheduleScreen extends StatelessWidget {
                             onTapActions: [
                               () async {
                                 Get.back();
-                                final val = await Get.toNamed(AppRouter.addGame, arguments: {
-                                  "activity": "game",
-                                });
+                                final val = await Get.toNamed(AppRouter.addGame,
+                                    arguments: {
+                                      "activity": "game",
+                                    });
                                 if (val != null) {
-                                  scheduleController.selectedSearchMethod1.value = 0;
-                                  await scheduleController.getScheduleListApiCall(filter: 'today');
+                                  scheduleController
+                                      .selectedSearchMethod1.value = 0;
+                                  await scheduleController
+                                      .getScheduleListApiCall(filter: 'today');
                                 }
                               },
                               () async {
                                 Get.back();
-                                final val = await Get.toNamed(AppRouter.addGame, arguments: {
-                                  "activity": "event",
-                                });
+                                final val = await Get.toNamed(AppRouter.addGame,
+                                    arguments: {
+                                      "activity": "event",
+                                    });
                                 if (val != null) {
-                                  scheduleController.selectedSearchMethod1.value = 0;
-                                  await scheduleController.getScheduleListApiCall(filter: 'today');
+                                  scheduleController
+                                      .selectedSearchMethod1.value = 0;
+                                  await scheduleController
+                                      .getScheduleListApiCall(filter: 'today');
                                 }
                               },
                             ],
@@ -157,7 +167,8 @@ class ScheduleScreen extends StatelessWidget {
                     onItemSelected: (index) async {
                       scheduleController.selectedSearchMethod1.value = index;
                       await scheduleController.getScheduleListApiCall(
-                          filter: scheduleController.selectedMethod1List[scheduleController.selectedSearchMethod1.value]);
+                          filter: scheduleController.selectedMethod1List[
+                              scheduleController.selectedSearchMethod1.value]);
                     },
                   ),
                 ),
@@ -178,8 +189,14 @@ class ScheduleScreen extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Padding(
-                                      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3.3),
-                                      child: Center(child: buildNoData(text: "No Data Found")),
+                                      padding: EdgeInsets.only(
+                                          top: MediaQuery.of(context)
+                                                  .size
+                                                  .height /
+                                              3.3),
+                                      child: Center(
+                                          child: buildNoData(
+                                              text: "No Data Found")),
                                     ),
                                   ],
                                 ),
@@ -188,24 +205,32 @@ class ScheduleScreen extends StatelessWidget {
                                 return ListView.builder(
                                     shrinkWrap: true,
                                     padding: EdgeInsets.zero,
-                                    itemCount: scheduleController.sortedScheduleList.length,
+                                    itemCount: scheduleController
+                                        .sortedScheduleList.length,
                                     physics: AlwaysScrollableScrollPhysics(),
                                     itemBuilder: (context, i) {
-                                      var item = scheduleController.sortedScheduleList[i].date;
+                                      var item = scheduleController
+                                          .sortedScheduleList[i].date;
 
                                       return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                            margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 10),
+                                            margin: EdgeInsets.symmetric(
+                                                horizontal: 20, vertical: 16),
                                             width: double.infinity,
-                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: AppColor.black12Color),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                color: AppColor.black12Color),
                                             child: Text(
-                                              item.isNotEmpty
-                                                  ? item
-                                                  : '',
-                                              style: TextStyle().normal16w500.textColor(AppColor.white),
+                                              item.isNotEmpty ? item : '',
+                                              style: TextStyle()
+                                                  .normal16w500
+                                                  .textColor(AppColor.white),
                                             ),
                                           ),
                                           buildListView(i)
@@ -230,14 +255,19 @@ class ScheduleScreen extends StatelessWidget {
       itemCount: scheduleController.sortedScheduleList[i].data.length,
       shrinkWrap: true,
       itemBuilder: (context, index) {
-        ScheduleData scheduleData = scheduleController.sortedScheduleList[i].data[index];
+        ScheduleData scheduleData =
+            scheduleController.sortedScheduleList[i].data[index];
         return GestureDetector(
           onTap: () {
+            if (scheduleData.isExternal) {
+              _showExternalEventDetails(context, scheduleData);
+              return;
+            }
             Get.toNamed(AppRouter.gameProgress, arguments: {
               'user_id': scheduleData.userBy,
               'activity_id': scheduleData.activityId,
-            })?.then((onValue){
-              if(onValue=="delete"){
+            })?.then((onValue) {
+              if (onValue == "delete") {
                 scheduleController.getScheduleListApiCall();
               }
             });
@@ -253,6 +283,92 @@ class ScheduleScreen extends StatelessWidget {
       },
     );
   }
+}
+
+void _showExternalEventDetails(BuildContext context, ScheduleData data) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      final String dateLabel = _formatExternalDate(data);
+      final String timeLabel = _formatExternalTime(data);
+      return AlertDialog(
+        title: Text(
+          capitalizeFirst(data.activityName ?? 'External Event'),
+          style: TextStyle().normal18w600.textColor(AppColor.black12Color),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (dateLabel.isNotEmpty)
+              Text(
+                dateLabel,
+                style:
+                    TextStyle().normal16w500.textColor(AppColor.black12Color),
+              ),
+            if (timeLabel.isNotEmpty) ...[
+              Gap(6),
+              Text(
+                timeLabel,
+                style: TextStyle()
+                    .normal15w500
+                    .textColor(AppColor.black12Color.withOpacity(0.7)),
+              ),
+            ],
+            if ((data.location?.address ?? data.locationDetails ?? '')
+                .isNotEmpty) ...[
+              Gap(12),
+              Text(
+                data.location?.address ?? data.locationDetails ?? '',
+                style:
+                    TextStyle().normal15w500.textColor(AppColor.black12Color),
+              ),
+            ],
+            if ((data.notes ?? data.externalDescription ?? '').isNotEmpty) ...[
+              Gap(12),
+              Text(
+                data.notes ?? data.externalDescription ?? '',
+                style:
+                    TextStyle().normal14w400.textColor(AppColor.black12Color),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Close'),
+          ),
+          if ((data.externalCalendarLink ?? '').isNotEmpty)
+            TextButton(
+              onPressed: () {
+                launchURL(data.externalCalendarLink!);
+              },
+              child: Text('Open Link'),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+String _formatExternalDate(ScheduleData data) {
+  final dateString = data.eventDate ?? data.startDate;
+  if (dateString == null || dateString.isEmpty) return '';
+  try {
+    final parsed = DateTime.parse(dateString);
+    return DateFormat('EEEE, MMM d, y').format(parsed);
+  } catch (e) {
+    return dateString;
+  }
+}
+
+String _formatExternalTime(ScheduleData data) {
+  if ((data.startTime ?? '').isEmpty) {
+    return '';
+  }
+  return DateUtilities.formatTime(
+      data.startTime ?? '', data.endTime ?? data.startTime ?? '');
 }
 
 Future<void> showAlertDialog({

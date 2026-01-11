@@ -234,7 +234,6 @@ import '../model/conversation_item.dart';
 //
 // }
 
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -246,10 +245,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../app_route.dart';
 import '../model/conversation_item.dart';
 
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // handle action
+}
+
 class PushNotificationService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
   // =========================
   // Initialization
@@ -291,8 +295,7 @@ class PushNotificationService {
     // =========================
     // Local Notifications
     // =========================
-    const androidInit =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -301,17 +304,15 @@ class PushNotificationService {
     );
 
     const initSettings =
-    InitializationSettings(android: androidInit, iOS: iosInit);
+        InitializationSettings(android: androidInit, iOS: iosInit);
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (response) {
-        if (response.payload != null) {
-          final data = json.decode(response.payload!);
-          _handleNotificationTap(data);
-        }
-      },
-    );
+    await _localNotifications.initialize(initSettings,
+        onDidReceiveNotificationResponse: (response) {
+      if (response.payload != null) {
+        final data = json.decode(response.payload!);
+        _handleNotificationTap(data);
+      }
+    }, onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
 
     // =========================
     // Message Handling
@@ -350,7 +351,7 @@ class PushNotificationService {
     const iosDetails = DarwinNotificationDetails();
 
     const details =
-    NotificationDetails(android: androidDetails, iOS: iosDetails);
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await _localNotifications.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -379,8 +380,7 @@ class PushNotificationService {
     if (convId.isEmpty) return;
 
     final convTypeRaw = (data['conversation_type'] ?? '').toString();
-    final convType =
-    convTypeRaw == 'group' ? 'team' : convTypeRaw;
+    final convType = convTypeRaw == 'group' ? 'team' : convTypeRaw;
 
     final conversation = ConversationItem(
       conversationId: convId,
@@ -402,9 +402,10 @@ class PushNotificationService {
       );
     }
   }
+
   Future<void> testLocalNotification() async {
     final FlutterLocalNotificationsPlugin localNotifications =
-    FlutterLocalNotificationsPlugin();
+        FlutterLocalNotificationsPlugin();
 
     const androidDetails = AndroidNotificationDetails(
       'test_channel',
@@ -417,7 +418,7 @@ class PushNotificationService {
     const iosDetails = DarwinNotificationDetails();
 
     const notificationDetails =
-    NotificationDetails(android: androidDetails, iOS: iosDetails);
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await localNotifications.show(
       0,
@@ -426,5 +427,4 @@ class PushNotificationService {
       notificationDetails,
     );
   }
-
 }

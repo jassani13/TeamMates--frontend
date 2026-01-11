@@ -171,6 +171,11 @@ class CalendarViewController extends GetxController {
         final String icsData = response.body;
         final ICalendar ical = ICalendar.fromString(icsData);
 
+        // Remove any previously stored events for this link to avoid duplicates after refreshes
+        externalEvents.removeWhere((key, value) {
+          return value.any((event) => event['web_cal_id'] == urlId);
+        });
+
         for (var event in ical.data) {
           if (event['type'] != 'VEVENT') continue;
 
@@ -278,6 +283,9 @@ class CalendarViewController extends GetxController {
       FormData formData = FormData.fromMap({
         'user_id': AppPref().userId,
       });
+      // Clear existing external state so refresh replaces data instead of duplicating
+      externalEvents.clear();
+      calendarLinks.clear();
       var response = await callApi(dio.post(
         ApiEndPoint.getWebCalList,
         data: formData,
@@ -300,12 +308,18 @@ class CalendarViewController extends GetxController {
               urlId: item['web_cal_id'],
             );
           }
+        } else {
+          // Ensure UI updates when no external links remain
+          _mergeEventsForDisplay();
         }
+      } else {
+        _mergeEventsForDisplay();
       }
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
+      _mergeEventsForDisplay();
     }
   }
 

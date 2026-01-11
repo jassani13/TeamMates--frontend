@@ -43,6 +43,12 @@ class ScheduleData {
   String? endDate; // End date for multi-day events
   String? maxCreateDate; // Frequency end date for recurring events
 
+  // External calendar metadata
+  bool isExternal=false;
+  int? webCalId;
+  String? externalCalendarLink;
+  String? externalDescription;
+
   ScheduleData({
     this.activityId,
     this.challengeId,
@@ -81,6 +87,10 @@ class ScheduleData {
     this.startDate,
     this.endDate,
     this.maxCreateDate,
+    this.isExternal = false,
+    this.webCalId,
+    this.externalCalendarLink,
+    this.externalDescription,
     this.canSendNudge,
     this.lastNudgeSent,
   });
@@ -122,6 +132,10 @@ class ScheduleData {
     isMultiDay = json['is_multi_day'];
     startDate = json['start_date'];
     endDate = json['end_date'];
+    isExternal = json['is_external'] ?? false;
+    webCalId = json['web_cal_id'];
+    externalCalendarLink = json['external_calendar_link'];
+    externalDescription = json['external_description'];
 
     if (json['tags'] != null) {
       tags = <EventTag>[];
@@ -172,7 +186,6 @@ class ScheduleData {
     data['status'] = this.status;
     data['reason'] = this.reason;
 
-
     data['is_multi_day'] = this.isMultiDay;
     data['start_date'] = this.startDate;
     data['end_date'] = this.endDate;
@@ -181,7 +194,6 @@ class ScheduleData {
     if (this.tags != null) {
       data['tags'] = this.tags!.map((tag) => tag.toJson()).toList();
     }
-
 
     if (this.team != null) {
       data['team'] = this.team?.toJson();
@@ -198,9 +210,18 @@ class ScheduleData {
     if (this.lastNudgeSent != null) {
       data['last_nudge_sent'] = this.lastNudgeSent;
     }
+    data['is_external'] = this.isExternal;
+    if (this.webCalId != null) {
+      data['web_cal_id'] = this.webCalId;
+    }
+    if (this.externalCalendarLink != null) {
+      data['external_calendar_link'] = this.externalCalendarLink;
+    }
+    if (this.externalDescription != null) {
+      data['external_description'] = this.externalDescription;
+    }
     return data;
   }
-
 
   // Multi-day helper methods
 
@@ -288,7 +309,6 @@ class ScheduleData {
   String get tagIdsString {
     if (tags == null || tags!.isEmpty) return '';
     return tags!.map((tag) => tag.tagId.toString()).join(',');
-
   }
 }
 

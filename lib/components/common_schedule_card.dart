@@ -26,6 +26,7 @@ class CommonScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     selectedSearchMethod1.value = selectedMethod1List
         .indexWhere((e) => e == (scheduleData?.activityUserStatus ?? ""));
+    final bool isExternal = scheduleData?.isExternal ?? false;
     return Stack(
       alignment: Alignment.topRight,
       children: [
@@ -79,7 +80,7 @@ class CommonScheduleCard extends StatelessWidget {
                       ),
                 ),
               Visibility(
-                visible: scheduleData?.activityType == 'game',
+                visible: !isExternal && scheduleData?.activityType == 'game',
                 child: Text(
                   "${scheduleData?.team?.name ?? ""} vs ${scheduleData?.opponent?.opponentName ?? ""}",
                   style: TextStyle().normal14w500.textColor(
@@ -91,7 +92,9 @@ class CommonScheduleCard extends StatelessWidget {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: scheduleData?.location?.address ?? "",
+                      text: scheduleData?.location?.address ??
+                          scheduleData?.locationDetails ??
+                          "",
                       style: TextStyle().normal15w500.textColor(
                             AppColor.black12Color,
                           ),
@@ -108,7 +111,7 @@ class CommonScheduleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isBtn == true) ...[
+              if (isBtn == true && !isExternal) ...[
                 SizedBox(height: 12),
                 Center(
                   child: Container(
@@ -136,7 +139,8 @@ class CommonScheduleCard extends StatelessWidget {
                 ),
               ],
               Visibility(
-                visible: scheduleData?.activityType == 'game' &&
+                visible: !isExternal &&
+                    scheduleData?.activityType == 'game' &&
                     scheduleData?.isLive == 1,
                 child: GestureDetector(
                   onTap: () {
@@ -218,7 +222,7 @@ class CommonScheduleCard extends StatelessWidget {
             ),
           ),
           child: Text(
-            (scheduleData?.isLive == 1)
+            (scheduleData?.isLive == 1 && !isExternal)
                 ? 'Live - ${capitalizeFirst(scheduleData?.activityType)}'
                 : capitalizeFirst(scheduleData?.activityType),
             style: TextStyle().normal16w500.textColor(
@@ -232,5 +236,4 @@ class CommonScheduleCard extends StatelessWidget {
       ],
     );
   }
-
 }

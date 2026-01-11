@@ -1,6 +1,8 @@
 import 'package:base_code/module/bottom/home/home_controller.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:http/http.dart' as http;
+import 'package:icalendar_parser/icalendar_parser.dart';
 
 class ScheduleController extends GetxController {
   List selectedMethod1List = [
@@ -85,6 +87,18 @@ class ScheduleController extends GetxController {
           }
         }
 
+        if ((filter?.toLowerCase() == 'upcoming') &&
+            startDate == null &&
+            endDate == null) {
+          final externalEntries = await _fetchExternalUpcomingEvents();
+          externalEntries.forEach((key, value) {
+            if (!groupedData.containsKey(key)) {
+              groupedData[key] = [];
+            }
+            groupedData[key]!.addAll(value);
+          });
+        }
+
         // Convert to sorted list and format dates for display
         var sortedEntries = groupedData.entries.toList();
         sortedEntries.sort((a, b) => a.key.compareTo(b.key));
@@ -104,7 +118,6 @@ class ScheduleController extends GetxController {
           String displayDate = _formatDateForDisplay(entry.key);
           return ShortedData(date: displayDate, data: entry.value);
         }).toList());
-
       }
     } catch (e) {
       if (kDebugMode) {
@@ -277,6 +290,164 @@ class ScheduleController extends GetxController {
       }
       AppToast.showAppToast("Failed to send nudge. Please try again.");
     }
+  }
+
+  Future<Map<String, List<ScheduleData>>> _fetchExternalUpcomingEvents() async {
+    final Map<String, List<ScheduleData>> grouped = {};
+    if (AppPref().userId == null) {
+      return grouped;
+    }
+    try {
+      var response = await callApi(
+        dio.post(
+          ApiEndPoint.getWebCalList,
+          data: {
+            'user_id': AppPref().userId,
+          },
+        ),
+        false,
+      );
+
+      if (response?.statusCode != 200) {
+        return grouped;
+      }
+
+      final List<dynamic> links = response?.data['data'] ?? [];
+      if (links.isEmpty) {
+        return grouped;
+      }
+
+      final futures = links.map<Future<List<ScheduleData>>>((link) {
+        final String rawLink = link['link']?.toString() ?? '';
+        final int? webCalId = link['web_cal_id'];
+        if (rawLink.isEmpty || webCalId == null) {
+          return Future.value(<ScheduleData>[]);
+        }
+        return _loadIcsEventsFromUrl(rawLink, webCalId);
+      }).toList();
+
+      final results = await Future.wait(futures);
+      final Set<String> seenExternalKeys = {};
+      for (final scheduleList in results) {
+        for (final schedule in scheduleList) {
+          final String dedupKey = _buildExternalEventKey(schedule);
+          if (dedupKey.isNotEmpty && seenExternalKeys.contains(dedupKey)) {
+            continue;
+          }
+          if (dedupKey.isNotEmpty) {
+            seenExternalKeys.add(dedupKey);
+          }
+          final String dateKey = schedule.effectiveStartDate ?? '';
+          if (dateKey.isEmpty) continue;
+          if (!grouped.containsKey(dateKey)) {
+            grouped[dateKey] = [];
+          }
+          grouped[dateKey]!.add(schedule);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to fetch external events: $e');
+      }
+    }
+    return grouped;
+  }
+
+  Future<List<ScheduleData>> _loadIcsEventsFromUrl(
+      String url, int webCalId) async {
+    final List<ScheduleData> events = [];
+    try {
+      final normalizedUrl = url.startsWith('webcal://')
+          ? url.replaceFirst('webcal://', 'https://')
+          : url;
+      final response = await http.get(Uri.parse(normalizedUrl));
+      if (response.statusCode != 200) {
+        return events;
+      }
+
+      final ICalendar ical = ICalendar.fromString(response.body);
+      for (var event in ical.data) {
+        if (event['type'] != 'VEVENT') continue;
+
+        final DateTime? start = _extractDateTime(event['dtstart']);
+        final DateTime? end = _extractDateTime(event['dtend']) ?? start;
+        if (start == null) continue;
+
+        final DateTime startLocal = start.toLocal();
+        final DateTime endLocal = (end ?? start).toLocal();
+        if (!_isUpcomingDate(startLocal)) {
+          continue;
+        }
+
+        final String eventDate = DateFormat('yyyy-MM-dd').format(startLocal);
+        final schedule = ScheduleData(
+          activityType: 'external',
+          activityName:
+              (event['summary'] ?? 'External Event').toString().trim(),
+          locationDetails: event['location']?.toString(),
+          notes: event['description']?.toString(),
+        )
+          ..isExternal = true
+          ..webCalId = webCalId
+          ..externalCalendarLink = normalizedUrl
+          ..externalDescription = event['description']?.toString()
+          ..eventDate = eventDate
+          ..startTime = DateFormat('HH:mm:ss').format(startLocal)
+          ..endTime = DateFormat('HH:mm:ss').format(endLocal);
+
+        final locationText = event['location']?.toString();
+        if (locationText != null && locationText.isNotEmpty) {
+          schedule.location = Locationn(
+            address: locationText,
+            location: locationText,
+          );
+        }
+
+        events.add(schedule);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to load ICS from $url: $e');
+      }
+    }
+    return events;
+  }
+
+  DateTime? _extractDateTime(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    if (raw is IcsDateTime) return raw.toDateTime();
+    if (raw is Map && raw['dt'] != null) {
+      return _extractDateTime(raw['dt']);
+    }
+    if (raw is String) {
+      try {
+        return DateTime.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  bool _isUpcomingDate(DateTime dateTime) {
+    final DateTime today = DateTime.now();
+    final DateTime normalizedToday =
+        DateTime(today.year, today.month, today.day);
+    final DateTime normalizedEvent =
+        DateTime(dateTime.year, dateTime.month, dateTime.day);
+    return !normalizedEvent.isBefore(normalizedToday);
+  }
+
+  String _buildExternalEventKey(ScheduleData data) {
+    final calendarId = data.webCalId?.toString() ?? '';
+    final date = data.eventDate ?? data.startDate ?? '';
+    final start = data.startTime ?? '';
+    final summary = data.activityName ?? '';
+    if (calendarId.isEmpty && date.isEmpty && summary.isEmpty) {
+      return '';
+    }
+    return '$calendarId|$date|$start|$summary';
   }
 
   @override

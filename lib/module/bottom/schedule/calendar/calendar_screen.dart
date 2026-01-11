@@ -458,12 +458,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildExternalEventCard(Map<String, dynamic> event) {
+    debugPrint("event:$event");
     final String summary = event['summary']?.toString() ?? 'No Title';
     final String location = event['location']?.toString() ?? 'Unknown Location';
     final String description =
         cleanDescription(event['description']?.toString() ?? '');
     final String? mapUrl =
         extractMapUrl(event['description']?.toString() ?? '');
+
+    // debugPrint(
+    //     "_buildExternalEventCard-> description: ${event['description']?.toString() ?? ''} :: mapUrl: $mapUrl");
 
     final dynamic rawDt = event['dtstart']?.dt;
     final dynamic rawDtEnd = event['dtend']?.dt;
@@ -474,8 +478,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     late DateTime start, end;
     try {
-      start = DateTime.parse(rawDt.toString());
-      end = DateTime.parse(rawDtEnd.toString());
+      start = DateTime.parse(rawDt.toString()).toLocal();
+      end = DateTime.parse(rawDtEnd.toString()).toLocal();
     } catch (e) {
       return const SizedBox.shrink();
     }
@@ -607,11 +611,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
   }
 
+  // String? extractMapUrl(String raw) {
+  //   final mapRegex = RegExp(r'(http[s]?:\/\/maps\.google\.com\?q=[^\s]+)');
+  //   final match = mapRegex.firstMatch(raw);
+  //   return match?.group(0);
+  // }
+
   String? extractMapUrl(String raw) {
-    final mapRegex = RegExp(r'(http[s]?:\/\/maps\.google\.com\?q=[^\s]+)');
-    final match = mapRegex.firstMatch(raw);
+    final urlRegex = RegExp(
+      r'(https?:\/\/[^\s]+)',
+      caseSensitive: false,
+    );
+
+    final match = urlRegex.firstMatch(raw);
     return match?.group(0);
   }
+
+  // List<String> extractAllUrls(String raw) {
+  //   final urlRegex = RegExp(
+  //     r'(https?:\/\/[^\s]+)',
+  //     caseSensitive: false,
+  //   );
+  //
+  //   return urlRegex
+  //       .allMatches(raw)
+  //       .map((m) => m.group(0)!)
+  //       .toList();
+  // }
+
 
   void _showSubscribeDialog(BuildContext context) {
     final TextEditingController urlController = TextEditingController();
