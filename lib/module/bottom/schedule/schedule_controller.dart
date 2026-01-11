@@ -87,10 +87,13 @@ class ScheduleController extends GetxController {
           }
         }
 
-        if ((filter?.toLowerCase() == 'upcoming') &&
+        final normalizedFilter = filter?.toLowerCase();
+        if (normalizedFilter != null &&
             startDate == null &&
-            endDate == null) {
-          final externalEntries = await _fetchExternalUpcomingEvents();
+            endDate == null &&
+            _supportsExternalEvents(normalizedFilter)) {
+          final externalEntries =
+              await _fetchExternalEventsForFilter(normalizedFilter);
           externalEntries.forEach((key, value) {
             if (!groupedData.containsKey(key)) {
               groupedData[key] = [];
@@ -292,9 +295,17 @@ class ScheduleController extends GetxController {
     }
   }
 
-  Future<Map<String, List<ScheduleData>>> _fetchExternalUpcomingEvents() async {
+  bool _supportsExternalEvents(String filter) {
+    return filter == 'today' || filter == 'past' || filter == 'upcoming';
+  }
+
+  Future<Map<String, List<ScheduleData>>> _fetchExternalEventsForFilter(
+      String filter) async {
     final Map<String, List<ScheduleData>> grouped = {};
     if (AppPref().userId == null) {
+      return grouped;
+    }
+    if (!_supportsExternalEvents(filter)) {
       return grouped;
     }
     try {
@@ -323,7 +334,7 @@ class ScheduleController extends GetxController {
         if (rawLink.isEmpty || webCalId == null) {
           return Future.value(<ScheduleData>[]);
         }
-        return _loadIcsEventsFromUrl(rawLink, webCalId);
+        return _loadIcsEventsFromUrl(rawLink, webCalId, filter);
       }).toList();
 
       final results = await Future.wait(futures);
@@ -354,7 +365,7 @@ class ScheduleController extends GetxController {
   }
 
   Future<List<ScheduleData>> _loadIcsEventsFromUrl(
-      String url, int webCalId) async {
+      String url, int webCalId, String filter) async {
     final List<ScheduleData> events = [];
     try {
       final normalizedUrl = url.startsWith('webcal://')
@@ -375,7 +386,7 @@ class ScheduleController extends GetxController {
 
         final DateTime startLocal = start.toLocal();
         final DateTime endLocal = (end ?? start).toLocal();
-        if (!_isUpcomingDate(startLocal)) {
+        if (!_shouldIncludeExternalEvent(startLocal, filter)) {
           continue;
         }
 
@@ -430,13 +441,22 @@ class ScheduleController extends GetxController {
     return null;
   }
 
-  bool _isUpcomingDate(DateTime dateTime) {
+  bool _shouldIncludeExternalEvent(DateTime dateTime, String filter) {
     final DateTime today = DateTime.now();
     final DateTime normalizedToday =
         DateTime(today.year, today.month, today.day);
     final DateTime normalizedEvent =
         DateTime(dateTime.year, dateTime.month, dateTime.day);
-    return !normalizedEvent.isBefore(normalizedToday);
+
+    switch (filter) {
+      case 'today':
+        return normalizedEvent.isAtSameMomentAs(normalizedToday);
+      case 'past':
+        return normalizedEvent.isBefore(normalizedToday);
+      case 'upcoming':
+      default:
+        return !normalizedEvent.isBefore(normalizedToday);
+    }
   }
 
   String _buildExternalEventKey(ScheduleData data) {
