@@ -364,33 +364,40 @@ class ChatDetailController extends GetxController {
       if (readerId == null || readerId.trim().isEmpty || readerId == me.id) {
         return; // ignore my own or invalid read events
       }
-      final lastIdStr = data['last_read_message_id']?.toString();
-      final lastId = int.tryParse(lastIdStr ?? '');
-      if (lastId == null) return;
+      final rawLastId = data['last_read_message_id'];
+      final lastIdStr = rawLastId?.toString() ?? '';
+      final lastId = lastIdStr.isEmpty ? null : int.tryParse(lastIdStr);
 
       bool changed = false;
       for (int i = 0; i < messages.length; i++) {
         final m = messages[i];
         if (m.author.id != me.id) continue; // only care about messages I sent
         final mid = int.tryParse(m.id) ?? -1;
-        if (mid <= lastId) {
-          final meta = {...?m.metadata};
-          final existing = (meta['read_by'] as List?) ?? [];
-          final readBy = existing
-              .map((e) => e.toString())
-              .where((s) => s.trim().isNotEmpty)
-              .toList();
-          if (!readBy.contains(readerId)) {
-            readBy.add(readerId);
-            meta['read_by'] = readBy;
-            if (m is types.TextMessage)
-              messages[i] = m.copyWith(metadata: meta);
-            if (m is types.ImageMessage)
-              messages[i] = m.copyWith(metadata: meta);
-            if (m is types.FileMessage)
-              messages[i] = m.copyWith(metadata: meta);
-            changed = true;
-          }
+        final shouldBeMarkedRead = lastId != null && mid != -1 && mid <= lastId;
+        final meta = {...?m.metadata};
+        final existing = (meta['read_by'] as List?) ?? [];
+        final readBy = existing
+            .map((e) => e.toString())
+            .where((s) => s.trim().isNotEmpty)
+            .toList();
+        final alreadyHasReader = readBy.contains(readerId);
+
+        bool localChange = false;
+        if (shouldBeMarkedRead && !alreadyHasReader) {
+          readBy.add(readerId);
+          localChange = true;
+        }
+        if (!shouldBeMarkedRead && alreadyHasReader) {
+          readBy.removeWhere((id) => id == readerId);
+          localChange = true;
+        }
+
+        if (localChange) {
+          meta['read_by'] = readBy;
+          if (m is types.TextMessage) messages[i] = m.copyWith(metadata: meta);
+          if (m is types.ImageMessage) messages[i] = m.copyWith(metadata: meta);
+          if (m is types.FileMessage) messages[i] = m.copyWith(metadata: meta);
+          changed = true;
         }
       }
       if (changed) messages.refresh();
