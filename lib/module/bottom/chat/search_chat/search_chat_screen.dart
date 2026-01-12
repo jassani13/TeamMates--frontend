@@ -23,24 +23,30 @@ class SearchChatScreen extends StatelessWidget {
             actions: [
               Obx(
                 () => !controller.isCreatingGroup.value
-                    ? PopupMenuButton(
-                        icon: const Icon(Icons.more_vert_rounded),
-                        onSelected: (val) {
-                          if (val == "create_group") {
-                            controller.isCreatingGroup.value = true;
-                            controller.selectedChatMethod.value = 1;
-                          }
+                    ? TextButton(
+                        onPressed: () {
+                          controller.isCreatingGroup.value = true;
+                          controller.selectedChatMethod.value = 1;
                         },
-                        itemBuilder: (context) => [
-                              PopupMenuItem<String>(
-                                value: "create_group",
-                                child: Text(
-                                  "Create Chat Group",
-                                  style:
-                                      TextStyle(color: AppColor.black12Color),
-                                ),
-                              ),
-                            ])
+                        child: Text("Create Group"))
+                    // ? PopupMenuButton(
+                    //     icon: const Icon(Icons.more_vert_rounded),
+                    //     onSelected: (val) {
+                    //       if (val == "create_group") {
+                    //         controller.isCreatingGroup.value = true;
+                    //         controller.selectedChatMethod.value = 1;
+                    //       }
+                    //     },
+                    //     itemBuilder: (context) => [
+                    //           PopupMenuItem<String>(
+                    //             value: "create_group",
+                    //             child: Text(
+                    //               "Create Chat Group",
+                    //               style:
+                    //                   TextStyle(color: AppColor.black12Color),
+                    //             ),
+                    //           ),
+                    //         ])
                     : SizedBox(),
               ),
               Obx(() {

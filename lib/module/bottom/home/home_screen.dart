@@ -2,6 +2,7 @@ import 'package:base_code/components/common_progress_bar.dart';
 import 'package:base_code/components/common_stat_card.dart';
 import 'package:base_code/model/challenge_model.dart';
 import 'package:base_code/module/bottom/home/home_controller.dart';
+import 'package:base_code/module/bottom/schedule/widgets/external_event_dialog.dart';
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
 import 'package:flutter/gestures.dart';
@@ -144,16 +145,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     : 16.0),
                                                         child: GestureDetector(
                                                           onTap: () {
+                                                            final data =
+                                                                scheduleData;
+                                                            if (data == null) {
+                                                              return;
+                                                            }
+                                                            if (data.isExternal ==
+                                                                true) {
+                                                              showExternalEventDetailsDialog(
+                                                                  context,
+                                                                  data);
+                                                              return;
+                                                            }
                                                             Get.toNamed(
                                                                 AppRouter
                                                                     .gameProgress,
                                                                 arguments: {
-                                                                  'user_id':
-                                                                      scheduleData
-                                                                          ?.userBy,
+                                                                  'user_id': data
+                                                                      .userBy,
                                                                   'activity_id':
-                                                                      scheduleData
-                                                                          ?.activityId,
+                                                                      data.activityId,
                                                                 });
                                                           },
                                                           child:
