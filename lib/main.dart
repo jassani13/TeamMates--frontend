@@ -58,6 +58,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 // }
 Future<void> myBackgroundMessageHandler(RemoteMessage message) async {
   debugPrint("BG Message: ${message.messageId}");
+  await Firebase.initializeApp();
 }
 
 void main() async {

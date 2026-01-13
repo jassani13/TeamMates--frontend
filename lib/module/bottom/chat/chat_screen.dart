@@ -11,6 +11,7 @@ import '../../../model/conversation_item.dart';
 import '../../../model/search_message_hit.dart';
 
 late IO.Socket socket;
+bool socketInitialized = false;
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -20,7 +21,10 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final chatController = Get.put<ChatScreenController>(ChatScreenController());
+  final ChatScreenController chatController =
+      Get.isRegistered<ChatScreenController>()
+          ? Get.find<ChatScreenController>()
+          : Get.put<ChatScreenController>(ChatScreenController());
   final TextEditingController _searchCtrl = TextEditingController();
   final Set<String> _joinedConversations = <String>{};
 
@@ -29,126 +33,132 @@ class _ChatScreenState extends State<ChatScreen> {
 
     debugPrint("[SOCKET] init url:$url");
 
-    socket = IO.io(
-      url,
-      {
-        'transports': ['websocket'],
-        'autoConnect': false,
-        'forceNew': true,
-        'reconnection': true,
-        'reconnectionAttempts': 5,
-        'reconnectionDelay': 2000,
-      },
-    );
+    if (!socketInitialized) {
+      socket = IO.io(
+        url,
+        {
+          'transports': ['websocket'],
+          'autoConnect': false,
+          'forceNew': true,
+          'reconnection': true,
+          'reconnectionAttempts': 5,
+          'reconnectionDelay': 2000,
+        },
+      );
+      socket.onConnectError((e) {
+        debugPrint('[SOCKET] connect error:$e');
+      });
+      socketInitialized = true;
+    }
 
-    socket.connect();
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-    socket.onConnect((_) {
-      debugPrint('[SOCKET] connected');
-      socket.emit('register', {'user_id': AppPref().userId});
-      chatController.attachSearchSocket();
+    socket.onConnect((_) => _handleSocketConnected());
+    if (socket.connected) {
+      _handleSocketConnected();
+    }
+  }
 
-      // Request conversations explicitly (server also emits on register)
+  void _handleSocketConnected() {
+    debugPrint('[SOCKET] connected');
+    socket.emit('register', {'user_id': AppPref().userId});
+    chatController.attachSearchSocket();
+
+    // Request conversations explicitly (server also emits on register)
+    try {
+      socket.emit('get_conversations', {'user_id': AppPref().userId});
+    } catch (e) {
+      debugPrint("get_conversations emit error:$e");
+    }
+
+    // Listen for full conversation list
+    socket.off('conversation_list');
+    socket.on('conversation_list', (data) {
+      debugPrint("conversation_list:$data");
       try {
-        socket.emit('get_conversations', {'user_id': AppPref().userId});
-      } catch (e) {
-        debugPrint("get_conversations emit error:$e");
-      }
-
-      // Listen for full conversation list
-      socket.off('conversation_list');
-      socket.on('conversation_list', (data) {
-        debugPrint("conversation_list:$data");
-        try {
-          if (data is List) {
-            chatController.setConversations(data);
-            // Join conversation rooms so we can receive typing events for list rows
-            for (final item in data) {
-              try {
-                if (item is Map) {
-                  final id = (item['conversation_id'] ?? '').toString();
-                  if (id.isNotEmpty && !_joinedConversations.contains(id)) {
-                    socket.emit('join_chat_room', {'conversation_id': id});
-                    _joinedConversations.add(id);
-                  }
+        if (data is List) {
+          chatController.setConversations(data);
+          // Join conversation rooms so we can receive typing events for list rows
+          for (final item in data) {
+            try {
+              if (item is Map) {
+                final id = (item['conversation_id'] ?? '').toString();
+                if (id.isNotEmpty && !_joinedConversations.contains(id)) {
+                  socket.emit('join_chat_room', {'conversation_id': id});
+                  _joinedConversations.add(id);
                 }
-              } catch (_) {}
-            }
+              }
+            } catch (_) {}
           }
-        } catch (e) {
-          if (kDebugMode) debugPrint('conversation_list parse error: $e');
         }
-      });
+      } catch (e) {
+        if (kDebugMode) debugPrint('conversation_list parse error: $e');
+      }
+    });
 
-      // Listen for incremental conversation updates (unread, last message etc.)
-      socket.off('updateConversationList');
-      socket.on('updateConversationList', (payload) {
-        try {
-          final res = payload is Map ? payload['resData'] ?? payload : payload;
-          if (res is Map) {
-            chatController.patchConversation(
-              convId: (res['conversation_id'] ?? '').toString(),
-              lastMessage: (res['last_message'] ?? '').toString(),
-              msgType: (res['msg_type'] ?? 'text').toString(),
-              fileUrl: (res['last_message_file_url'] ?? '').toString(),
-              type: (res['type'] ?? '').toString(),
-              ownerId: res['owner_id']?.toString(),
-              title: (res['title'] ?? '').toString(),
-              image: (res['image'] ?? '').toString(),
-              createdAt: (res['created_at'] ?? '').toString(),
-              unreadCount:
-                  int.tryParse((res['unread_count'] ?? '0').toString()),
-            );
-            // Ensure we are subscribed to typing events for this conversation
-            final id = (res['conversation_id'] ?? '').toString();
-            if (id.isNotEmpty && !_joinedConversations.contains(id)) {
-              socket.emit('join_chat_room', {'conversation_id': id});
-              _joinedConversations.add(id);
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) debugPrint('updateConversationList error: $e');
-        }
-      });
-
-      // Typing events from joined conversation rooms -> show in list
-      socket.off('typing');
-      socket.on('typing', (payload) {
-        try {
-          if (payload is! Map) return;
-          final convId =
-              (payload['conversation_id'] ?? payload['chat_room_id'] ?? '')
-                  .toString();
-          if (convId.isEmpty) return;
-          final isTyping = payload['isTyping'] == true;
-          final uid = (payload['user_id'] ?? '').toString();
-          final first = (payload['sender_first_name'] ?? '').toString();
-          final last = (payload['sender_last_name'] ?? '').toString();
-          final display = (first + ' ' + last).trim();
-          chatController.setTypingForConversation(
-            conversationId: convId,
-            isTyping: isTyping,
-            typingUserId: uid,
-            displayName: display.isNotEmpty ? display : null,
+    // Listen for incremental conversation updates (unread, last message etc.)
+    socket.off('updateConversationList');
+    socket.on('updateConversationList', (payload) {
+      try {
+        final res = payload is Map ? payload['resData'] ?? payload : payload;
+        if (res is Map) {
+          chatController.patchConversation(
+            convId: (res['conversation_id'] ?? '').toString(),
+            lastMessage: (res['last_message'] ?? '').toString(),
+            msgType: (res['msg_type'] ?? 'text').toString(),
+            fileUrl: (res['last_message_file_url'] ?? '').toString(),
+            type: (res['type'] ?? '').toString(),
+            ownerId: res['owner_id']?.toString(),
+            title: (res['title'] ?? '').toString(),
+            image: (res['image'] ?? '').toString(),
+            createdAt: (res['created_at'] ?? '').toString(),
+            unreadCount: int.tryParse((res['unread_count'] ?? '0').toString()),
           );
-        } catch (e) {
-          if (kDebugMode) debugPrint('typing(list) error: $e');
+          // Ensure we are subscribed to typing events for this conversation
+          final id = (res['conversation_id'] ?? '').toString();
+          if (id.isNotEmpty && !_joinedConversations.contains(id)) {
+            socket.emit('join_chat_room', {'conversation_id': id});
+            _joinedConversations.add(id);
+          }
         }
-      });
-
-
-      // Presence (if you keep existing events)
-      socket.emit('userOnline', [AppPref().userId]);
-      socket.on('updateUserStatus', (data) {
-        chatController.onlineUsers.clear();
-        chatController.onlineUsers.addAll(data as Map);
-      });
+      } catch (e) {
+        if (kDebugMode) debugPrint('updateConversationList error: $e');
+      }
     });
 
-    socket.onConnectError((e){
-      debugPrint('[SOCKET] connect error:$e');
+    // Typing events from joined conversation rooms -> show in list
+    socket.off('typing');
+    socket.on('typing', (payload) {
+      try {
+        if (payload is! Map) return;
+        final convId =
+            (payload['conversation_id'] ?? payload['chat_room_id'] ?? '')
+                .toString();
+        if (convId.isEmpty) return;
+        final isTyping = payload['isTyping'] == true;
+        final uid = (payload['user_id'] ?? '').toString();
+        final first = (payload['sender_first_name'] ?? '').toString();
+        final last = (payload['sender_last_name'] ?? '').toString();
+        final display = (first + ' ' + last).trim();
+        chatController.setTypingForConversation(
+          conversationId: convId,
+          isTyping: isTyping,
+          typingUserId: uid,
+          displayName: display.isNotEmpty ? display : null,
+        );
+      } catch (e) {
+        if (kDebugMode) debugPrint('typing(list) error: $e');
+      }
     });
 
+    // Presence (if you keep existing events)
+    socket.emit('userOnline', [AppPref().userId]);
+    socket.on('updateUserStatus', (data) {
+      chatController.onlineUsers.clear();
+      chatController.onlineUsers.addAll(data as Map);
+    });
   }
 
   void userOnline() {

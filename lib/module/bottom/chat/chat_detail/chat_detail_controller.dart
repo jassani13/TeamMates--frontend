@@ -11,7 +11,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:dio/dio.dart' as dio_pkg;
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../../../../data/network/server_config.dart';
 import '../chat_screen.dart';
 
 class ChatDetailController extends GetxController {
@@ -43,7 +45,10 @@ class ChatDetailController extends GetxController {
   bool _didInitialFocusJump = false;
 
   // Reuse existing chat controller for media upload helper
-  final ChatScreenController chatController = Get.put(ChatScreenController());
+  final ChatScreenController chatController =
+      Get.isRegistered<ChatScreenController>()
+          ? Get.find<ChatScreenController>()
+          : Get.put(ChatScreenController());
 
   // Scroll helpers (moved from UI for readability)
   final ItemScrollController itemScrollController = ItemScrollController();
@@ -94,6 +99,7 @@ class ChatDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _ensureSocketBootstrapped();
     final args = Get.arguments ?? {};
     conversation = args['conversation'] as ConversationItem?;
     // Pick up a specific message to focus when opening the screen (from global search results)
@@ -204,6 +210,46 @@ class ChatDetailController extends GetxController {
     if (index < 0 || index >= _matchIds.length) return;
     final id = _matchIds[index];
     await scrollToMessageNoSideEffects(id);
+  }
+
+  void _ensureSocketBootstrapped() {
+    if (socketInitialized) {
+      if (!socket.connected) {
+        try {
+          socket.connect();
+        } catch (e) {
+          debugPrint('[SOCKET] reconnect error: $e');
+        }
+      }
+      return;
+    }
+
+    final String url = ServerConfig.socketBaseUrl;
+    debugPrint("[SOCKET] detail init url:$url");
+
+    socket = IO.io(
+      url,
+      {
+        'transports': ['websocket'],
+        'autoConnect': false,
+        'forceNew': true,
+        'reconnection': true,
+        'reconnectionAttempts': 5,
+        'reconnectionDelay': 2000,
+      },
+    );
+
+    socket.onConnect((_) {
+      debugPrint('[SOCKET] detail connected');
+      socket.emit('register', {'user_id': AppPref().userId});
+    });
+
+    socket.onConnectError((e) {
+      debugPrint('[SOCKET] detail connect error:$e');
+    });
+
+    socket.connect();
+    socketInitialized = true;
   }
 
   void _registerSocketListeners() {

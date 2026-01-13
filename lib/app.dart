@@ -47,7 +47,8 @@ class _SampleAppState extends State<SampleApp> with WidgetsBindingObserver {
             home: demo(),
             title: 'TeamMates',
             debugShowCheckedModeBanner: false,
-            themeMode: AppPref().isDark == true ? ThemeMode.dark : ThemeMode.light,
+            themeMode:
+                AppPref().isDark == true ? ThemeMode.dark : ThemeMode.light,
             initialRoute: AppRouter.splash,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -65,7 +66,8 @@ class _SampleAppState extends State<SampleApp> with WidgetsBindingObserver {
                   textScaler: const TextScaler.linear(1),
                 ),
                 child: AnnotatedRegion<SystemUiOverlayStyle>(
-                  value: (MediaQuery.of(context).platformBrightness == Brightness.light
+                  value: (MediaQuery.of(context).platformBrightness ==
+                          Brightness.light
                       ? SystemUiOverlayStyle.light
                       : SystemUiOverlayStyle.dark),
                   child: child ?? const SizedBox(),
