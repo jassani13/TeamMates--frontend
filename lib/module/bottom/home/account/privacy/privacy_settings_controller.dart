@@ -1,5 +1,6 @@
 import 'package:base_code/package/config_packages.dart';
 import 'package:base_code/package/screen_packages.dart';
+import 'package:flutter/material.dart';
 
 class PrivacySettingsController extends GetxController {
   final RxBool readReceiptsEnabled = true.obs; // default ON
@@ -52,19 +53,16 @@ class PrivacySettingsController extends GetxController {
         'read_receipts': value ? 1 : 0,
       });
       final res = await callApi(
-          dio.post(ApiEndPoint.readReceiptsPrivacy, data: body),false);
+          dio.post(ApiEndPoint.readReceiptsPrivacy, data: body), false);
       if (res?.statusCode == 200) {
-        Get.snackbar(
-            'Privacy', 'Read receipts ${value ? 'enabled' : 'disabled'}',
-            snackPosition: SnackPosition.BOTTOM);
+        Fluttertoast.showToast(
+            msg: 'Read receipts ${value ? 'enabled' : 'disabled'}');
       } else {
-        Get.snackbar('Privacy', 'Could not update setting',
-            snackPosition: SnackPosition.BOTTOM);
+        Fluttertoast.showToast(msg: 'Could not update setting');
       }
     } catch (e) {
       debugPrint('error->setReadReceipts: $e');
-      Get.snackbar('Privacy', 'Error saving setting',
-          snackPosition: SnackPosition.BOTTOM);
+      Fluttertoast.showToast(msg: 'Error saving setting');
     } finally {
       saving.value = false;
     }
