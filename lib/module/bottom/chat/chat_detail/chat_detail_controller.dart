@@ -1138,6 +1138,8 @@ class ChatDetailController extends GetxController {
       msgType: conversation!.msgType,
       createdAt: conversation!.createdAt,
       unreadCount: 0,
+      lastMessageSenderId: conversation!.lastMessageSenderId,
+      lastMessageSenderName: conversation!.lastMessageSenderName,
     );
   }
 

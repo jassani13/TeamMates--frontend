@@ -123,7 +123,10 @@ class ChatScreenController extends GetxController {
           msgType: c.msgType,
           createdAt: c.createdAt,
           unreadCount: 0,
-          lastReadMessageId: null);
+          lastReadMessageId: null,
+          ownerId: c.ownerId,
+          lastMessageSenderId: c.lastMessageSenderId,
+          lastMessageSenderName: c.lastMessageSenderName);
     }
   }
 
@@ -139,6 +142,8 @@ class ChatScreenController extends GetxController {
     String? createdAt,
     String? lastReadMessageId,
     int? unreadCount,
+    String? lastMessageSenderName,
+    String? lastMessageSenderId,
   }) {
     final idx = conversations.indexWhere((c) => c.conversationId == convId);
     DateTime? parsedCreatedAt;
@@ -162,7 +167,9 @@ class ChatScreenController extends GetxController {
           createdAt: parsedCreatedAt ?? DateTime.now(),
           unreadCount: unreadCount ?? 0,
           ownerId: ownerId,
-          lastReadMessageId: lastReadMessageId);
+          lastReadMessageId: lastReadMessageId,
+          lastMessageSenderName: lastMessageSenderName,
+          lastMessageSenderId: lastMessageSenderId);
       conversations.add(item);
     } else {
       final old = conversations[idx];
@@ -177,7 +184,13 @@ class ChatScreenController extends GetxController {
           msgType: msgType,
           createdAt: parsedCreatedAt ?? old.createdAt,
           unreadCount: unreadCount ?? old.unreadCount,
-          lastReadMessageId: lastReadMessageId ?? old.lastReadMessageId);
+          lastReadMessageId: lastReadMessageId ?? old.lastReadMessageId,
+          lastMessageSenderName: _preferValue(
+              incoming: lastMessageSenderName,
+              fallback: old.lastMessageSenderName),
+          lastMessageSenderId: _preferValue(
+              incoming: lastMessageSenderId,
+              fallback: old.lastMessageSenderId));
       conversations[idx] = updated;
     }
 
@@ -187,6 +200,12 @@ class ChatScreenController extends GetxController {
       final bt = b.createdAt?.millisecondsSinceEpoch ?? 0;
       return bt.compareTo(at);
     });
+  }
+
+  String? _preferValue({String? incoming, String? fallback}) {
+    final clean = incoming?.trim();
+    if (clean != null && clean.isNotEmpty) return clean;
+    return fallback;
   }
 
   Future<String> setMediaChatApiCall({

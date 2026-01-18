@@ -101,6 +101,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Listen for incremental conversation updates (unread, last message etc.)
     socket.off('updateConversationList');
     socket.on('updateConversationList', (payload) {
+      debugPrint("updating conversations:$payload");
       try {
         final res = payload is Map ? payload['resData'] ?? payload : payload;
         if (res is Map) {
@@ -115,6 +116,10 @@ class _ChatScreenState extends State<ChatScreen> {
             image: (res['image'] ?? '').toString(),
             createdAt: (res['created_at'] ?? '').toString(),
             unreadCount: int.tryParse((res['unread_count'] ?? '0').toString()),
+            lastMessageSenderName:
+                (res['last_message_sender_name'] ?? '').toString(),
+            lastMessageSenderId:
+                (res['last_message_sender_id'] ?? '').toString(),
           );
           // Ensure we are subscribed to typing events for this conversation
           final id = (res['conversation_id'] ?? '').toString();
@@ -320,6 +325,27 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Builder(builder: (_) {
+                    final type = (c.type ?? '').toLowerCase();
+                    final isGroupLike = type == 'group' || type == 'team';
+                    if (!isGroupLike) return const SizedBox.shrink();
+                    var senderLabel = (c.lastMessageSenderName ?? '').trim();
+                    final senderId = (c.lastMessageSenderId ?? '').trim();
+                    final myId = AppPref().userId?.toString() ?? '';
+                    if (senderId.isNotEmpty && senderId == myId) {
+                      senderLabel = 'You';
+                    }
+                    if (senderLabel.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(senderLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle()
+                              .normal14w400
+                              .textColor(AppColor.grey4EColor)),
+                    );
+                  }),
                   Text(c.title == '' ? '(Untitled ${c.type})' : c.title ?? '',
                       style: TextStyle()
                           .normal16w500

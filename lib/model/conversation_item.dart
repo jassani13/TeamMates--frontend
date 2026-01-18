@@ -10,6 +10,8 @@ class ConversationItem {
   final String? msgType;
   final DateTime? createdAt;
   final int? unreadCount;
+  final String? lastMessageSenderName;
+  final String? lastMessageSenderId;
 
   ConversationItem({
     required this.conversationId,
@@ -23,6 +25,8 @@ class ConversationItem {
     required this.msgType,
     required this.createdAt,
     required this.unreadCount,
+    this.lastMessageSenderName,
+    this.lastMessageSenderId,
   });
 
   factory ConversationItem.fromJson(dynamic j) {
@@ -40,6 +44,8 @@ class ConversationItem {
           ? null
           : DateTime.tryParse(j['created_at']),
       unreadCount: int.tryParse((j['unread_count'] ?? '0').toString()) ?? 0,
+      lastMessageSenderName: (j['last_message_sender_name'] ?? '').toString(),
+      lastMessageSenderId: (j['last_message_sender_id'] ?? '').toString(),
     );
   }
 }
