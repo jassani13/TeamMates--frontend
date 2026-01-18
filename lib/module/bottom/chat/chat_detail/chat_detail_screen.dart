@@ -99,6 +99,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           final bubble = MessageBubble(
             message: msg,
             isMe: isMe,
+            showReadReceipt: controller.myReadReceiptsOn.value,
             highlightQuery: query,
             onTap: () {},
             onThreadPreviewTap: () => _openThreadScreen(msg),

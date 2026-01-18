@@ -181,6 +181,13 @@ class MessageBubble extends StatelessWidget {
     return 'https://$t';
   }
 
+  int _resolveReadTarget(dynamic raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) return int.tryParse(raw) ?? 0;
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final meta = message.metadata ?? {};
@@ -193,6 +200,7 @@ class MessageBubble extends StatelessWidget {
             .where((s) => s.isNotEmpty)
             .toList()) ??
         [];
+    final readTargetCount = _resolveReadTarget(meta['read_target_count']);
     final repliesCount = meta['replies_count'] is int
         ? meta['replies_count'] as int
         : int.tryParse(meta['replies_count']?.toString() ?? '0') ?? 0;
@@ -393,6 +401,7 @@ class MessageBubble extends StatelessWidget {
                               onMedia: msgType == 'image',
                               showRead: isMe && showReadReceipt,
                               readByCount: readBy.length,
+                              readTargetCount: readTargetCount,
                               onReadByTap: onReadByTap,
                               isPinned: isPinned,
                               isFlagged: isFlagged,
@@ -460,6 +469,7 @@ class _BubbleFooter extends StatelessWidget {
   final bool onMedia;
   final bool showRead;
   final int readByCount;
+  final int readTargetCount;
   final VoidCallback? onReadByTap;
   final bool isPinned;
   final bool isFlagged;
@@ -470,6 +480,7 @@ class _BubbleFooter extends StatelessWidget {
     required this.onMedia,
     required this.showRead,
     required this.readByCount,
+    required this.readTargetCount,
     this.onReadByTap,
     this.isPinned = false,
     this.isFlagged = false,
@@ -477,9 +488,12 @@ class _BubbleFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasRead = showRead && readByCount > 0;
+    final everyoneRead = readTargetCount > 0
+        ? (readByCount >= readTargetCount)
+        : (readByCount > 0);
+    final shouldShowReadIcon = showRead;
     final showTime = timeText.isNotEmpty;
-    if (!showTime && !hasRead && !isPinned && !isFlagged) {
+    if (!showTime && !shouldShowReadIcon && !isPinned && !isFlagged) {
       return const SizedBox.shrink();
     }
 
@@ -490,15 +504,22 @@ class _BubbleFooter extends StatelessWidget {
         color: onMedia ? Colors.white : Colors.grey.shade600,
       ),
     );
-    final readIcon = hasRead
-        ? GestureDetector(
-            onTap: onReadByTap,
-            child: const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: Icon(Icons.done_all, size: 14, color: Color(0xFF25D366)),
-            ),
-          )
-        : const SizedBox.shrink();
+    Widget readIcon = const SizedBox.shrink();
+    if (shouldShowReadIcon) {
+      final atLeastOneReader = readByCount > 0;
+      final iconColor = everyoneRead
+          ? const Color(0xFF25D366)
+          : (onMedia ? Colors.white70 : Colors.grey.shade500);
+      final icon = Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Icon(Icons.done_all, size: 14, color: iconColor),
+      );
+      if (atLeastOneReader && onReadByTap != null) {
+        readIcon = GestureDetector(onTap: onReadByTap, child: icon);
+      } else {
+        readIcon = icon;
+      }
+    }
 
     final pinIcon = isPinned
         ? const Padding(

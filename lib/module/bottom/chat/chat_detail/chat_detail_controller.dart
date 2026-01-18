@@ -1210,6 +1210,10 @@ class ChatDetailController extends GetxController {
       'latest_reply_msg_type': raw['latest_reply_msg_type'] ?? '',
       'latest_reply_created_at': raw['latest_reply_created_at'],
       'latest_reply_file_url': raw['latest_reply_file_url'] ?? '',
+      'read_target_count': raw['read_target_count'] ??
+          raw['readTargetCount'] ??
+          raw['readTarget'] ??
+          0,
     };
 
     if (msgType == 'image') {
