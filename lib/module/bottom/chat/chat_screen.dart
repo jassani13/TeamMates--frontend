@@ -304,7 +304,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _conversationTile(ConversationItem c) {
     final timeAgo = c.createdAt == null
         ? ''
-        : DateUtilities.getTimeAgo(c.createdAt!.toIso8601String());
+        : DateUtilities.getTimeAgo(
+            c.createdAt!.toIso8601String(),
+            assumeUtcWhenNoTimezone: false,
+          );
     return GestureDetector(
       onTap: () {
         Get.toNamed(AppRouter.conversationDetailScreen,

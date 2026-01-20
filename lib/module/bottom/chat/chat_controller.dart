@@ -8,8 +8,9 @@ import '../../../data/network/dio_client.dart';
 import '../../../data/network/end_point.dart';
 import '../../../model/conversation_item.dart';
 import '../../../model/search_message_hit.dart';
-import 'chat_screen.dart';
 import '../../../package/screen_packages.dart';
+import '../../../utils/date_utilities.dart';
+import 'chat_screen.dart';
 
 class ChatScreenController extends GetxController {
   RxInt selectedChatMethod = 0.obs;
@@ -148,7 +149,10 @@ class ChatScreenController extends GetxController {
     final idx = conversations.indexWhere((c) => c.conversationId == convId);
     DateTime? parsedCreatedAt;
     if (createdAt != null && createdAt.isNotEmpty) {
-      parsedCreatedAt = DateTime.tryParse(createdAt) ?? parsedCreatedAt;
+      parsedCreatedAt = DateUtilities.parseServerDateTime(
+        createdAt,
+        assumeUtcWhenNoTimezone: true,
+      );
     }
     final bool isText = (msgType == 'text');
     final String normalizedLastMessage = isText ? (lastMessage) : msgType;

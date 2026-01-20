@@ -59,7 +59,7 @@ android {
         multiDexEnabled true
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
-        versionName '3.4.1'
+        versionName '3.4.2'
     }
     signingConfigs {
         release {

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../utils/catched_network_image.dart';
 import '../../../../utils/common_function.dart';
+import '../../../../utils/date_utilities.dart';
 
 typedef ReactionTap = void Function(String messageId, String reaction);
 
@@ -66,8 +67,7 @@ class MessageBubble extends StatelessWidget {
       }
       final createdStr = m.metadata?['created_at']?.toString();
       if (createdStr != null && createdStr.isNotEmpty) {
-        final dt =
-            DateTime.tryParse(createdStr.replaceFirst(' ', 'T'))?.toLocal();
+        final dt = DateUtilities.parseServerDateTime(createdStr);
         if (dt != null) return DateFormat('h:mm a').format(dt);
       }
     } catch (_) {}

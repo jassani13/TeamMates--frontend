@@ -78,6 +78,8 @@ class ChatDetailController extends GetxController {
   static const evMessageRead = 'message_read';
   static const evMessagesReadBroadcast = 'messages_read';
   static const evReaction = 'message_reaction';
+  static final RegExp _serverTzPattern =
+      RegExp(r'(Z)$|([+\-]\d{2}:?\d{2}$)', caseSensitive: false);
   static const evMessageEdited = 'message_edited';
   static const evMessageDeleted = 'message_deleted';
   static const evMarkUnread = 'mark_unread';
@@ -1183,10 +1185,10 @@ class ChatDetailController extends GetxController {
     final senderLastName = "${raw['sender_last_name'] ?? ""}";
     final senderProfile = raw['sender_profile']?.toString();
     final id = raw['message_id'].toString();
-    final createdAtStr = raw['created_at']?.toString();
-    final createdAt = createdAtStr != null
-        ? DateTime.tryParse(createdAtStr)?.toUtc().millisecondsSinceEpoch
-        : DateTime.now().toUtc().millisecondsSinceEpoch;
+    final createdAtInstant =
+        _parseServerTimestampToUtc(raw['created_at']?.toString()) ??
+            DateTime.now().toUtc();
+    final createdAt = createdAtInstant.millisecondsSinceEpoch;
 
     final metadata = <String, dynamic>{
       'msg_type': msgType,
@@ -1259,6 +1261,17 @@ class ChatDetailController extends GetxController {
       text: raw['msg']?.toString() ?? '',
       metadata: metadata,
     );
+  }
+
+  DateTime? _parseServerTimestampToUtc(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final normalized =
+        trimmed.contains('T') ? trimmed : trimmed.replaceAll(' ', 'T');
+    final hasOffset = _serverTzPattern.hasMatch(normalized);
+    final iso = hasOffset ? normalized : '${normalized}Z';
+    return DateTime.tryParse(iso)?.toUtc();
   }
 
   /// Best-effort resolver to attach a human-readable name for typing users.

@@ -7,17 +7,29 @@ class DateUtilities {
   static const am = 'AM';
   static const pm = 'PM';
   static const dd_MM_yyyy = 'dd MMMM yyyy';
-
+  static final RegExp _tzPattern =
+      RegExp(r'(Z)$|([+\-]\d{2}:?\d{2}$)', caseSensitive: false);
 
   static DateTime? parseDateTime(String dateTimeString) {
     try {
       if (dateTimeString.isEmpty) return null;
-      dateTimeString = dateTimeString.replaceAll(RegExp(r'\s+'), ' ').trim();
-      return DateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTimeString);
-    } catch (e) {
+      final normalized = dateTimeString.replaceAll(RegExp(r'\s+'), ' ').trim();
+      return DateFormat("yyyy-MM-dd HH:mm:ss").parse(normalized);
+    } catch (_) {
       return null;
     }
   }
+
+  static DateTime? parseServerDateTime(String dateTimeString,
+      {bool assumeUtcWhenNoTimezone = true}) {
+    try {
+      return _parseServerDateTime(dateTimeString,
+          assumeUtcWhenNoTimezone: assumeUtcWhenNoTimezone);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static String formatDateTime(DateTime? dt) {
     if (dt == null) return '';
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} - ${dt.day}/${dt.month}/${dt.year}';
@@ -35,6 +47,7 @@ class DateUtilities {
       return "${remainingMinutes}m";
     }
   }
+
   static DateTime? parseIcsDateTime(String? dateStr) {
     if (dateStr == null) return null;
     try {
@@ -43,12 +56,14 @@ class DateUtilities {
       return null;
     }
   }
-  static String getTimeAgo(String createdAt) {
+
+  static String getTimeAgo(String createdAt,
+      {bool assumeUtcWhenNoTimezone = true}) {
     try {
-      DateTime dateTime = DateTime.parse(createdAt).toUtc();
-      return timeago.format(
-        dateTime,
-      );
+      final dt = parseServerDateTime(createdAt,
+          assumeUtcWhenNoTimezone: assumeUtcWhenNoTimezone);
+      if (dt == null) return "";
+      return timeago.format(dt);
     } catch (e) {
       return "";
     }
@@ -120,5 +135,57 @@ class DateUtilities {
       if (years == 0) return "1 yesr left";
       return "$years year${years > 1 ? 's' : ''} left";
     }
+  }
+
+  static DateTime? _parseServerDateTime(String? raw,
+      {bool assumeUtcWhenNoTimezone = true}) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final normalized =
+        trimmed.contains('T') ? trimmed : trimmed.replaceAll(' ', 'T');
+    final hasOffset = _tzPattern.hasMatch(normalized);
+
+    if (hasOffset) {
+      final parsed = DateTime.tryParse(normalized);
+      if (parsed == null) return null;
+      return parsed.isUtc ? parsed.toLocal() : parsed;
+    }
+
+    if (!assumeUtcWhenNoTimezone) {
+      final parsed = DateTime.tryParse(normalized);
+      if (parsed == null) return null;
+      return parsed.isUtc ? parsed.toLocal() : parsed;
+    }
+
+    final candidates = [
+      {
+        'pattern': "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",
+        'value': normalized,
+      },
+      {
+        'pattern': "yyyy-MM-dd'T'HH:mm:ss.SSS",
+        'value': normalized,
+      },
+      {
+        'pattern': "yyyy-MM-dd'T'HH:mm:ss",
+        'value': normalized,
+      },
+      {
+        'pattern': 'yyyy-MM-dd HH:mm:ss',
+        'value': normalized.replaceAll('T', ' '),
+      },
+    ];
+
+    for (final candidate in candidates) {
+      try {
+        final fmt = DateFormat(candidate['pattern'] as String);
+        final parsed = fmt.parseUtc(candidate['value'] as String);
+        return parsed.toLocal();
+      } catch (_) {}
+    }
+
+    final fallback = DateTime.tryParse('${normalized}Z');
+    return fallback?.toLocal();
   }
 }
