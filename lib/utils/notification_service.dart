@@ -18,6 +18,10 @@ class PushNotificationService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  static bool _launchedFromTerminatedNotification = false;
+
+  static bool get launchedFromTerminatedNotification =>
+      _launchedFromTerminatedNotification;
 
   // =========================
   // Initialization
@@ -84,6 +88,7 @@ class PushNotificationService {
 
     // Terminated
     final initialMessage = await _fcm.getInitialMessage();
+    _launchedFromTerminatedNotification = initialMessage != null;
     if (initialMessage != null) {
       Future.delayed(const Duration(seconds: 1), () {
         _handleMessage(initialMessage);
@@ -148,7 +153,10 @@ class PushNotificationService {
   static void _handleNotificationData(Map<String, dynamic> data) {
     debugPrint("Notification data: $data");
     final convId = (data['conversation_id'] ?? '').toString();
-    if (convId.isEmpty) return;
+    if (convId.isEmpty) {
+      _launchedFromTerminatedNotification = false;
+      return;
+    }
 
     final convTypeRaw = (data['conversation_type'] ?? '').toString();
     final convType = convTypeRaw == 'group' ? 'team' : convTypeRaw;
@@ -170,10 +178,24 @@ class PushNotificationService {
         "mtag: ${Get.currentRoute} :: ${AppRouter.conversationDetailScreen}");
     if (Get.currentRoute != AppRouter.conversationDetailScreen) {
       debugPrint("mtag->inside if block");
-      Get.toNamed(
+      final navigation = Get.toNamed(
         AppRouter.conversationDetailScreen,
         arguments: {'conversation': conversation},
       );
+
+      if (_launchedFromTerminatedNotification && navigation != null) {
+        navigation.whenComplete(() {
+          _launchedFromTerminatedNotification = false;
+          if (Get.currentRoute != AppRouter.bottom) {
+            Get.offAllNamed(AppRouter.bottom);
+          }
+        });
+      }
+    } else if (_launchedFromTerminatedNotification) {
+      _launchedFromTerminatedNotification = false;
+      if (Get.currentRoute == AppRouter.splash) {
+        Get.offAllNamed(AppRouter.bottom);
+      }
     }
   }
 
