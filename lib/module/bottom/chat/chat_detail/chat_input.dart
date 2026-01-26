@@ -120,6 +120,7 @@ class _ChatInputState extends State<ChatInput> {
                     Expanded(
                       child: TextField(
                         controller: _controller,
+                        maxLines: null,
                         decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Type a message',

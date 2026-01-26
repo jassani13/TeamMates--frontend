@@ -7,7 +7,7 @@ abstract class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     focusColor: AppColor.grey100,
     textSelectionTheme: TextSelectionThemeData(
-        selectionColor: AppColor.black..withValues(alpha: (0.4)),
+        selectionColor: AppColor.gray(),
         cursorColor: AppColor.black..withValues(alpha: (0.4)),
         selectionHandleColor: AppColor.black),
     useMaterial3: true,
